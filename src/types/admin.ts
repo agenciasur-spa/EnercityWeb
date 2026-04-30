@@ -55,6 +55,64 @@ export interface AdminContact {
   updated_at: string | null;
 }
 
+export interface LeadStatusHistory {
+  id: string;
+  lead_id: string;
+  from_status: string | null;
+  to_status: string;
+  notas: string | null;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  created_at: string;
+}
+
+export interface ContactStatusHistory {
+  id: string;
+  contact_id: string;
+  from_status: string | null;
+  to_status: string;
+  notas: string | null;
+  changed_by: string | null;
+  changed_by_email: string | null;
+  created_at: string;
+}
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  content: string;
+  created_by: string | null;
+  created_by_email: string | null;
+  created_at: string;
+}
+
+export interface ContactNote {
+  id: string;
+  contact_id: string;
+  content: string;
+  created_by: string | null;
+  created_by_email: string | null;
+  created_at: string;
+}
+
+export type TimelineEntry =
+  | { type: 'status_change'; id: string; from_status: string | null; to_status: string; notas: string | null; changed_by_email: string | null; created_at: string }
+  | { type: 'note'; id: string; content: string; created_by_email: string | null; created_at: string };
+
+export interface LeadDetailData {
+  lead: AdminLead;
+  status_history: LeadStatusHistory[];
+  notes: LeadNote[];
+  timeline: TimelineEntry[];
+}
+
+export interface ContactDetailData {
+  contact: AdminContact;
+  status_history: ContactStatusHistory[];
+  notes: ContactNote[];
+  timeline: TimelineEntry[];
+}
+
 export interface DashboardMetrics {
   total_leads: number;
   total_contacts: number;

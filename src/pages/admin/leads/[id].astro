@@ -1,0 +1,137 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import LeadDetail from '@/components/admin/lead-detail';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import type { LeadDetailData, LeadStatusHistory, LeadNote, TimelineEntry, AdminLead } from '@/types/admin';
+
+export const prerender = false;
+
+const id = Astro.params.id;
+if (!id) {
+  return Astro.redirect('/admin/leads');
+}
+
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!uuidRegex.test(id)) {
+  return Astro.redirect('/admin/leads');
+}
+
+const [
+  leadResult,
+  historyResult,
+  notesResult,
+] = await Promise.all([
+  supabaseAdmin
+    .from('leads')
+    .select('id, nombre, email, telefono, estado, notas, created_at, updated_at, monto_boleta_ingresado, factor_techo_aplicado, costo_fijo_medidor_aplicado, precio_final_iva, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)')
+    .eq('id', id)
+    .single(),
+  supabaseAdmin
+    .from('lead_status_history')
+    .select('*')
+    .eq('lead_id', id)
+    .order('created_at', { ascending: false }),
+  supabaseAdmin
+    .from('lead_notes')
+    .select('*')
+    .eq('lead_id', id)
+    .order('created_at', { ascending: false }),
+]);
+
+if (leadResult.error || !leadResult.data) {
+  return Astro.redirect('/admin/leads');
+}
+
+type LeadRow = {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  estado: string;
+  notas: string | null;
+  created_at: string;
+  updated_at: string | null;
+  monto_boleta_ingresado: number;
+  factor_techo_aplicado: number;
+  costo_fijo_medidor_aplicado: number;
+  precio_final_iva: number;
+  comunas: { nombre: string } | null;
+  precios_kits: { consumo_bruto: number; paneles: number; kwp: number } | null;
+};
+
+const leadRow = leadResult.data as unknown as LeadRow;
+
+const lead: AdminLead = {
+  id: leadRow.id,
+  nombre: leadRow.nombre,
+  email: leadRow.email,
+  telefono: leadRow.telefono,
+  comuna_id: 0,
+  comuna_nombre: leadRow.comunas?.nombre ?? '',
+  kit_id: 0,
+  kit_label: leadRow.precios_kits
+    ? `${leadRow.precios_kits.kwp} kWp · ${leadRow.precios_kits.paneles}p`
+    : '',
+  monto_boleta_ingresado: leadRow.monto_boleta_ingresado,
+  factor_techo_aplicado: leadRow.factor_techo_aplicado,
+  costo_fijo_medidor_aplicado: leadRow.costo_fijo_medidor_aplicado,
+  precio_final_iva: leadRow.precio_final_iva,
+  estado: leadRow.estado as AdminLead['estado'],
+  notas: leadRow.notas,
+  created_at: leadRow.created_at,
+  updated_at: leadRow.updated_at,
+};
+
+const history = (historyResult.data ?? []) as LeadStatusHistory[];
+const notes = (notesResult.data ?? []) as LeadNote[];
+
+const userIds = new Set<string>();
+for (const h of history) { if (h.changed_by) userIds.add(h.changed_by); }
+for (const n of notes) { if (n.created_by) userIds.add(n.created_by); }
+
+const adminUser = Astro.locals.adminUser;
+if (adminUser.id) userIds.add(adminUser.id);
+
+const emailMap = new Map<string, string>();
+
+if (userIds.size > 0) {
+  const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+  for (const u of authUsers) {
+    emailMap.set(u.id, u.email ?? '');
+  }
+}
+
+emailMap.set(adminUser.id, adminUser.email);
+
+for (const h of history) {
+  h.changed_by_email = h.changed_by ? (emailMap.get(h.changed_by) ?? null) : null;
+}
+for (const n of notes) {
+  n.created_by_email = n.created_by ? (emailMap.get(n.created_by) ?? null) : null;
+}
+
+const timeline: TimelineEntry[] = [
+  ...history.map(h => ({
+    type: 'status_change' as const,
+    id: h.id,
+    from_status: h.from_status,
+    to_status: h.to_status,
+    notas: h.notas,
+    changed_by_email: h.changed_by_email,
+    created_at: h.created_at,
+  })),
+  ...notes.map(n => ({
+    type: 'note' as const,
+    id: n.id,
+    content: n.content,
+    created_by_email: n.created_by_email,
+    created_at: n.created_at,
+  })),
+].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+const detailData: LeadDetailData = { lead, status_history: history, notes, timeline };
+---
+
+<AdminLayout title={`${lead.nombre} — Enercity Admin`}>
+  <LeadDetail client:load data={detailData} adminUserId={adminUser.id} adminEmail={adminUser.email} />
+</AdminLayout>

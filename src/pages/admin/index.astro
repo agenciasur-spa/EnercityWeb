@@ -4,6 +4,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import DashboardMetrics from '@/components/admin/dashboard-metrics';
 import type { DashboardMetrics as DashboardMetricsType, LeadStatus, ContactStatus } from '@/types/admin';
 
+export const prerender = false;
+
 const [leadsResult, contactsResult, leadsByStatusResult, contactsByStatusResult] = await Promise.all([
   supabaseAdmin
     .from('leads')

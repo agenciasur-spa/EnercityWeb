@@ -52,7 +52,6 @@ type ContactRow = {
   proyecto: string;
   mensaje: string | null;
   estado: string;
-  notas: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -135,7 +134,7 @@ function ContactsTable({ contacts, total }: ContactsTableProps) {
   const handleStatusSelect = useCallback((contact: ContactRow, newStatus: ContactStatus) => {
     setDialogContact(contact);
     setDialogNewStatus(newStatus);
-    setDialogNotas(contact.notas ?? '');
+    setDialogNotas('');
     setError(null);
     setDialogOpen(true);
   }, []);
@@ -262,7 +261,9 @@ function ContactsTable({ contacts, total }: ContactsTableProps) {
             ) : (
               paginated.map((contact) => (
                 <TableRow key={contact.id}>
-                  <TableCell className="font-medium">{contact.nombre}</TableCell>
+                  <TableCell className="font-medium">
+                    <a href={`/admin/contacts/${contact.id}`} className="text-[#154660] hover:underline">{contact.nombre}</a>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{contact.email}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {contact.telefono ?? '—'}

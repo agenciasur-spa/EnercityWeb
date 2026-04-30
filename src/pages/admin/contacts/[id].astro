@@ -1,0 +1,125 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import ContactDetail from '@/components/admin/contact-detail';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import type { ContactDetailData, ContactStatusHistory, ContactNote, TimelineEntry, AdminContact } from '@/types/admin';
+
+export const prerender = false;
+
+const id = Astro.params.id;
+if (!id) {
+  return Astro.redirect('/admin/contacts');
+}
+
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+if (!uuidRegex.test(id)) {
+  return Astro.redirect('/admin/contacts');
+}
+
+const [
+  contactResult,
+  historyResult,
+  notesResult,
+] = await Promise.all([
+  supabaseAdmin
+    .from('contacts')
+    .select('id, nombre, email, telefono, proyecto, mensaje, estado, notas, created_at, updated_at')
+    .eq('id', id)
+    .single(),
+  supabaseAdmin
+    .from('contact_status_history')
+    .select('*')
+    .eq('contact_id', id)
+    .order('created_at', { ascending: false }),
+  supabaseAdmin
+    .from('contact_notes')
+    .select('*')
+    .eq('contact_id', id)
+    .order('created_at', { ascending: false }),
+]);
+
+if (contactResult.error || !contactResult.data) {
+  return Astro.redirect('/admin/contacts');
+}
+
+type ContactRow = {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  proyecto: string;
+  mensaje: string | null;
+  estado: string;
+  notas: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+const contactRow = contactResult.data as unknown as ContactRow;
+
+const contact: AdminContact = {
+  id: contactRow.id,
+  nombre: contactRow.nombre,
+  email: contactRow.email,
+  telefono: contactRow.telefono,
+  proyecto: contactRow.proyecto,
+  mensaje: contactRow.mensaje,
+  estado: contactRow.estado as AdminContact['estado'],
+  notas: contactRow.notas,
+  created_at: contactRow.created_at,
+  updated_at: contactRow.updated_at,
+};
+
+const history = (historyResult.data ?? []) as ContactStatusHistory[];
+const notes = (notesResult.data ?? []) as ContactNote[];
+
+const userIds = new Set<string>();
+for (const h of history) { if (h.changed_by) userIds.add(h.changed_by); }
+for (const n of notes) { if (n.created_by) userIds.add(n.created_by); }
+
+const adminUser = Astro.locals.adminUser;
+if (adminUser.id) userIds.add(adminUser.id);
+
+const emailMap = new Map<string, string>();
+
+if (userIds.size > 0) {
+  const { data: { users: authUsers } } = await supabaseAdmin.auth.admin.listUsers();
+  for (const u of authUsers) {
+    emailMap.set(u.id, u.email ?? '');
+  }
+}
+
+emailMap.set(adminUser.id, adminUser.email);
+
+for (const h of history) {
+  h.changed_by_email = h.changed_by ? (emailMap.get(h.changed_by) ?? null) : null;
+}
+for (const n of notes) {
+  n.created_by_email = n.created_by ? (emailMap.get(n.created_by) ?? null) : null;
+}
+
+const timeline: TimelineEntry[] = [
+  ...history.map(h => ({
+    type: 'status_change' as const,
+    id: h.id,
+    from_status: h.from_status,
+    to_status: h.to_status,
+    notas: h.notas,
+    changed_by_email: h.changed_by_email,
+    created_at: h.created_at,
+  })),
+  ...notes.map(n => ({
+    type: 'note' as const,
+    id: n.id,
+    content: n.content,
+    created_by_email: n.created_by_email,
+    created_at: n.created_at,
+  })),
+].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+const detailData: ContactDetailData = { contact, status_history: history, notes, timeline };
+---
+
+<AdminLayout title={`${contact.nombre} — Enercity Admin`}>
+  <ContactDetail client:load data={detailData} adminUserId={adminUser.id} adminEmail={adminUser.email} />
+</AdminLayout>

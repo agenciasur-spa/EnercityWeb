@@ -49,7 +49,6 @@ type LeadRow = {
   email: string;
   telefono: string | null;
   estado: string;
-  notas: string | null;
   created_at: string;
   updated_at: string | null;
   monto_boleta_ingresado: number;
@@ -137,7 +136,7 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
   const handleStatusSelect = useCallback((lead: LeadRow, newStatus: LeadStatus) => {
     setDialogLead(lead);
     setDialogNewStatus(newStatus);
-    setDialogNotas(lead.notas ?? '');
+    setDialogNotas('');
     setError(null);
     setDialogOpen(true);
   }, []);
@@ -265,7 +264,9 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
             ) : (
               paginated.map((lead) => (
                 <TableRow key={lead.id}>
-                  <TableCell className="font-medium">{lead.nombre}</TableCell>
+                  <TableCell className="font-medium">
+                    <a href={`/admin/leads/${lead.id}`} className="text-[#154660] hover:underline">{lead.nombre}</a>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{lead.email}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {lead.telefono ?? '—'}

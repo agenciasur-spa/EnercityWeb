@@ -3,9 +3,11 @@ import AdminLayout from '@/layouts/admin-layout.astro';
 import ContactsTable from '@/components/admin/contacts-table';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
+export const prerender = false;
+
 const { data, count } = await supabaseAdmin
   .from('contacts')
-  .select('id, nombre, email, telefono, proyecto, mensaje, estado, notas, created_at, updated_at', { count: 'exact' })
+  .select('id, nombre, email, telefono, proyecto, mensaje, estado, created_at, updated_at', { count: 'exact' })
   .order('created_at', { ascending: false });
 
 type ContactRow = {
@@ -16,7 +18,6 @@ type ContactRow = {
   proyecto: string;
   mensaje: string | null;
   estado: string;
-  notas: string | null;
   created_at: string;
   updated_at: string | null;
 };

@@ -3,10 +3,18 @@ import AdminLayout from '@/layouts/admin-layout.astro';
 import LeadsTable from '@/components/admin/leads-table';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-const { data, count } = await supabaseAdmin
+export const prerender = false;
+
+const leadsResult = await supabaseAdmin
   .from('leads')
-  .select('id, nombre, email, telefono, estado, notas, created_at, updated_at, monto_boleta_ingresado, precio_final_iva, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)', { count: 'exact' })
+  .select('id, nombre, email, telefono, estado, created_at, updated_at, monto_boleta_ingresado, precio_final_iva, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)', { count: 'exact' })
   .order('created_at', { ascending: false });
+
+if (leadsResult.error) {
+  console.error('[leads.astro] Supabase query error:', leadsResult.error);
+}
+
+const { data, count } = leadsResult;
 
 type LeadRow = {
   id: string;
@@ -14,7 +22,6 @@ type LeadRow = {
   email: string;
   telefono: string | null;
   estado: string;
-  notas: string | null;
   created_at: string;
   updated_at: string | null;
   monto_boleta_ingresado: number;
