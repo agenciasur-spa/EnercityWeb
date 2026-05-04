@@ -1,0 +1,23 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import NavLinksTable from '@/components/admin/content/nav-links-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('nav_links')
+  .select('*')
+  .order('location', { ascending: true })
+  .order('sort_order', { ascending: true });
+
+if (error) {
+  console.error('[nav.astro] Supabase query error:', error);
+}
+
+const navLinks = data ?? [];
+---
+
+<AdminLayout title="Navegación — Enercity Admin">
+  <NavLinksTable client:load navLinks={navLinks} />
+</AdminLayout>

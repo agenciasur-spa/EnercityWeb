@@ -2,9 +2,13 @@ import { useState, useEffect } from 'react';
 import { Menu, X, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logoEnercity from '/src/assets/logoEnercity.png'; 
+import type { NavLink } from '../../types/content';
 
+interface NavbarProps {
+  links: NavLink[];
+}
 
-export function Navbar() {
+export function Navbar({ links }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -13,13 +17,6 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const navLinks = [
-    { name: 'Inicio', href: '#inicio' },
-    { name: 'Nosotros', href: '#nosotros' },
-    { name: 'Soluciones', href: '#soluciones' },
-    { name: 'Simulador', href: '#simulador-section' },
-  ];
 
   return (
     // Contenedor centrado con ancho automático
@@ -40,9 +37,8 @@ export function Navbar() {
       >
         <div className="flex justify-between items-center gap-8 w-full">
           
-          {/* LOGO: Aquí puedes swappear por <img src="/logo.svg" /> */}
+          {/* LOGO */}
           <div className="flex items-center gap-2.5 shrink-0 cursor-pointer">
-            
             <img 
               src={logoEnercity.src} 
               alt="Enercity Logo" 
@@ -57,14 +53,14 @@ export function Navbar() {
 
           {/* DESKTOP LINKS */}
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
+            {links.map((link) => (
               <motion.a 
-                key={link.name}
+                key={link.id || link.href}
                 href={link.href} 
                 whileHover={{ y: -1, transition: { duration: 0.15 } }}
                 className="text-sm font-medium text-white/70 hover:text-white transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1.5px] after:bg-[#F07E04] after:transition-all after:duration-300 hover:after:w-full"
               >
-                {link.name}
+                {link.label}
               </motion.a>
             ))}
             
@@ -89,7 +85,7 @@ export function Navbar() {
           </button>
         </div>
 
-        {/* MOBILE MENU DROPDOWN (Estilo Card) */}
+        {/* MOBILE MENU DROPDOWN */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div 
@@ -99,14 +95,14 @@ export function Navbar() {
               className="absolute top-[calc(100%+12px)] left-0 right-0 bg-[#154660] border border-white/10 p-6 rounded-[2rem] shadow-2xl md:hidden mx-6"
             >
               <div className="flex flex-col gap-4">
-                {navLinks.map((link) => (
+                {links.map((link) => (
                   <a 
-                    key={link.name}
+                    key={link.id || link.href}
                     href={link.href} 
                     onClick={() => setIsMenuOpen(false)}
                     className="text-lg font-bold text-white/80 hover:text-[#F07E04] py-2 border-b border-white/5"
                   >
-                    {link.name}
+                    {link.label}
                   </a>
                 ))}
                 <button 

@@ -1,8 +1,13 @@
 import React from 'react';
 import { ArrowRight, Zap } from 'lucide-react';
-import { motion, useMotionValue, useTransform, useReducedMotion } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import type { HeroContent } from '../../types/content';
 
-export function Hero() {
+interface HeroProps {
+  content: HeroContent;
+}
+
+export function Hero({ content }: HeroProps) {
   // Variables para el efecto Parallax del mouse
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -62,7 +67,7 @@ export function Hero() {
           >
             <div className="w-2.5 h-2.5 rounded-full bg-[#4AAF4D] animate-pulse" />
             <span className="text-xs md:text-sm font-black font-sans tracking-[0.2em] uppercase text-white">
-              8 años de ingeniería fotovoltaica
+              {content.badge}
             </span>
           </motion.div>
 
@@ -73,8 +78,8 @@ export function Hero() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-5xl md:text-7xl lg:text-8xl  font-semibold text-white leading-[1.05] mb-8  drop-shadow-2xl"
           >
-            Tu inversión solar <br />
-            <span className="text-[#F07E04]">garantizada.</span>
+            {content.headline} <br />
+            <span className="text-[#F07E04]">{content.headlineAccent}</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -84,8 +89,7 @@ export function Hero() {
             transition={{ delay: 0.3 }}
             className="text-lg md:text-2xl text-white/90 mb-12 leading-relaxed max-w-2xl font-medium drop-shadow-md"
           >
-            Expertos en energía fotovoltaica. Diseñamos soluciones que generan 
-            ahorro real hasta que tu proyecto <span className="text-white font-bold border-b-2 border-[#4AAF4D]">se pague solo.</span>
+            {content.subheadline}
           </motion.p>
 
           {/* Botones de Acción */}
@@ -101,7 +105,7 @@ export function Hero() {
               whileTap={{ scale: 0.97 }}
               className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#4AAF4D] hover:bg-[#3d8f3f] transition-colors shadow-2xl shadow-[#4AAF4D]/40"
             >
-              Simular mi ahorro ahora 
+              {content.ctaPrimary}
               <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
             </motion.button>
             <motion.a 
@@ -110,7 +114,7 @@ export function Hero() {
               whileTap={{ scale: 0.97 }}
               className="flex items-center justify-center px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-white/5 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-colors shadow-xl"
             >
-              Ver proyectos industriales
+              {content.ctaSecondary}
             </motion.a>
           </motion.div>
         </div>
@@ -127,20 +131,18 @@ export function Hero() {
               <Zap className="w-6 h-6 text-white" fill="white" />
             </div>
             <div>
-              <div className="text-xl font-black font-sans text-white">Doble</div>
-              <div className="text-[#4AAF4D] text-xs font-black font-sans uppercase tracking-widest">Garantía Real</div>
+              <div className="text-xl font-black font-sans text-white">{content.cardTitle}</div>
+              <div className="text-[#4AAF4D] text-xs font-black font-sans uppercase tracking-widest">{content.cardSubtitle}</div>
             </div>
           </div>
           
           <div className="space-y-4">
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/5 group hover:bg-white/10 transition-colors">
-              <div className="text-4xl font-black font-sans text-white">120</div>
-              <div className="text-white/40 text-[10px] uppercase tracking-tighter font-bold">Meses ROI Estimado</div>
-            </div>
-            <div className="bg-white/5 rounded-2xl p-5 border border-white/5 group hover:bg-white/10 transition-colors">
-              <div className="text-4xl font-black font-sans text-white">10 Años</div>
-              <div className="text-white/40 text-[10px] uppercase tracking-tighter font-bold">Soporte Técnico Especializado</div>
-            </div>
+            {Array.isArray(content.cardStats) && content.cardStats.map((stat, idx) => (
+              <div key={idx} className="bg-white/5 rounded-2xl p-5 border border-white/5 group hover:bg-white/10 transition-colors">
+                <div className="text-4xl font-black font-sans text-white">{stat.value}</div>
+                <div className="text-white/40 text-[10px] uppercase tracking-tighter font-bold">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </motion.div>
       </div>

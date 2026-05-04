@@ -1,0 +1,22 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import SolutionsTable from '@/components/admin/content/solutions-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('solutions')
+  .select('*')
+  .order('sort_order', { ascending: true });
+
+if (error) {
+  console.error('[solutions.astro] Supabase query error:', error);
+}
+
+const solutions = data ?? [];
+---
+
+<AdminLayout title="Soluciones — Enercity Admin">
+  <SolutionsTable client:load solutions={solutions} />
+</AdminLayout>

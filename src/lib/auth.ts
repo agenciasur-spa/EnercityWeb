@@ -1,5 +1,19 @@
-import { supabaseAdmin } from './supabase-admin';
+import { createClient } from '@supabase/supabase-js';
 import type { AdminUser } from '@/types/admin';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
+const supabaseServiceKey = import.meta.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseServiceKey) {
+  throw new Error('[auth] SUPABASE_SERVICE_KEY is required for auth client');
+}
+
+const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+  },
+});
 
 export function getAuthCookieName(): string {
   const url = import.meta.env.PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321';
@@ -17,7 +31,7 @@ export async function signInAdmin(
   email: string,
   password: string,
 ): Promise<{ session: Record<string, unknown> | null; error: string | null }> {
-  const { data, error } = await supabaseAdmin.auth.signInWithPassword({
+  const { data, error } = await supabaseAuth.auth.signInWithPassword({
     email,
     password,
   });
@@ -54,7 +68,7 @@ export async function getAdminUser(request: Request): Promise<AdminUser | null> 
 }
 
 async function verifyToken(token: string): Promise<AdminUser | null> {
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  const { data, error } = await supabaseAuth.auth.getUser(token);
   if (error || !data.user) return null;
 
   return {

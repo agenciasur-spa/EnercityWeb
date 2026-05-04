@@ -4,15 +4,26 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImage?: string;
 }
 
-const { title, description = "Simula tu ahorro con paneles solares. Cotización personalizada en minutos para tu hogar o empresa en Chile." } = Astro.props;
+const {
+  title,
+  description = "Simula tu ahorro con paneles solares. Cotización personalizada en minutos para tu hogar o empresa en Chile.",
+  ogTitle,
+  ogDescription,
+  ogImage,
+} = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
 const siteName = "Enercity";
 const siteUrl = "https://paneles-solares.cl";
-const ogTitle = "Enercity — Simulador de Paneles Solares en Chile";
-const ogDescription = "Simula tu ahorro con paneles solares. Cotización personalizada en minutos para tu hogar o empresa en Chile.";
+
+// OG tags: use dynamic values if provided, otherwise derive from page props
+const resolvedOgTitle = ogTitle || `${title} — ${siteName}`;
+const resolvedOgDescription = ogDescription || description;
 ---
 
 <!doctype html>
@@ -37,15 +48,17 @@ const ogDescription = "Simula tu ahorro con paneles solares. Cotización persona
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonicalURL} />
-    <meta property="og:title" content={ogTitle} />
-    <meta property="og:description" content={ogDescription} />
+    <meta property="og:title" content={resolvedOgTitle} />
+    <meta property="og:description" content={resolvedOgDescription} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:locale" content="es_CL" />
+    {ogImage && <meta property="og:image" content={ogImage} />}
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={ogTitle} />
-    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:title" content={resolvedOgTitle} />
+    <meta name="twitter:description" content={resolvedOgDescription} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify({
@@ -59,7 +72,7 @@ const ogDescription = "Simula tu ahorro con paneles solares. Cotización persona
         "name": "Chile"
       },
       "serviceType": "Instalación de paneles solares",
-      "description": "Simula tu ahorro con paneles solares en Chile. Cotización personalizada para hogares y empresas."
+      "description": resolvedOgDescription
     })} />
   </head>
   <body class="min-h-screen bg-background font-sans antialiased">

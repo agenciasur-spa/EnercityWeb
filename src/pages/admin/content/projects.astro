@@ -1,0 +1,22 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import ProjectsTable from '@/components/admin/content/projects-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('projects')
+  .select('*')
+  .order('sort_order', { ascending: true });
+
+if (error) {
+  console.error('[projects.astro] Supabase query error:', error);
+}
+
+const projects = data ?? [];
+---
+
+<AdminLayout title="Proyectos — Enercity Admin">
+  <ProjectsTable client:load projects={projects} />
+</AdminLayout>

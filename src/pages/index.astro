@@ -10,9 +10,18 @@ import { SavingsCalculator } from '../components/organisms/savings-calculator';
 import { ContactCta } from '../components/organisms/contact-cta';
 import { Footer } from '../components/organisms/footer';
 import { supabase } from '../lib/supabase';
-
-import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, BarChart3, Shield } from 'lucide-react';
-
+import {
+  getStats,
+  getHeroContent,
+  getProjects,
+  getSolutions,
+  getGuaranteesContent,
+  getContactCtaContent,
+  getNavLinks,
+  getFooterContent,
+  getSolutionsSectionHeader,
+  getProjectsSectionHeader,
+} from '../lib/content';
 
 const { data: comunasData, error: comunasError } = await supabase
   .from('comunas')
@@ -30,17 +39,49 @@ const comunas = (comunasData || []).map((c: any) => ({
 }));
 
 const hasErrors = !!comunasError;
+
+// Fetch ALL dynamic content from CMS (with hardcoded fallbacks)
+const [
+  heroContent,
+  stats,
+  projects,
+  solutions,
+  guaranteesContent,
+  contactCtaContent,
+  navbarLinks,
+  footerLinks,
+  footerContent,
+  solutionsHeader,
+  projectsHeader,
+] = await Promise.all([
+  getHeroContent(),
+  getStats(),
+  getProjects(),
+  getSolutions(),
+  getGuaranteesContent(),
+  getContactCtaContent(),
+  getNavLinks('navbar'),
+  getNavLinks('footer'),
+  getFooterContent(),
+  getSolutionsSectionHeader(),
+  getProjectsSectionHeader(),
+]);
+// Dynamic SEO meta tags from CMS content
+const seoTitle = `${heroContent.headline} ${heroContent.headlineAccent} | Enercity Solar`;
+const seoDescription = heroContent.subheadline;
+const seoOgTitle = `Enercity — ${heroContent.headline} ${heroContent.headlineAccent}`;
+const seoOgDescription = heroContent.subheadline;
 ---
 
-<Layout title="Enercity - Energia Solar para Chile">
-  <Navbar  client:load />
+<Layout title={seoTitle} description={seoDescription} ogTitle={seoOgTitle} ogDescription={seoOgDescription}>
+  <Navbar client:load links={navbarLinks} />
   
   <main>
-    <Hero client:load/>
-    <StatsBar client:visible/>
-    <FeatureIndustrial client:visible/>
-    <SolutionsGrid client:visible/>
-    <GuaranteeBanner client:visible/>
+    <Hero client:load content={heroContent} />
+    <StatsBar client:visible stats={stats} />
+    <FeatureIndustrial client:visible projects={projects} sectionTag={projectsHeader.tag} sectionTitle={projectsHeader.title} sectionTitleAccent={projectsHeader.titleAccent} sectionDescription={projectsHeader.description} sectionFeatures={projectsHeader.features} ctaText={projectsHeader.ctaText} />
+    <SolutionsGrid client:visible solutions={solutions} sectionTag={solutionsHeader.tag} sectionTitle={solutionsHeader.title} sectionTitleAccent={solutionsHeader.titleAccent} />
+    <GuaranteeBanner client:visible content={guaranteesContent} />
     {hasErrors ? (
       <section className="py-20 bg-gray-50" id="simulador">
         <div className="container mx-auto px-4 text-center">
@@ -54,8 +95,8 @@ const hasErrors = !!comunasError;
       
     )}
     
-    <ContactCta client:visible />
+    <ContactCta client:visible content={contactCtaContent} />
   </main>
   
-  <Footer client:visible />
+  <Footer client:visible links={footerLinks} content={footerContent} />
 </Layout>
