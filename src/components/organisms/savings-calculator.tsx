@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { PDFData } from "@/lib/pdfGenerator";
 
 
 import {
@@ -14,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert, Download } from 'lucide-react';
 
 interface Comuna {
   id: number;
@@ -116,6 +117,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isCalculating, setIsCalculating] = useState(false);
   const [result, setResult] = useState<QuoteResult | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savedPdfData, setSavedPdfData] = useState<PDFData | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const [formData, setFormData] = useState({
     comunaId: 0,
@@ -184,6 +187,57 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     if (step > 1) setStep((step - 1) as Step);
   };
 
+  const buildPdfData = (): PDFData | null => {
+    if (!result || result.estado !== "OK" || !result.calculo) return null;
+    const kit = result.kit;
+    const calculo = result.calculo;
+    const resumen = result.resumenInversion;
+    const datosComuna = result.datosComuna;
+    if (!kit || !calculo || !resumen) return null;
+
+    return {
+      customerName: formData.nombre,
+      customerEmail: formData.email,
+      customerPhone: formData.telefono,
+      kitName: `Kit ${kit.kwp} kWP — ${kit.paneles} paneles`,
+      kitPower: `${kit.kwp} kWP`,
+      panelCount: kit.paneles,
+      panelWattage: Math.round((kit.kwp * 1000) / kit.paneles),
+      roofType: formData.tipoTecho,
+      meterLocation: formData.tipoMedidor,
+      comunaName: datosComuna?.nombre ?? comunas.find(c => c.id === formData.comunaId)?.nombre ?? '',
+      regionName: datosComuna?.region,
+      monthlyBill: formData.montoBoleta,
+      annualSavings: resumen.ahorroAnual,
+      monthlySavings: resumen.ahorroMensual,
+      systemPrice: calculo.precioFinalIva,
+      systemPriceNoIva: calculo.precioSinIva,
+      paybackYears: resumen.anosRecuperacion,
+      coveragePercent: resumen.cobertura,
+      co2Reduction: Math.round(calculo.generacionAnualKwh * 0.5),
+      investmentClassification: resumen.clasificacion,
+      roi25Years: resumen.ahorroAnual * 25,
+      quoteDate: new Date().toISOString(),
+    };
+  };
+
+  const handleDownloadPdf = async () => {
+    const data = savedPdfData ?? buildPdfData();
+    if (!data) {
+      console.warn('[PDF] No data available for download');
+      return;
+    }
+    setIsDownloadingPdf(true);
+    try {
+      const { downloadPDF } = await import('@/lib/pdfGenerator');
+      await downloadPDF(data);
+    } catch (err) {
+      console.error('[PDF] Manual download failed:', err);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleSubmitLead = async () => {
     if (!result || result.estado !== "OK" || !result.calculo) return;
     if (!formData.nombre || !formData.email) {
@@ -214,6 +268,23 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
 
       if (!apiResponse.ok) {
         throw new Error(responseData.error || "Error al crear lead");
+      }
+
+      // --- PDF generation (silent failure, must NOT break lead flow) ---
+      // Save PDF data for the manual download button on Step 5
+      try {
+        const pdfData = buildPdfData();
+        if (pdfData) {
+          setSavedPdfData(pdfData);
+          // Auto-download best-effort: may be blocked by browser download gating
+          // after the async fetch() gap. The Step 5 button is the reliable fallback.
+          const { downloadPDF } = await import('@/lib/pdfGenerator');
+          await downloadPDF(pdfData);
+        } else {
+          console.warn('[PDF] Skipped — missing data for PDF build');
+        }
+      } catch (pdfError: unknown) {
+        console.error('[PDF] Auto-generation failed (user can use manual button):', pdfError);
       }
 
       setStep(5); // Avanzar al Paso 5 de confirmación
@@ -510,6 +581,24 @@ case 3:
               Tu solicitud ha sido enviada exitosamente. Un asesor de Enercity te contactará
               en las próximas 24 horas hábiles para coordinar la visita técnica y la instalación.
             </p>
+            
+            {/* PDF Download Button — the reliable fallback for browser download gating */}
+            {savedPdfData && (
+              <button
+                onClick={handleDownloadPdf}
+                disabled={isDownloadingPdf}
+                className="w-full max-w-md mx-auto py-4 rounded-2xl bg-[#F07E04] hover:bg-[#F09C0A] text-white font-semibold transition-all flex items-center justify-center gap-3 mb-4 disabled:opacity-50"
+              >
+                {isDownloadingPdf ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Download className="w-5 h-5" />
+                    Descargar Diagnóstico PDF
+                  </>
+                )}
+              </button>
+            )}
             
             <button
               onClick={() => {

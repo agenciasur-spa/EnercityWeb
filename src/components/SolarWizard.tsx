@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Comuna } from '../types/simulation';
+import type { PDFData } from '../lib/pdfGenerator';
 
 interface QuoteResult {
   estado: 'OK' | 'NO_VIABLE' | 'EJECUTIVO' | 'ERROR';
@@ -193,9 +194,49 @@ export default function SolarWizard({ comunas }: WizardProps) {
 
       setLeadCreated(true);
 
-      if (result.calculo) {
-        //const { generatePDF } = await import('../lib/pdfGenerator');
-        //generatePDF(pdfData);
+      // Generate and download PDF — isolated try/catch so lead flow is never affected
+      if (result.kit && result.datosComuna && result.resumenInversion) {
+        try {
+          const { downloadPDF } = await import('../lib/pdfGenerator');
+
+          const kit = result.kit;
+          const calculo = result.calculo!;
+          const comuna = result.datosComuna;
+          const resumen = result.resumenInversion;
+
+          const panelWattage: number = Math.round((kit.kwp * 1000) / kit.paneles);
+          // CO₂ reduction estimate: Chile grid emission factor ~0.5 kg CO₂/kWh
+          const co2Reduction: number = Math.round(calculo.generacionAnualKwh * 0.5);
+
+          const pdfData: PDFData = {
+            customerName: formData.nombre,
+            customerEmail: formData.email,
+            customerPhone: formData.telefono || 'No proporcionado',
+            kitName: `Kit Solar ${kit.kwp} kWP`,
+            kitPower: `${kit.kwp} kWP`,
+            panelCount: kit.paneles,
+            panelWattage,
+            roofType: formData.tipoTecho,
+            meterLocation: formData.tipoMedidor,
+            comunaName: comuna.nombre,
+            regionName: comuna.region,
+            monthlyBill: formData.montoBoleta,
+            annualSavings: resumen.ahorroAnual,
+            monthlySavings: resumen.ahorroMensual,
+            systemPrice: calculo.precioFinalIva,
+            systemPriceNoIva: calculo.precioSinIva,
+            paybackYears: calculo.paybackAnos,
+            coveragePercent: resumen.cobertura,
+            co2Reduction,
+            investmentClassification: resumen.clasificacion,
+            roi25Years: resumen.ahorroAnual * 25,
+            quoteDate: new Date().toISOString(),
+          };
+
+          await downloadPDF(pdfData);
+        } catch (pdfError) {
+          console.error('Error generating PDF:', pdfError);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error desconocido');
