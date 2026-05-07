@@ -299,13 +299,13 @@ export async function sendLeadEmails(data: LeadEmailData) {
   try {
     const [clienteRes, managerRes] = await Promise.all([
       resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: 'Enercity Solar <onboarding@resend.dev>',
         to: [cliente.email],
         subject: `☀️ Tu Presupuesto Solar Enercity - ${cliente.nombre}`,
         html: clienteHtml,
       }),
       resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: 'Enercity Solar <onboarding@resend.dev>',
         to: ['mojeda@agenciasur.cl'],
         subject: `🚨 NUEVO LEAD SIMULADOR: ${cliente.nombre} - ${comuna.nombre}`,
         html: managerHtml,
