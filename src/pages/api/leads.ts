@@ -112,6 +112,7 @@ export const POST: APIRoute = async ({ request }) => {
     const tipoTechoLabel = TIPO_TECHO_MAP[factorTechoAplicado] ?? 'Otro';
     const tipoMedidorLabel = TIPO_MEDIDOR_MAP[costoFijoMedidorAplicado] ?? 'No especificado';
 
+    let emailErrorDetails = null;
     try {
       await sendLeadEmails({
         cliente: {
@@ -133,10 +134,25 @@ export const POST: APIRoute = async ({ request }) => {
         costoMedidor: costoFijoMedidorAplicado,
       });
     } catch (emailError) {
+      emailErrorDetails = {
+        message: emailError instanceof Error ? emailError.message : 'Error desconocido',
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+        timestamp: new Date().toISOString()
+      };
       console.error('[Email] Fallo en envio (no bloquea respuesta):', emailError);
+      console.error('[Email] Error details:', JSON.stringify(emailErrorDetails, null, 2));
     }
 
-    return new Response(JSON.stringify({ success: true, lead: data }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      lead: data,
+      email: emailErrorDetails ? { 
+        failed: true, 
+        details: emailErrorDetails 
+      } : { 
+        failed: false 
+      }
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
