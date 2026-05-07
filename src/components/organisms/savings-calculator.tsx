@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
+
+  const pageLoadTime = useRef(Date.now());
 
   const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
@@ -251,6 +253,9 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       return;
     }
 
+    const timeTaken = Date.now() - pageLoadTime.current;
+    if (timeTaken < 3000) return;
+
     setIsSubmitting(true);
 
     try {
@@ -280,6 +285,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           clasificacion: result.resumenInversion?.clasificacion || '',
           website: formData.website,
           captchaToken,
+          timeTaken,
         }),
       });
 

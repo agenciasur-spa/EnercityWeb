@@ -5,6 +5,15 @@ import { z } from 'zod';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 import { verifyTurnstileToken } from '../../lib/turnstile';
 
+function isGibberish(text: string): boolean {
+  if (!text || text.length < 4) return false;
+  const vowels = text.match(/[aeiouáéíóúü]/gi)?.length || 0;
+  const consonants = text.replace(/[aeiouáéíóúü\s\d]/gi, '').length;
+  const total = vowels + consonants;
+  if (total === 0) return false;
+  return consonants / total > 0.75;
+}
+
 export const prerender = false;
 
 const contactSchema = z.object({
@@ -15,6 +24,7 @@ const contactSchema = z.object({
   mensaje: z.string().optional().transform(v => v?.trim().slice(0, 2000) || undefined),
   website: z.string().optional().transform(v => v?.trim() || undefined),
   captchaToken: z.string().optional().transform(v => v || ''),
+  timeTaken: z.number().optional(),
 });
 
 export const POST: APIRoute = async ({ request }) => {
@@ -33,6 +43,15 @@ export const POST: APIRoute = async ({ request }) => {
     if (body.website && body.website.trim() !== '') {
       console.log(`[Honeypot] Bot detected from IP: ${clientIP} - website field filled: "${body.website}"`);
       return new Response(JSON.stringify({ error: 'Bot detected' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Time honeypot check
+    if (typeof body.timeTaken === 'number' && body.timeTaken < 3000) {
+      console.log(`[TimeHoneypot] Bot detected from IP: ${clientIP} - timeTaken: ${body.timeTaken}ms`);
+      return new Response(JSON.stringify({ error: 'Form submitted too fast' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -57,6 +76,15 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const { nombre, email, telefono, proyecto, mensaje, website } = parsed.data;
+
+    // Gibberish check on mensaje
+    if (mensaje && isGibberish(mensaje)) {
+      console.log(`[Gibberish] Spam detected from IP: ${clientIP} - mensaje: "${mensaje}"`);
+      return new Response(JSON.stringify({ error: 'Mensaje inválido' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const { data, error } = await supabase
       .from('contacts')

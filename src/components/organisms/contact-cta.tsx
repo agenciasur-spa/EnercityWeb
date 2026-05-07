@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -25,6 +25,8 @@ export function ContactCta({ content }: ContactCtaProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
+
+  const pageLoadTime = useRef(Date.now());
 
   const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
@@ -59,12 +61,15 @@ export function ContactCta({ content }: ContactCtaProps) {
     e.preventDefault();
     if (!isFormValid) return;
 
+    const timeTaken = Date.now() - pageLoadTime.current;
+    if (timeTaken < 3000) return;
+
     setLoading(true);
     try {
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, captchaToken }),
+        body: JSON.stringify({ ...formData, captchaToken, timeTaken }),
       });
       if (!res.ok) throw new Error('Error al enviar');
       setSubmitted(true);
