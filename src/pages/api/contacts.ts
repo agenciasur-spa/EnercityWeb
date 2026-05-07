@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { sendContactEmails } from '../../lib/email';
 import { z } from 'zod';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
+import { verifyTurnstileToken } from '../../lib/turnstile';
 
 export const prerender = false;
 
@@ -13,6 +14,7 @@ const contactSchema = z.object({
   proyecto: z.enum(['residencial', 'industrial', 'agricola'], { errorMap: () => ({ message: 'Proyecto inválido' }) }),
   mensaje: z.string().optional().transform(v => v?.trim().slice(0, 2000) || undefined),
   website: z.string().optional().transform(v => v?.trim() || undefined),
+  captchaToken: z.string().optional().transform(v => v || ''),
 });
 
 export const POST: APIRoute = async ({ request }) => {
@@ -31,6 +33,15 @@ export const POST: APIRoute = async ({ request }) => {
     if (body.website && body.website.trim() !== '') {
       console.log(`[Honeypot] Bot detected from IP: ${clientIP} - website field filled: "${body.website}"`);
       return new Response(JSON.stringify({ error: 'Bot detected' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Turnstile check
+    if (!await verifyTurnstileToken(body.captchaToken || '')) {
+      console.log(`[Turnstile] Bot detected from IP: ${clientIP}`);
+      return new Response(JSON.stringify({ error: 'Captcha invalido' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       });

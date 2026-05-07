@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { sendLeadEmails } from '../../lib/email';
 import type { LeadInput } from '../../types/simulation';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
+import { verifyTurnstileToken } from '../../lib/turnstile';
 
 export const prerender = false;
 
@@ -45,6 +46,15 @@ export const POST: APIRoute = async ({ request }) => {
     if (body.website && body.website.trim() !== '') {
       console.log(`[Honeypot] Bot detected from IP: ${clientIP} - website field filled: "${body.website}"`);
       return new Response(JSON.stringify({ error: 'Bot detected' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Turnstile check
+    if (!await verifyTurnstileToken(body.captchaToken || '')) {
+      console.log(`[Turnstile] Bot detected from IP: ${clientIP}`);
+      return new Response(JSON.stringify({ error: 'Captcha invalido' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
