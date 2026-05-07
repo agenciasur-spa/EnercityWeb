@@ -65,6 +65,8 @@ const FALLBACK_HERO: HeroContent = {
     { value: '120', label: 'Meses ROI Estimado' },
     { value: '10 Años', label: 'Soporte Técnico Especializado' },
   ],
+  backgroundImage: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80',
+  backgroundVideo: undefined,
 };
 
 const FALLBACK_STATS: StatItem[] = [
@@ -111,7 +113,7 @@ const FALLBACK_PROJECTS: Project[] = [
     id: '1',
     name: 'Planta Industrial Maipú',
     type: 'Logística',
-    image_url: 'https://picsum.photos/id/101/600/400',
+    image_url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=600&q=80',
     saving: '45%',
     saving_label: 'Ahorro Mensual',
     alt_text: 'Instalación solar en galpón industrial Enercity Maipú',
@@ -122,7 +124,7 @@ const FALLBACK_PROJECTS: Project[] = [
     id: '2',
     name: 'Viña del Maipo',
     type: 'Agricultura',
-    image_url: 'https://picsum.photos/id/75/600/400',
+    image_url: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=600&q=80',
     saving: '$12M',
     saving_label: 'Ahorro Anual',
     alt_text: 'Paneles solares Enercity en viñedo chileno',
@@ -133,7 +135,7 @@ const FALLBACK_PROJECTS: Project[] = [
     id: '3',
     name: 'Clínica San Borja',
     type: 'Salud',
-    image_url: 'https://picsum.photos/id/192/600/400',
+    image_url: 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=600&q=80',
     saving: '220kWp',
     saving_label: 'Potencia Instalada',
     alt_text: 'Sistema solar Enercity en techo de edificio comercial Santiago',

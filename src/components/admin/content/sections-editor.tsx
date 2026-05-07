@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Upload, X } from 'lucide-react';
 
 type SiteContentRow = {
   id: string;
@@ -20,7 +20,7 @@ interface SectionsEditorProps {
 type SaveState = 'idle' | 'saving' | 'success' | 'error';
 
 // Field definitions per section — maps JSONB key to label + type
-type FieldDef = { key: string; label: string; type: 'text' | 'textarea' };
+type FieldDef = { key: string; label: string; type: 'text' | 'textarea' | 'image' };
 
 const SECTION_FIELDS: Record<string, { title: string; fields: FieldDef[] }> = {
   hero: {
@@ -34,6 +34,8 @@ const SECTION_FIELDS: Record<string, { title: string; fields: FieldDef[] }> = {
       { key: 'ctaSecondary', label: 'CTA Secundario', type: 'text' },
       { key: 'cardTitle', label: 'Tarjeta Título', type: 'text' },
       { key: 'cardSubtitle', label: 'Tarjeta Subtítulo', type: 'text' },
+      { key: 'backgroundImage', label: 'Imagen de Fondo', type: 'image' },
+      { key: 'backgroundVideo', label: 'Video de Fondo (URL)', type: 'text' },
     ],
   },
   guarantees: {
@@ -93,6 +95,8 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
   const [activeTab, setActiveTab] = useState<string>('hero');
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const hasChanges = useCallback(
     (section: string) => {
@@ -113,6 +117,39 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
     }));
     setSaveStates((prev) => ({ ...prev, [section]: 'idle' }));
   }, []);
+
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    setErrors((prev) => ({ ...prev, [activeTab]: '' }));
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/content/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Error al subir imagen');
+      }
+
+      const { url } = await res.json();
+      handleChange(activeTab, 'backgroundImage', url);
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        [activeTab]: err instanceof Error ? err.message : 'Error al subir imagen',
+      }));
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [handleChange, activeTab]);
 
   const handleSave = useCallback(async (section: string) => {
     setSaveStates((prev) => ({ ...prev, [section]: 'saving' }));
@@ -238,6 +275,49 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
                             'border-orange-400 focus-visible:border-orange-400'
                         )}
                       />
+                    ) : field.type === 'image' ? (
+                      <div className="space-y-3">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                        />
+                        <div className="flex items-center gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingImage}
+                          >
+                            <Upload className="mr-2 size-4" />
+                            {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
+                          </Button>
+                          {!!data[field.key] && (
+                            <div className="relative size-16 rounded overflow-hidden border">
+                              <img
+                                src={String(data[field.key])}
+                                alt="Preview"
+                                className="size-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleChange(section, field.key, '')}
+                                className="absolute top-0.5 right-0.5 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80 transition-colors"
+                              >
+                                <X className="size-3" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        {!!data[field.key] && (
+                          <p className="text-xs text-muted-foreground truncate max-w-xs">
+                            {String(data[field.key])}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground">Máximo 5MB. JPEG, PNG, WebP.</p>
+                      </div>
                     ) : (
                       <Input
                         value={String(data[field.key] ?? '')}
