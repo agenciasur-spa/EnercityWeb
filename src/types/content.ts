@@ -56,6 +56,8 @@ export interface HeroContent {
   cardTitle: string;
   cardSubtitle: string;
   cardStats: { value: string; label: string }[];
+  backgroundImage?: string;
+  backgroundVideo?: string;
 }
 
 export interface GuaranteeCard {

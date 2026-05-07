@@ -8,6 +8,8 @@ interface HeroProps {
 }
 
 export function Hero({ content }: HeroProps) {
+  const { backgroundImage, backgroundVideo } = content;
+
   // Variables para el efecto Parallax del mouse
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -40,16 +42,31 @@ export function Hero({ content }: HeroProps) {
         style={{ x: bgX, y: bgY, scale: 1.1 }}
         className="absolute inset-0 w-full h-full z-0"
       >
-        <img 
-          src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80" 
-          alt="Granja solar Enercity" 
-          className="w-full h-full object-cover"
-          width={1920}
-          height={1080}
-          loading="eager"
-          fetchPriority="high"
-          decoding="async"
-        />
+        {backgroundVideo ? (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster={backgroundImage || undefined}
+            className="w-full h-full object-cover"
+            aria-hidden="true"
+          >
+            <source src={backgroundVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <img
+            src={backgroundImage || 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80'}
+            alt="Granja solar Enercity"
+            className="w-full h-full object-cover"
+            width={1920}
+            height={1080}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+          />
+        )}
         {/* Overlay ultra-oscuro para asegurar que el texto blanco se vea sí o sí */}
         <div className="absolute inset-0 bg-[#0A1929]/70 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-tr from-[#0A1929] via-transparent to-black/40" />

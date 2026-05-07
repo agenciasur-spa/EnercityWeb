@@ -156,7 +156,9 @@ INSERT INTO public.site_content (section, data) VALUES ('hero', '{
   "cardStats": [
     { "value": "120", "label": "Meses ROI Estimado" },
     { "value": "10 Años", "label": "Soporte Técnico Especializado" }
-  ]
+  ],
+  "backgroundImage": "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80",
+  "backgroundVideo": null
 }'::jsonb);
 
 -- Guarantees section content
@@ -240,9 +242,9 @@ INSERT INTO public.stats (value, label, description, icon, sort_order) VALUES
 
 -- Projects
 INSERT INTO public.projects (name, type, image_url, saving, saving_label, alt_text, sort_order) VALUES
-  ('Planta Industrial Maipú', 'Logística', 'https://picsum.photos/id/101/600/400', '45%', 'Ahorro Mensual', 'Instalación solar en galpón industrial Enercity Maipú', 1),
-  ('Viña del Maipo', 'Agricultura', 'https://picsum.photos/id/75/600/400', '$12M', 'Ahorro Anual', 'Paneles solares Enercity en viñedo chileno', 2),
-  ('Clínica San Borja', 'Salud', 'https://picsum.photos/id/192/600/400', '220kWp', 'Potencia Instalada', 'Sistema solar Enercity en techo de edificio comercial Santiago', 3);
+  ('Planta Industrial Maipú', 'Logística', 'https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=600&q=80', '45%', 'Ahorro Mensual', 'Instalación solar en galpón industrial Enercity Maipú', 1),
+  ('Viña del Maipo', 'Agricultura', 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=600&q=80', '$12M', 'Ahorro Anual', 'Paneles solares Enercity en viñedo chileno', 2),
+  ('Clínica San Borja', 'Salud', 'https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=600&q=80', '220kWp', 'Potencia Instalada', 'Sistema solar Enercity en techo de edificio comercial Santiago', 3);
 
 -- Solutions
 INSERT INTO public.solutions (slug, title, badge, description, features, tooltip, icon, color, colorbg, sort_order) VALUES
