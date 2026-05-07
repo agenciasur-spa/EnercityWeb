@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { getSettings } from './settings';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
@@ -49,6 +50,10 @@ function formatCLP(amount: number): string {
 }
 
 export async function sendLeadEmails(data: LeadEmailData) {
+  const settings = await getSettings();
+  const emailFromName = settings.email_from_name as string;
+  const emailFromAddress = settings.email_from_address as string;
+  
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
 
@@ -299,13 +304,13 @@ export async function sendLeadEmails(data: LeadEmailData) {
   try {
     const [clienteRes, managerRes] = await Promise.all([
       resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: `${emailFromName} <${emailFromAddress}>`,
         to: [cliente.email],
         subject: `☀️ Tu Presupuesto Solar Enercity - ${cliente.nombre}`,
         html: clienteHtml,
       }),
       resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: `${emailFromName} <${emailFromAddress}>`,
         to: ['mojeda@agenciasur.cl'],
         subject: `🚨 NUEVO LEAD SIMULADOR: ${cliente.nombre} - ${comuna.nombre}`,
         html: managerHtml,
@@ -325,6 +330,10 @@ export async function sendLeadEmails(data: LeadEmailData) {
 }
 
 export async function sendContactEmails(data: ContactEmailData) {
+  const settings = await getSettings();
+  const emailFromName = settings.email_from_name as string;
+  const emailFromAddress = settings.email_from_address as string;
+  
   const { nombre, email, telefono, proyecto, mensaje } = data;
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
   const telefonoDisplay = telefono || 'No proporcionado';
@@ -587,13 +596,13 @@ export async function sendContactEmails(data: ContactEmailData) {
   try {
     const [usuarioRes, managerRes] = await Promise.all([
       resend.emails.send({
-        from: 'Enercity Solar <onboarding@resend.dev>',
+        from: `${emailFromName} <${emailFromAddress}>`,
         to: [email],
         subject: `¡Gracias por contactarnos! — Enercity Solar`,
         html: usuarioHtml,
       }),
       resend.emails.send({
-        from: 'Enercity Solar <onboarding@resend.dev>',
+        from: `${emailFromName} <${emailFromAddress}>`,
         to: ['mojeda@agenciasur.cl'],
         subject: `Nuevo contacto: ${proyectoLabel} - ${nombre}`,
         html: managerHtml,
