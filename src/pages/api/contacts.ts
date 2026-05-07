@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendContactEmails } from '../../lib/email';
 import { z } from 'zod';
+import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 
 export const prerender = false;
 
@@ -11,11 +12,29 @@ const contactSchema = z.object({
   telefono: z.string().optional().transform(v => v?.trim().slice(0, 50) || undefined),
   proyecto: z.enum(['residencial', 'industrial', 'agricola'], { errorMap: () => ({ message: 'Proyecto inválido' }) }),
   mensaje: z.string().optional().transform(v => v?.trim().slice(0, 2000) || undefined),
+  website: z.string().optional().transform(v => v?.trim() || undefined),
 });
 
 export const POST: APIRoute = async ({ request }) => {
   try {
+    // Rate limiting check
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(clientIP);
+    if (!rateLimitResult.allowed) {
+      console.log(`[RateLimit] Bot detected from IP: ${clientIP}`);
+      return createRateLimitResponse(rateLimitResult.resetAt);
+    }
+
     const body = await request.json();
+
+    // Honeypot check
+    if (body.website && body.website.trim() !== '') {
+      console.log(`[Honeypot] Bot detected from IP: ${clientIP} - website field filled: "${body.website}"`);
+      return new Response(JSON.stringify({ error: 'Bot detected' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     const parsed = contactSchema.safeParse(body);
     if (!parsed.success) {
@@ -26,7 +45,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const { nombre, email, telefono, proyecto, mensaje } = parsed.data;
+    const { nombre, email, telefono, proyecto, mensaje, website } = parsed.data;
 
     const { data, error } = await supabase
       .from('contacts')

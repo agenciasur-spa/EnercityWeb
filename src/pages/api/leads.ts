@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendLeadEmails } from '../../lib/email';
 import type { LeadInput } from '../../types/simulation';
+import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 
 export const prerender = false;
 
@@ -30,9 +31,26 @@ const TIPO_MEDIDOR_MAP: Record<number, string> = {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
+    // Rate limiting check
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(clientIP);
+    if (!rateLimitResult.allowed) {
+      console.log(`[RateLimit] Bot detected from IP: ${clientIP}`);
+      return createRateLimitResponse(rateLimitResult.resetAt);
+    }
+
     const body: LeadInput = await request.json();
 
-    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva } = body;
+    // Honeypot check
+    if (body.website && body.website.trim() !== '') {
+      console.log(`[Honeypot] Bot detected from IP: ${clientIP} - website field filled: "${body.website}"`);
+      return new Response(JSON.stringify({ error: 'Bot detected' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website } = body;
 
     if (!nombre || !email || !kitId || precioFinalIva === undefined) {
       return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {

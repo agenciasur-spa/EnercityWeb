@@ -17,7 +17,8 @@ export function ContactCta({ content }: ContactCtaProps) {
     telefono: '',
     email: '',
     proyecto: '',
-    mensaje: ''
+    mensaje: '',
+    website: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -207,6 +208,18 @@ export function ContactCta({ content }: ContactCtaProps) {
                   onChange={handleChange}
                   rows={3}
                   className="w-full px-5 py-4 rounded-2xl bg-white/5 border border-white/10 transition-all text-white placeholder:text-white/20 focus:outline-none focus:border-[#F07E04] resize-none"
+                />
+              </div>
+
+              {/* Honeypot — oculto para humanos, visible para bots */}
+              <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
+                <input
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={formData.website}
+                  onChange={handleChange}
                 />
               </div>
 
