@@ -128,6 +128,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     nombre: "",
     email: "",
     telefono: "",
+    website: "",
   });
 
   
@@ -261,6 +262,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           factorTechoAplicado: result.calculo.factorTecho,
           costoFijoMedidorAplicado: result.calculo.costoMedidor,
           precioFinalIva: result.calculo.precioFinalIva,
+          website: formData.website,
         }),
       });
 
@@ -756,7 +758,7 @@ const renderResults = () => {
         </div>
 
         {/* Captura de Leads (Formulario) */}
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
           <div className="grid grid-cols-1 gap-3">
             <Input
               value={formData.nombre}
@@ -772,6 +774,20 @@ const renderResults = () => {
               className="bg-white/10 border-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base"
             />
           </div>
+
+          {/* Honeypot — oculto para humanos, visible para bots */}
+          <div className="absolute opacity-0 pointer-events-none" aria-hidden="true">
+            <Input
+              name="website"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={formData.website}
+              onChange={(e) => setFormData({...formData, website: e.target.value})}
+              className="bg-white/10 border-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6"
+            />
+          </div>
+
           <Button
             onClick={handleSubmitLead}
             disabled={isSubmitting}
