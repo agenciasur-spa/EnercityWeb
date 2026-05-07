@@ -11,7 +11,7 @@ function isGibberish(text: string): boolean {
   const consonants = text.replace(/[aeiouáéíóúü\s\d]/gi, '').length;
   const total = vowels + consonants;
   if (total === 0) return false;
-  return consonants / total > 0.75;
+  return consonants / total > 0.65; // 65% consonants = likely gibberish
 }
 
 export const prerender = false;
