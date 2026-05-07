@@ -25,6 +25,7 @@ interface LeadEmailData {
   montoBoleta: number;
   factorTecho: number;
   costoMedidor: number;
+  pdfBytes?: Uint8Array;
 }
 
 interface ContactEmailData {
@@ -308,6 +309,10 @@ export async function sendLeadEmails(data: LeadEmailData) {
         to: [cliente.email],
         subject: `☀️ Tu Presupuesto Solar Enercity - ${cliente.nombre}`,
         html: clienteHtml,
+        attachments: data.pdfBytes ? [{
+          filename: 'diagnostico-solar-enercity.pdf',
+          content: Buffer.from(data.pdfBytes),
+        }] : undefined,
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,

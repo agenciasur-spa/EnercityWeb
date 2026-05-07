@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendLeadEmails } from '../../lib/email';
+import { generatePDF } from '../../lib/pdfGenerator';
+import type { PDFData } from '../../lib/pdfGenerator';
 import type { LeadInput } from '../../types/simulation';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 import { verifyTurnstileToken } from '../../lib/turnstile';
@@ -60,7 +62,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website } = body;
+    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion } = body;
 
     if (!nombre || !email || !kitId || precioFinalIva === undefined) {
       return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {
@@ -100,7 +102,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    let comunaNombre = 'No especificada';
+    comunaNombre = 'No especificada';
     if (comunaId) {
       const { data: comunaData } = await supabase
         .from('comunas')
@@ -140,6 +142,39 @@ export const POST: APIRoute = async ({ request }) => {
     const tipoTechoLabel = TIPO_TECHO_MAP[factorTechoAplicado] ?? 'Otro';
     const tipoMedidorLabel = TIPO_MEDIDOR_MAP[costoFijoMedidorAplicado] ?? 'No especificado';
 
+    let pdfBytes: Uint8Array | undefined = undefined;
+    try {
+      const pdfData: PDFData = {
+        customerName: nombre,
+        customerEmail: email,
+        customerPhone: telefono || '',
+        kitName: `Kit ${kitKwp || Number(kitData.kwp)} kWP — ${kitPaneles || kitData.paneles} paneles`,
+        kitPower: `${kitKwp || Number(kitData.kwp)} kWP`,
+        panelCount: kitPaneles || kitData.paneles,
+        panelWattage: Math.round(((kitKwp || Number(kitData.kwp)) * 1000) / (kitPaneles || kitData.paneles)),
+        roofType: tipoTechoLabel,
+        meterLocation: tipoMedidorLabel,
+        comunaName: comunaNombre || 'No especificada',
+        regionName: comunaRegion || undefined,
+        monthlyBill: montoBoletaIngresado,
+        annualSavings: ahorroAnual || 0,
+        monthlySavings: ahorroMensual || 0,
+        systemPrice: precioFinalIva,
+        systemPriceNoIva: precioSinIva || 0,
+        paybackYears: anosRecuperacion || 0,
+        coveragePercent: cobertura || 0,
+        co2Reduction: Math.round((generacionAnualKwh || 0) * 0.5),
+        investmentClassification: clasificacion || 'No disponible',
+        roi25Years: (ahorroAnual || 0) * 25,
+        quoteDate: new Date().toISOString(),
+      };
+
+      pdfBytes = await generatePDF(pdfData);
+      console.log(`[API] PDF generado server-side: ${pdfBytes.length} bytes`);
+    } catch (pdfError) {
+      console.error('[API] Error generando PDF server-side:', pdfError);
+    }
+
     let emailErrorDetails = null;
     try {
       await sendLeadEmails({
@@ -160,6 +195,7 @@ export const POST: APIRoute = async ({ request }) => {
         montoBoleta: montoBoletaIngresado,
         factorTecho: factorTechoAplicado,
         costoMedidor: costoFijoMedidorAplicado,
+        pdfBytes,
       });
     } catch (emailError) {
       emailErrorDetails = {
