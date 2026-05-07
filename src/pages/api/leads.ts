@@ -53,6 +53,15 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // Time honeypot check
+    if (typeof (body as Record<string, unknown>).timeTaken === 'number' && (body as Record<string, unknown>).timeTaken < 3000) {
+      console.log(`[TimeHoneypot] Bot detected from IP: ${clientIP} - timeTaken: ${(body as Record<string, unknown>).timeTaken}ms`);
+      return new Response(JSON.stringify({ error: 'Form submitted too fast' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     // Turnstile check
     if (!await verifyTurnstileToken(body.captchaToken || '')) {
       console.log(`[Turnstile] Bot detected from IP: ${clientIP}`);
