@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { resolveIcon } from '../../lib/icon-map';
 import type { ContactCtaContent } from '../../types/content';
 
@@ -22,6 +23,10 @@ export function ContactCta({ content }: ContactCtaProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
+
+  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
   // Validaciones en tiempo real
   const validateField = (name: string, value: string) => {
@@ -45,9 +50,10 @@ export function ContactCta({ content }: ContactCtaProps) {
       formData.nombre.length >= 3 &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
       formData.proyecto !== '' &&
-      Object.values(errors).every(err => err === '')
+      Object.values(errors).every(err => err === '') &&
+      (!siteKey || !!captchaToken)
     );
-  }, [formData, errors]);
+  }, [formData, errors, captchaToken, siteKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +64,7 @@ export function ContactCta({ content }: ContactCtaProps) {
       const res = await fetch('/api/contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, captchaToken }),
       });
       if (!res.ok) throw new Error('Error al enviar');
       setSubmitted(true);
@@ -222,6 +228,32 @@ export function ContactCta({ content }: ContactCtaProps) {
                   onChange={handleChange}
                 />
               </div>
+
+              {siteKey && (
+                <div className="flex justify-center my-4">
+                  <Turnstile
+                    siteKey={siteKey}
+                    onSuccess={(token) => {
+                      setCaptchaToken(token);
+                      setCaptchaError(false);
+                    }}
+                    onError={() => {
+                      setCaptchaError(true);
+                      setCaptchaToken(null);
+                    }}
+                    onExpire={() => {
+                      setCaptchaError(true);
+                      setCaptchaToken(null);
+                    }}
+                  />
+                </div>
+              )}
+
+              {captchaError && (
+                <p className="text-red-400 text-[10px] font-black font-sans uppercase tracking-widest text-center">
+                  Verifica el captcha para continuar
+                </p>
+              )}
 
               {/* Botón con validación visual */}
               <motion.button 

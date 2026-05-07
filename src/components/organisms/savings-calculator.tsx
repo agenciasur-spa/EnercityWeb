@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PDFData } from "@/lib/pdfGenerator";
@@ -119,6 +120,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedPdfData, setSavedPdfData] = useState<PDFData | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
+
+  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
   const [formData, setFormData] = useState({
     comunaId: 0,
@@ -263,6 +268,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           costoFijoMedidorAplicado: result.calculo.costoMedidor,
           precioFinalIva: result.calculo.precioFinalIva,
           website: formData.website,
+          captchaToken,
         }),
       });
 
@@ -787,6 +793,32 @@ const renderResults = () => {
               className="bg-white/10 border-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6"
             />
           </div>
+
+          {siteKey && (
+            <div className="flex justify-center my-4">
+              <Turnstile
+                siteKey={siteKey}
+                onSuccess={(token) => {
+                  setCaptchaToken(token);
+                  setCaptchaError(false);
+                }}
+                onError={() => {
+                  setCaptchaError(true);
+                  setCaptchaToken(null);
+                }}
+                onExpire={() => {
+                  setCaptchaError(true);
+                  setCaptchaToken(null);
+                }}
+              />
+            </div>
+          )}
+
+          {captchaError && (
+            <p className="text-red-400 text-[10px] font-black uppercase tracking-widest text-center">
+              Verifica el captcha para continuar
+            </p>
+          )}
 
           <Button
             onClick={handleSubmitLead}
