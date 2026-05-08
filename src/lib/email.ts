@@ -303,9 +303,11 @@ export async function sendLeadEmails(data: LeadEmailData) {
 </html>`;
 
   try {
+    const fromField = `${emailFromName} <${emailFromAddress}>`;
+    console.log(`[Email] DEBUG from field: "${fromField}" | name="${emailFromName}" | address="${emailFromAddress}"`);
     const [clienteRes, managerRes] = await Promise.all([
       resend.emails.send({
-        from: `${emailFromName} <${emailFromAddress}>`,
+        from: fromField,
         to: [cliente.email],
         subject: `☀️ Tu Presupuesto Solar Enercity - ${cliente.nombre}`,
         html: clienteHtml,
@@ -599,9 +601,11 @@ export async function sendContactEmails(data: ContactEmailData) {
 </html>`;
 
   try {
+    const fromField = `${emailFromName} <${emailFromAddress}>`;
+    console.log(`[Email] DEBUG from field: "${fromField}" | name="${emailFromName}" | address="${emailFromAddress}"`);
     const [usuarioRes, managerRes] = await Promise.all([
       resend.emails.send({
-        from: `${emailFromName} <${emailFromAddress}>`,
+        from: fromField,
         to: [email],
         subject: `¡Gracias por contactarnos! — Enercity Solar`,
         html: usuarioHtml,
