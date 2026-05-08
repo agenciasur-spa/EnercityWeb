@@ -78,6 +78,13 @@ export const POST: APIRoute = async ({ request }) => {
     const { nombre, email, telefono, proyecto, mensaje, website } = parsed.data;
 
     // Gibberish check on mensaje
+    if (mensaje) {
+      const vowels = mensaje.match(/[aeiouáéíóúü]/gi)?.length || 0;
+      const consonants = mensaje.replace(/[aeiouáéíóúü\s\d]/gi, '').length;
+      const total = vowels + consonants;
+      const ratio = total > 0 ? consonants / total : 0;
+      console.log(`[DEBUG] Gibberish check: "${mensaje}" | vowels=${vowels} consonants=${consonants} ratio=${(ratio*100).toFixed(1)}%`);
+    }
     if (mensaje && isGibberish(mensaje)) {
       console.log(`[Gibberish] Spam detected from IP: ${clientIP} - mensaje: "${mensaje}"`);
       return new Response(JSON.stringify({ error: 'Mensaje inválido' }), {
