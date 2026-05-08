@@ -52,8 +52,8 @@ function formatCLP(amount: number): string {
 
 export async function sendLeadEmails(data: LeadEmailData) {
   const settings = await getSettings();
-  const emailFromName = settings.email_from_name as string;
-  const emailFromAddress = settings.email_from_address as string;
+  const emailFromName = (settings.email_from_name as string) || 'Enercity Solar';
+  const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
   
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
@@ -336,8 +336,8 @@ export async function sendLeadEmails(data: LeadEmailData) {
 
 export async function sendContactEmails(data: ContactEmailData) {
   const settings = await getSettings();
-  const emailFromName = settings.email_from_name as string;
-  const emailFromAddress = settings.email_from_address as string;
+  const emailFromName = (settings.email_from_name as string) || 'Enercity Solar';
+  const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
   
   const { nombre, email, telefono, proyecto, mensaje } = data;
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
