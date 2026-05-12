@@ -52,7 +52,7 @@ function formatCLP(amount: number): string {
 
 export async function sendLeadEmails(data: LeadEmailData) {
   const settings = await getSettings();
-  const emailFromName = (settings.email_from_name as string) || 'Enercity Solar';
+  const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
   
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
@@ -75,7 +75,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
           <tr>
             <td style="background:#154660;padding:32px 40px;text-align:center;">
               <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                ☀️ Enercity Solar
+                ☀️ Enercity
               </h1>
               <p style="margin:8px 0 0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
                 Tu Presupuesto Personalizado
@@ -175,7 +175,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity Solar · paneles-solares.cl<br>
+                Enercity · paneles-solares.cl<br>
                 Este presupuesto tiene validez por 30 días. Sujeto a confirmación técnica.
               </p>
             </td>
@@ -336,7 +336,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
 
 export async function sendContactEmails(data: ContactEmailData) {
   const settings = await getSettings();
-  const emailFromName = (settings.email_from_name as string) || 'Enercity Solar';
+  const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
   
   const { nombre, email, telefono, proyecto, mensaje } = data;
@@ -360,7 +360,7 @@ export async function sendContactEmails(data: ContactEmailData) {
           <tr>
             <td style="background:#154660;padding:32px 40px;text-align:center;">
               <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                ☀️ Enercity Solar
+                ☀️ Enercity
               </h1>
               <p style="margin:8px 0 0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
                 Consultoría Energética
@@ -468,7 +468,7 @@ export async function sendContactEmails(data: ContactEmailData) {
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity Solar · paneles-solares.cl<br>
+                Enercity · paneles-solares.cl<br>
                 Consultoría técnica personalizada para proyectos solares.
               </p>
             </td>
@@ -603,7 +603,7 @@ export async function sendContactEmails(data: ContactEmailData) {
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
         to: [email],
-        subject: `¡Gracias por contactarnos! — Enercity Solar`,
+        subject: `¡Gracias por contactarnos! — Enercity`,
         html: usuarioHtml,
       }),
       resend.emails.send({

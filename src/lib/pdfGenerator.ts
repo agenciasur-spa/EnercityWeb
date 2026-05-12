@@ -1,5 +1,5 @@
 /**
- * pdfGenerator.ts — Self-contained PDF generator for Enercity Solar diagnostic reports.
+ * pdfGenerator.ts — Self-contained PDF generator for Enercity diagnostic reports.
  *
  * Uses pdf-lib (v1.17.1) via dynamic import. All text in Spanish.
  * A4 page, Helvetica/HelveticaBold, color-coded sections.
@@ -264,7 +264,7 @@ function drawLabelValue(
 // ---------------------------------------------------------------------------
 
 /**
- * Generates a PDF document for an Enercity Solar diagnostic report.
+ * Generates a PDF document for an Enercity diagnostic report.
  *
  * @param data — The diagnostic data to render.
  * @returns A Uint8Array containing the raw PDF bytes.
@@ -478,7 +478,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
     'Esta cotización tiene carácter informativo y es válida por 30 días desde la fecha de emisión.',
     'Los valores presentados son estimaciones basadas en los datos proporcionados y pueden variar',
     'al momento de la instalación. Los cálculos de ahorro consideran condiciones promedio de',
-    'radiación solar y tarifas eléctricas vigentes. Enercity Solar se reserva el derecho de',
+    'radiación solar y tarifas eléctricas vigentes. Enercity se reserva el derecho de',
     'modificar precios y condiciones sin previo aviso.',
   ];
 
@@ -502,7 +502,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   y -= 16;
 
   const footerText: string =
-    'Enercity Solar  |  contacto@enercitysolar.cl  |  www.enercitysolar.cl';
+    'Enercity  |  contacto@enercitysolar.cl  |  www.enercitysolar.cl';
   page.drawText(sanitizeText(footerText), {
     x: MARGIN_LEFT,
     y,
