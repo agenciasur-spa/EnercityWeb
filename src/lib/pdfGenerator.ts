@@ -502,7 +502,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   y -= 16;
 
   const footerText: string =
-    'Enercity  |  contacto@enercitysolar.cl  |  www.enercitysolar.cl';
+    'Enercity  |  contacto@enercity.cl  |  www.enercity.cl';
   page.drawText(sanitizeText(footerText), {
     x: MARGIN_LEFT,
     y,
