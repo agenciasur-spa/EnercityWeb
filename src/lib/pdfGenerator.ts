@@ -285,7 +285,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   // ========================================================================
   let y: number = PAGE_HEIGHT - 50;
 
-  page.drawText(sanitizeText('ENERCITY SOLAR'), {
+  page.drawText(sanitizeText('ENERCITY'), {
     x: MARGIN_LEFT,
     y,
     size: 24,
