@@ -48,6 +48,55 @@ function normalizeArray<T>(value: unknown): T[] {
 }
 
 /**
+ * Detect if an object is an "indexed string" — a string that got
+ * expanded into {"0":"I","1":"n","2":"g",...} by a serialization bug.
+ * Handles both pure indexed objects and those with extra keys like "text".
+ */
+function isIndexedString(obj: Record<string, unknown>): boolean {
+  const keys = Object.keys(obj);
+  if (keys.length === 0) return false;
+  // Check if numeric keys form a sequential sequence starting at "0"
+  const numericKeys = keys.filter((k) => /^\d+$/.test(k)).sort((a, b) => Number(a) - Number(b));
+  if (numericKeys.length === 0) return false;
+  for (let i = 0; i < numericKeys.length; i++) {
+    if (numericKeys[i] !== String(i)) return false;
+  }
+  return true;
+}
+
+/**
+ * Reconstruct a string from an indexed object like {"0":"I","1":"n",...}.
+ */
+function unindexString(obj: Record<string, unknown>): string {
+  const keys = Object.keys(obj).sort((a, b) => Number(a) - Number(b));
+  return keys.map((k) => obj[k]).join('');
+}
+
+/**
+ * Normalize an array that should contain plain strings.
+ *
+ * Handles three known formats:
+ * 1. Plain strings: ["foo", "bar"] ← ideal
+ * 2. Admin format objects: [{text: "foo"}, {text: "bar"}] ← extract .text
+ * 3. Corrupted indexed objects: [{"0":"f","1":"o","2":"o"}] ← reconstruct string
+ */
+function normalizeStringArray(value: unknown): string[] {
+  const raw = normalizeArray<unknown>(value);
+  return raw.map((item) => {
+    if (typeof item === 'string') return item;
+    if (typeof item === 'object' && item !== null) {
+      const obj = item as Record<string, unknown>;
+      // Corrupted indexed string: {"0":"I","1":"n",...} — check FIRST
+      // because corruption can also have a "text" key (empty string)
+      if (isIndexedString(obj)) return unindexString(obj);
+      // Admin saves {text: "..."} objects — extract the text
+      if ('text' in obj && typeof obj.text === 'string') return obj.text;
+    }
+    return String(item ?? '');
+  });
+}
+
+/**
  * Validate that all string fields in CMS data are actually strings.
  * Logs detailed error if any field is an object/array/buffer.
  */
@@ -525,9 +574,14 @@ export async function getProjectsSectionHeader(): Promise<ProjectsSectionContent
       const raw = data.data as Record<string, unknown>;
       return {
         ...raw,
-        features: normalizeArray<string>(raw.features),
+        features: normalizeStringArray(raw.features),
       } as ProjectsSectionContent;
     },
     FALLBACK_PROJECTS_HEADER
   );
 }
+
+// ────────────────────────────────────────────────
+// EXPORTED FOR TESTING
+// ────────────────────────────────────────────────
+export { normalizeArray, normalizeStringArray, validateStringFields };

@@ -39,3 +39,6 @@ supabase_export.json
 supabase_export.sql
 supabase/snippets/
 supabase/schema.sql
+
+# DB backups (contain production data)
+backups/
