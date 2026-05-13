@@ -79,7 +79,6 @@ export const POST: APIRoute = async ({ request }) => {
 
     // Gibberish check on mensaje
     if (mensaje && isGibberish(mensaje)) {
-      console.log(`[Gibberish] Spam detected from IP: ${clientIP} - mensaje: "${mensaje}"`);
       return new Response(JSON.stringify({ error: 'Mensaje inválido' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -106,8 +105,6 @@ export const POST: APIRoute = async ({ request }) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    console.log(`[API] Contacto creado: ${email}`);
 
     try {
       await sendContactEmails({

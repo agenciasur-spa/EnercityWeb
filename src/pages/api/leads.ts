@@ -146,8 +146,6 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    console.log(`[API] Lead creado: ${email}`);
-
     const tipoTechoLabel = TIPO_TECHO_MAP[factorTechoAplicado] ?? 'Otro';
     const tipoMedidorLabel = TIPO_MEDIDOR_MAP[costoFijoMedidorAplicado] ?? 'No especificado';
 
@@ -179,7 +177,6 @@ export const POST: APIRoute = async ({ request }) => {
       };
 
       pdfBytes = await generatePDF(pdfData);
-      console.log(`[API] PDF generado server-side: ${pdfBytes.length} bytes`);
     } catch (pdfError) {
       console.error('[API] Error generando PDF server-side:', pdfError);
     }
