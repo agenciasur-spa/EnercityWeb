@@ -47,6 +47,24 @@ function normalizeArray<T>(value: unknown): T[] {
   return [];
 }
 
+/**
+ * Validate that all string fields in CMS data are actually strings.
+ * Logs detailed error if any field is an object/array/buffer.
+ */
+function validateStringFields(obj: Record<string, unknown>, context: string): void {
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === 'string') continue;
+    if (Array.isArray(value)) {
+      // Arrays are OK if they contain objects
+      continue;
+    }
+    if (typeof value === 'object') {
+      console.error(`[CMS VALIDATION ERROR] ${context}.${key} is not a string! Type: ${typeof value}, Value:`, JSON.stringify(value).substring(0, 200));
+    }
+  }
+}
+
 // ────────────────────────────────────────────────
 // HARDCODED FALLBACKS (current production values)
 // ────────────────────────────────────────────────
@@ -333,6 +351,7 @@ export async function getHeroContent(): Promise<HeroContent> {
 
       if (error || !data?.data) throw error || new Error('No hero data');
       const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'hero');
       return {
         ...raw,
         cardStats: normalizeArray<{ value: string; label: string }>(raw.cardStats),
@@ -405,6 +424,7 @@ export async function getGuaranteesContent(): Promise<GuaranteeContent> {
 
       if (error || !data?.data) throw error || new Error('No guarantees data');
       const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'guarantees');
       return {
         ...raw,
         cards: normalizeArray<GuaranteeContent['cards'][number]>(raw.cards),
