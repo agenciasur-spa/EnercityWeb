@@ -10,9 +10,12 @@ interface Props {
 }
 
 const { faqs, isOpen = false } = Astro.props;
+
+// Serializar FAQs para client-side
+const faqJson = JSON.stringify(faqs);
 ---
 
-<script>
+<script define:vars={{ faqJson }}>
   interface FAQItem {
     pregunta: string;
     respuesta: string;
@@ -21,13 +24,10 @@ const { faqs, isOpen = false } = Astro.props;
   declare global {
     interface Window {
       toggleFAQModal?: () => void;
-      faqData?: FAQItem[];
     }
   }
 
-  const props = {
-    faqs: [{ pregunta: '', respuesta: '' }],
-  };
+  const faqData: FAQItem[] = JSON.parse(faqJson);
 
   function toggleModal() {
     const modal = document.getElementById('faq-modal') as HTMLDialogElement;
@@ -43,9 +43,58 @@ const { faqs, isOpen = false } = Astro.props;
     }
   }
 
-  // Make available globally
-  window.toggleFAQModal = toggleModal;
-  window.faqData = props.faqs;
+  function renderFAQs() {
+    const container = document.getElementById('faq-container');
+    if (!container) return;
+
+    if (faqData.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-8 text-gray-500">
+          No hay preguntas frecuentes disponibles en este momento.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = faqData.map((faq: FAQItem, index: number) => `
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <details class="group">
+          <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <span class="text-gray-900">${faq.pregunta}</span>
+            <span class="transition group-open:rotate-180">
+              <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </span>
+          </summary>
+          <div class="text-gray-600 mt-0 px-4 pb-4">
+            ${faq.respuesta}
+          </div>
+        </details>
+      </div>
+    `).join('');
+  }
+
+  // Make toggleModal available globally
+  window.toggleFAQModal = () => {
+    renderFAQs();
+    toggleModal();
+  };
+
+  // Render FAQs when component mounts
+  document.addEventListener('DOMContentLoaded', () => {
+    renderFAQs();
+  });
+
+  // Close modal on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Close modal when clicking outside
+  document.getElementById('faq-modal')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'faq-modal') closeModal();
+  });
 </script>
 
 <dialog id="faq-modal" class="bg-transparent p-0">
@@ -87,44 +136,6 @@ const { faqs, isOpen = false } = Astro.props;
     </div>
   </div>
 </dialog>
-
-<script>
-  function renderFAQs() {
-    const container = document.getElementById('faq-container');
-    if (!container || !window.faqData) return;
-
-    container.innerHTML = window.faqData.map((faq: FAQItem, index: number) => `
-      <div class="border border-gray-200 rounded-lg overflow-hidden">
-        <details class="group">
-          <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
-            <span class="text-gray-900">${faq.pregunta}</span>
-            <span class="transition group-open:rotate-180">
-              <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24">
-                <path d="M6 9l6 6 6-6"></path>
-              </svg>
-            </span>
-          </summary>
-          <div class="text-gray-600 mt-0 px-4 pb-4">
-            ${faq.respuesta}
-          </div>
-        </details>
-      </div>
-    `).join('');
-  }
-
-  // Render FAQs when component mounts
-  document.addEventListener('DOMContentLoaded', renderFAQs);
-
-  // Close modal on escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeModal();
-  });
-
-  // Close modal when clicking outside
-  document.getElementById('faq-modal')?.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).id === 'faq-modal') closeModal();
-  });
-</script>
 
 <style>
   details > summary {
