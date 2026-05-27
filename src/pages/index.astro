@@ -9,7 +9,7 @@ import { GuaranteeBanner } from '../components/organisms/guarantee-banner';
 import { SavingsCalculator } from '../components/organisms/savings-calculator';
 import { ContactCta } from '../components/organisms/contact-cta';
 import { Footer } from '../components/organisms/footer';
-import FAQ from '../components/organisms/faq.astro';
+import FAQModal from '../components/organisms/faq-modal.astro';
 import { supabase } from '../lib/supabase';
 import {
   getStats,
@@ -100,8 +100,8 @@ const seoOgDescription = heroContent.subheadline;
     )}
     
     <ContactCta client:visible content={contactCtaContent} />
-    <FAQ faqs={faqs} />
   </main>
   
   <Footer client:visible links={footerLinks} content={footerContent} />
+  <FAQModal faqs={faqs} />
 </Layout>

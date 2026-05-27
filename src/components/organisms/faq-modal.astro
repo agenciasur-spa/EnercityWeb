@@ -1,0 +1,136 @@
+---
+interface FAQItem {
+  pregunta: string;
+  respuesta: string;
+}
+
+interface Props {
+  faqs: FAQItem[];
+  isOpen?: boolean;
+}
+
+const { faqs, isOpen = false } = Astro.props;
+---
+
+<script>
+  interface FAQItem {
+    pregunta: string;
+    respuesta: string;
+  }
+
+  declare global {
+    interface Window {
+      toggleFAQModal?: () => void;
+      faqData?: FAQItem[];
+    }
+  }
+
+  const props = {
+    faqs: [{ pregunta: '', respuesta: '' }],
+  };
+
+  function toggleModal() {
+    const modal = document.getElementById('faq-modal') as HTMLDialogElement;
+    if (modal) {
+      modal.showModal();
+    }
+  }
+
+  function closeModal() {
+    const modal = document.getElementById('faq-modal') as HTMLDialogElement;
+    if (modal) {
+      modal.close();
+    }
+  }
+
+  // Make available globally
+  window.toggleFAQModal = toggleModal;
+  window.faqData = props.faqs;
+</script>
+
+<dialog id="faq-modal" class="bg-transparent p-0">
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
+  <div class="fixed inset-4 md:inset-10 lg:inset-20 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b">
+      <div>
+        <h2 class="text-2xl font-bold text-[#154660]">Preguntas Frecuentes</h2>
+        <p class="text-gray-600 mt-1">Respuestas a las dudas más comunes sobre energía solar</p>
+      </div>
+      <button
+        onclick="closeModal()"
+        class="text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="Cerrar"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="space-y-4" id="faq-container">
+        <!-- FAQs will be inserted here by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 border-t bg-gray-50 flex justify-end">
+      <button
+        onclick="closeModal()"
+        class="px-6 py-2 bg-[#154660] text-white rounded-lg hover:bg-[#1d5a7a] transition-colors"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  function renderFAQs() {
+    const container = document.getElementById('faq-container');
+    if (!container || !window.faqData) return;
+
+    container.innerHTML = window.faqData.map((faq: FAQItem, index: number) => `
+      <div class="border border-gray-200 rounded-lg overflow-hidden">
+        <details class="group">
+          <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+            <span class="text-gray-900">${faq.pregunta}</span>
+            <span class="transition group-open:rotate-180">
+              <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24">
+                <path d="M6 9l6 6 6-6"></path>
+              </svg>
+            </span>
+          </summary>
+          <div class="text-gray-600 mt-0 px-4 pb-4">
+            ${faq.respuesta}
+          </div>
+        </details>
+      </div>
+    `).join('');
+  }
+
+  // Render FAQs when component mounts
+  document.addEventListener('DOMContentLoaded', renderFAQs);
+
+  // Close modal on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  // Close modal when clicking outside
+  document.getElementById('faq-modal')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'faq-modal') closeModal();
+  });
+</script>
+
+<style>
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

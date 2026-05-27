@@ -64,6 +64,17 @@ export function Navbar({ links }: NavbarProps) {
               </motion.a>
             ))}
             
+            {/* FAQ Link */}
+            <motion.button 
+              onClick={() => {
+                (window as any).toggleFAQModal?.();
+              }}
+              whileHover={{ y: -1, transition: { duration: 0.15 } }}
+              className="text-sm font-medium text-white/70 hover:text-white transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1.5px] after:bg-[#F07E04] after:transition-all after:duration-300 hover:after:w-full"
+            >
+              FAQ
+            </motion.button>
+            
             {/* BOTÓN SIMULAR ESTILO ENERCITY */}
             <motion.button 
               onClick={() => document.getElementById('simulador-section')?.scrollIntoView({ behavior: 'smooth' })}
@@ -105,6 +116,15 @@ export function Navbar({ links }: NavbarProps) {
                     {link.label}
                   </a>
                 ))}
+                <button 
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    (window as any).toggleFAQModal?.();
+                  }}
+                  className="text-lg font-bold text-white/80 hover:text-[#F07E04] py-2 border-b border-white/5 text-left"
+                >
+                  FAQ
+                </button>
                 <button 
                   onClick={() => {
                     setIsMenuOpen(false);
