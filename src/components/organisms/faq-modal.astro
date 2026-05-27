@@ -15,18 +15,55 @@ const { faqs, isOpen = false } = Astro.props;
 const faqJson = JSON.stringify(faqs);
 ---
 
-<script define:vars={{ faqJson }}>
+<dialog id="faq-modal" data-faq-json={faqJson} class="bg-transparent p-0">
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
+  <div class="fixed inset-4 md:inset-10 lg:inset-20 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b">
+      <div>
+        <h2 class="text-2xl font-bold text-[#154660]">Preguntas Frecuentes</h2>
+        <p class="text-gray-600 mt-1">Respuestas a las dudas más comunes sobre energía solar</p>
+      </div>
+      <button
+        onclick="closeModal()"
+        class="text-gray-400 hover:text-gray-600 transition-colors"
+        aria-label="Cerrar"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="space-y-4" id="faq-container">
+        <!-- FAQs will be inserted here by JavaScript -->
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 border-t bg-gray-50 flex justify-end">
+      <button
+        onclick="closeModal()"
+        class="px-6 py-2 bg-[#154660] text-white rounded-lg hover:bg-[#1d5a7a] transition-colors"
+      >
+        Cerrar
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<script is:inline>
   interface FAQItem {
     pregunta: string;
     respuesta: string;
   }
 
-  declare global {
-    interface Window {
-      toggleFAQModal?: () => void;
-    }
-  }
-
+  // Get FAQ data from data attribute
+  const modal = document.getElementById('faq-modal') as HTMLElement;
+  const faqJson = modal?.getAttribute('data-faq-json') || '[]';
   const faqData: FAQItem[] = JSON.parse(faqJson);
 
   function toggleModal() {
@@ -76,15 +113,13 @@ const faqJson = JSON.stringify(faqs);
   }
 
   // Make toggleModal available globally
-  window.toggleFAQModal = () => {
+  (window as any).toggleFAQModal = () => {
     renderFAQs();
     toggleModal();
   };
 
-  // Render FAQs when component mounts
-  document.addEventListener('DOMContentLoaded', () => {
-    renderFAQs();
-  });
+  // Render FAQs when page loads
+  renderFAQs();
 
   // Close modal on escape key
   document.addEventListener('keydown', (e) => {
@@ -92,50 +127,10 @@ const faqJson = JSON.stringify(faqs);
   });
 
   // Close modal when clicking outside
-  document.getElementById('faq-modal')?.addEventListener('click', (e) => {
+  modal?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).id === 'faq-modal') closeModal();
   });
 </script>
-
-<dialog id="faq-modal" class="bg-transparent p-0">
-  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
-  <div class="fixed inset-4 md:inset-10 lg:inset-20 bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-w-4xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between p-6 border-b">
-      <div>
-        <h2 class="text-2xl font-bold text-[#154660]">Preguntas Frecuentes</h2>
-        <p class="text-gray-600 mt-1">Respuestas a las dudas más comunes sobre energía solar</p>
-      </div>
-      <button
-        onclick="closeModal()"
-        class="text-gray-400 hover:text-gray-600 transition-colors"
-        aria-label="Cerrar"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
-    </div>
-
-    <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="space-y-4" id="faq-container">
-        <!-- FAQs will be inserted here by JavaScript -->
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="p-6 border-t bg-gray-50 flex justify-end">
-      <button
-        onclick="closeModal()"
-        class="px-6 py-2 bg-[#154660] text-white rounded-lg hover:bg-[#1d5a7a] transition-colors"
-      >
-        Cerrar
-      </button>
-    </div>
-  </div>
-</dialog>
 
 <style>
   details > summary {
