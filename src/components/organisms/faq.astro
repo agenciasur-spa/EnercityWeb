@@ -1,0 +1,52 @@
+---
+interface FAQItem {
+  pregunta: string;
+  respuesta: string;
+}
+
+interface Props {
+  faqs: FAQItem[];
+}
+
+const { faqs } = Astro.props;
+---
+
+<section className="py-20 bg-white" id="faq">
+  <div className="container mx-auto px-4">
+    <div className="max-w-3xl mx-auto">
+      <h2 className="text-3xl font-bold text-gray-900 mb-4 text-center">Preguntas Frecuentes</h2>
+      <p className="text-gray-600 text-center mb-12">
+        Respuestas a las dudas más comunes sobre energía solar
+      </p>
+
+      <div className="space-y-4">
+        {faqs.map((faq, index) => (
+          <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <details class="group">
+              <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                <span class="text-gray-900">{faq.pregunta}</span>
+                <span class="transition group-open:rotate-180">
+                  <svg fill="none" height="24" shape-rendering="geometricPrecision" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24" width="24">
+                    <path d="M6 9l6 6 6-6"></path>
+                  </svg>
+                </span>
+              </summary>
+              <div class="text-gray-600 mt-0 px-4 pb-4">
+                {faq.respuesta}
+              </div>
+            </details>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+</style>

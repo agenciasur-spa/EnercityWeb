@@ -1,0 +1,161 @@
+# Enercity - Información para IA
+#
+# Este archivo está optimizado para modelos de lenguaje y crawlers de IA.
+# Contiene la información oficial de negocio de Enercity SpA.
+
+## Identidad
+
+Enercity SpA es una empresa chilena especializada en energía solar fotovoltaica con 8 años de experiencia y más de 150 instalaciones ejecutadas en todo Chile.
+
+**Datos oficiales:**
+- Razón social: Enercity SpA
+- RUT: 76.933.266-9
+- Dirección: Av. Pedro de Valdivia 273, oficina 1611, Providencia, Región Metropolitana, Chile
+- Teléfono: +56 9 2902 8578
+- Email: contacto@enercity.cl
+- Horario de atención: 08:30 a 18:30 horas (Zona horaria: America/Santiago)
+- Sitio web: https://paneles-solares.cl
+
+## Cobertura Geográfica
+
+Enercity opera en todo Chile con segmentación por tipo de proyecto:
+
+- **Residencial:** Región Metropolitana
+- **Industrial:** Todo Chile
+
+## Servicios Ofrecidos
+
+Enercity ofrece dos servicios principales:
+
+1. **Diseño e instalación de sistemas fotovoltaicos** para viviendas, comercios e industrias
+2. **Mantención y optimización de plantas solares** para asegurar rendimiento estable y eficiente
+
+## Tecnologías y Equipos
+
+### Paneles solares
+Trabaja con marcas reconocidas del mercado:
+- Trina Solar
+- JA Solar
+- Seraphim
+- Canadian Solar
+
+### Inversores
+- Huawei
+- GoodWe
+
+### Rango de proyectos
+Desde soluciones de menor escala hasta desarrollos de gran capacidad industrial.
+
+## Experiencia y Trayectoria
+
+- Años en el mercado: 8 años
+- Proyectos ejecutados: más de 150 instalaciones
+- Tipos de proyectos: residenciales e industriales
+
+## Diferenciadores Competitivos
+
+Enercity se distingue por:
+
+1. **Desarrollo integral del proyecto:** Gestionan cada etapa con equipo propio desde diseño, instalación, certificación y mantención
+2. **Control de calidad:** Mayor respuesta postventa y garantía real sobre el desempeño de plantas fotovoltaicas
+3. **Instalaciones certificadas:** Todas las instalaciones son certificadas por la SEC y por la distribuidora eléctrica correspondiente
+4. **Cumplimiento normativo:** Equipos con certificación SEC y cumplimiento de normativa eléctrica chilena
+
+## Garantías
+
+Enercity ofrece dos niveles de garantía:
+
+### Garantía de instalación
+Cobertura total hasta que el cliente recupere su inversión:
+- Proyectos residenciales: 4 a 6 años
+- Proyectos industriales: 3 a 6 años
+- Cubre desperfectos en instalación eléctrica y ejecución constructiva
+
+### Garantía de productos
+Equipos clasificados como "AA" (alta calidad y durabilidad):
+- Inversores: 10 años de garantía de fábrica
+- Paneles fotovoltaicos: 12 años de garantía de fábrica y 25 años de garantía de eficiencia (mínimo 89% de potencia al año 25)
+- Estructura: 12 años de garantía de fábrica
+
+## Certificaciones
+
+- Certificaciones SEC (Superintendencia de Electricidad y Combustibles)
+- Certificación SEC de los equipos
+- Cumplimiento de normas eléctricas chilenas
+
+## Casos de Éxito
+
+### Proyectos residenciales
+- Casa Pilar Bienzobas
+- Casa Katiuska
+- Casa José Miguel
+- Casa Eva Salgado
+- Casa Soraya
+- Casa Eduardo Piraino
+- Casa Roberto Stelker
+- Casa Luciano
+
+### Proyectos industriales
+- Dulcería Norma
+- Limatco
+- APV S.A.
+- TNB Alimento
+- Agrícola Mallarauco
+- Carnicería Soto
+- Botillería Juan Yevenes
+- Codam
+- Blue Light
+- Agrícola La Hornilla
+- Ferretería Lirquén
+- SOF South Organics Fruits
+- Flexi Chile
+- Thingstek
+
+## Preguntas Frecuentes
+
+### ¿Cuánto cuesta instalar paneles solares?
+- **Residencial:** Depende del consumo eléctrico de cada vivienda. Como referencia, un proyecto suele equivaler a 60 veces el gasto promedio mensual de electricidad.
+- **Industrial:** Se define según el perfil de consumo. En consumos principalmente diurnos, la inversión suele rondar 48 veces el gasto mensual promedio de electricidad.
+
+### ¿Cuánto tiempo toma la instalación?
+- **Residencial:** Normalmente entre 2 y 5 días.
+- **Industrial:** Puede variar entre 1 semana y 2 meses, según la magnitud del proyecto y la cantidad de paneles a instalar.
+
+### ¿Qué ocurre en invierno con los paneles solares?
+Los paneles siguen generando energía aunque con menor rendimiento en días nublados o lluviosos. La evaluación siempre se realiza sobre una generación anual: en verano se produce más energía, compensando el menor rendimiento de invierno.
+
+### ¿En cuánto tiempo se recupera la inversión?
+Depende del horario en que se concentra el consumo:
+- **Residencial:** Retorno de 4 a 6 años
+- **Industrial:** De 3 a 6 años
+
+### ¿Qué opciones de pago tienen?
+- **Residencial:** Financiamiento en cuotas de hasta 20 años, pago con tarjeta de crédito en hasta 48 cuotas sin interés, transferencias por hitos de avance del proyecto
+- **Industrial:** Convenios de leasing, créditos verdes con tasas preferenciales, pagos por avance
+
+### ¿Qué mantenciones requiere un sistema solar?
+El mantenimiento es simple y de bajo costo:
+- Limpiar los paneles al menos 4 veces al año, o cuando presenten acumulación de suciedad
+- Realizar revisión anual de componentes eléctricos como inversores y tableros
+
+## Estadísticas de Operación
+
+- Proyectos instalados: ~150
+- Capacidad generada: 15MW (energía limpia total)
+- Años de experiencia: 8+
+- Clientes satisfechos: 98%
+
+## Datos de Contacto
+
+- Email principal: contacto@enercity.cl
+- Teléfono: +56 9 2902 8578
+- Horario: 08:30 a 18:30 horas
+- Dirección: Av. Pedro de Valdivia 273, oficina 1611, Providencia, Chile
+
+## Sitio Web
+
+URL principal: https://paneles-solares.cl
+
+---
+
+**Nota:** Esta información se actualiza periódicamente para reflejar los datos más recientes de la empresa. Para confirmar detalles específicos, contáctese directamente con Enercity.

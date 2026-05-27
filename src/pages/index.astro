@@ -9,6 +9,7 @@ import { GuaranteeBanner } from '../components/organisms/guarantee-banner';
 import { SavingsCalculator } from '../components/organisms/savings-calculator';
 import { ContactCta } from '../components/organisms/contact-cta';
 import { Footer } from '../components/organisms/footer';
+import FAQ from '../components/organisms/faq.astro';
 import { supabase } from '../lib/supabase';
 import {
   getStats,
@@ -21,6 +22,7 @@ import {
   getFooterContent,
   getSolutionsSectionHeader,
   getProjectsSectionHeader,
+  getFAQ,
 } from '../lib/content';
 
 const { data: comunasData, error: comunasError } = await supabase
@@ -53,6 +55,7 @@ const [
   footerContent,
   solutionsHeader,
   projectsHeader,
+  faqs,
 ] = await Promise.all([
   getHeroContent(),
   getStats(),
@@ -65,6 +68,7 @@ const [
   getFooterContent(),
   getSolutionsSectionHeader(),
   getProjectsSectionHeader(),
+  getFAQ(),
 ]);
 // Dynamic SEO meta tags from CMS content
 const seoTitle = `${heroContent.headline} ${heroContent.headlineAccent} | Enercity`;
@@ -96,6 +100,7 @@ const seoOgDescription = heroContent.subheadline;
     )}
     
     <ContactCta client:visible content={contactCtaContent} />
+    <FAQ faqs={faqs} />
   </main>
   
   <Footer client:visible links={footerLinks} content={footerContent} />

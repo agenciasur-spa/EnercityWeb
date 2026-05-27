@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { getBusinessInfo } from '../lib/content';
 
 interface Props {
   title: string;
@@ -21,9 +22,110 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
 const siteName = "Enercity";
 const siteUrl = "https://paneles-solares.cl";
 
+const businessInfo = await getBusinessInfo();
+
 // OG tags: use dynamic values if provided, otherwise derive from page props
 const resolvedOgTitle = ogTitle || `${title} — ${siteName}`;
 const resolvedOgDescription = ogDescription || description;
+
+// JSON-LD Structured Data
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "LocalBusiness",
+      "@id": `${siteUrl}#organization`,
+      name: businessInfo.razonSocial,
+      legalName: businessInfo.nombreLegal,
+      alternateName: siteName,
+      url: siteUrl,
+      logo: `${siteUrl}/logo.png`,
+      image: `${siteUrl}/logo.png`,
+      description: description,
+      telephone: businessInfo.telefono,
+      email: businessInfo.email,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Av. Pedro de Valdivia 273, oficina 1611",
+        addressLocality: "Providencia",
+        addressRegion: "Región Metropolitana",
+        addressCountry: "CL"
+      },
+      geo: {
+        "@type": "GeoCoordinates",
+        latitude: -33.4389,
+        longitude: -70.6506
+      },
+      areaServed: {
+        "@type": "Place",
+        name: businessInfo.cobertura
+      },
+      openingHoursSpecification: {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "08:30",
+        closes: "18:30",
+        timeZone: businessInfo.horarioZona
+      },
+      priceRange: "$$",
+      sameAs: []
+    },
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}#org`,
+      name: siteName,
+      url: siteUrl,
+      logo: `${siteUrl}/logo.png`,
+      description: description,
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: businessInfo.telefono,
+        email: businessInfo.email,
+        contactType: "customer service",
+        availableLanguage: ["Spanish", "English"]
+      },
+      areaServed: {
+        "@type": "Country",
+        name: "Chile"
+      },
+      knowsAbout: businessInfo.servicios
+    },
+    {
+      "@type": "Service",
+      "@id": `${siteUrl}#service`,
+      name: "Instalación de paneles solares",
+      description: businessInfo.servicios.join(". "),
+      provider: {
+        "@type": "Organization",
+        name: businessInfo.razonSocial
+      },
+      areaServed: {
+        "@type": "Place",
+        name: businessInfo.cobertura
+      },
+      hasOfferCatalog: {
+        "@type": "OfferCatalog",
+        name: "Servicios fotovoltaicos",
+        itemListElement: businessInfo.servicios.map((service, index) => ({
+          "@type": "Offer",
+          position: index + 1,
+          name: service
+        }))
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}#website`,
+      url: siteUrl,
+      name: siteName,
+      description: description,
+      publisher: {
+        "@type": "Organization",
+        name: businessInfo.razonSocial
+      }
+    }
+  ]
+};
 ---
 
 <!doctype html>
@@ -61,19 +163,7 @@ const resolvedOgDescription = ogDescription || description;
     {ogImage && <meta name="twitter:image" content={ogImage} />}
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": siteName,
-      "url": siteUrl,
-      "logo": "https://paneles-solares.cl/logo.png",
-      "areaServed": {
-        "@type": "Country",
-        "name": "Chile"
-      },
-      "serviceType": "Instalación de paneles solares",
-      "description": resolvedOgDescription
-    })} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body class="min-h-screen bg-background font-sans antialiased">
     <slot />

@@ -582,6 +582,130 @@ export async function getProjectsSectionHeader(): Promise<ProjectsSectionContent
 }
 
 // ────────────────────────────────────────────────
+// NEW SEO DATA
+// ────────────────────────────────────────────────
+
+export async function getFAQ(): Promise<{ pregunta: string; respuesta: string }[]> {
+  return getCached<{ pregunta: string; respuesta: string }[]>(
+    'site_content:faq',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'faq')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No FAQ data');
+      return data.data as { pregunta: string; respuesta: string }[];
+    },
+    []
+  );
+}
+
+export async function getBusinessInfo(): Promise<{
+  razonSocial: string;
+  nombreLegal: string;
+  direccion: string;
+  cobertura: string;
+  telefono: string;
+  email: string;
+  horario: string;
+  rut: string;
+  horarioZona: string;
+  servicios: string[];
+  marcasPaneles: string[];
+  inversores: string[];
+  rangoProyectos: string;
+  anosExperiencia: string;
+  cantidadInstalaciones: string;
+  diferenciadores: string;
+  certificaciones: string;
+  garantias: string[];
+  casosExito: string[];
+}> {
+  return getCached<{
+    razonSocial: string;
+    nombreLegal: string;
+    direccion: string;
+    cobertura: string;
+    telefono: string;
+    email: string;
+    horario: string;
+    rut: string;
+    horarioZona: string;
+    servicios: string[];
+    marcasPaneles: string[];
+    inversores: string[];
+    rangoProyectos: string;
+    anosExperiencia: string;
+    cantidadInstalaciones: string;
+    diferenciadores: string;
+    certificaciones: string;
+    garantias: string[];
+    casosExito: string[];
+  }>(
+    'site_content:business_info',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'business_info')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No business_info data');
+      return data.data as {
+        razonSocial: string;
+        nombreLegal: string;
+        direccion: string;
+        cobertura: string;
+        telefono: string;
+        email: string;
+        horario: string;
+        rut: string;
+        horarioZona: string;
+        servicios: string[];
+        marcasPaneles: string[];
+        inversores: string[];
+        rangoProyectos: string;
+        anosExperiencia: string;
+        cantidadInstalaciones: string;
+        diferenciadores: string;
+        certificaciones: string;
+        garantias: string[];
+        casosExito: string[];
+      };
+    },
+    {
+      razonSocial: 'Enercity SpA',
+      nombreLegal: 'Enercity SpA',
+      direccion: 'Av. Pedro de Valdivia 273, oficina 1611, Providencia, Chile',
+      cobertura: 'Región Metropolitana (residencial), todo Chile (industrial)',
+      telefono: '+56 9 2902 8578',
+      email: 'contacto@enercity.cl',
+      horario: '08:30 a 18:30 horas',
+      rut: '76.933.266-9',
+      horarioZona: 'America/Santiago',
+      servicios: ['Diseño e instalación de sistemas fotovoltaicos', 'Mantención y optimización de plantas solares'],
+      marcasPaneles: ['Trina Solar', 'JA Solar', 'Seraphim', 'Canadian Solar'],
+      inversores: ['Huawei', 'GoodWe'],
+      rangoProyectos: 'desde soluciones de menor escala hasta desarrollos de gran capacidad',
+      anosExperiencia: '8',
+      cantidadInstalaciones: '~150',
+      diferenciadores: 'Desarrollo integral del proyecto: gestionamos cada etapa con equipo propio desde diseño hasta instalación y certificación. Instalaciones certificadas por SEC. Garantías sólidas (hasta ROI de inversión, garantía de equipos 12-25 años). Trayectoria de más de 150 instalaciones.',
+      certificaciones: 'Certificaciones SEC, certificación SEC de los equipos, normas eléctricas chilenas',
+      garantias: [
+        'Garantía de instalación hasta recuperación de inversión (4-6 años residencial, 3-6 años industrial)',
+        'Garantía de productos: inversores 10 años, paneles 12 años de fábrica y 25 años de eficiencia'
+      ],
+      casosExito: [
+        'Residencial: Casa Pilar Bienzobas, Casa Katiuska, Casa José Miguel, Casa Eva Salgado, Casa Soraya, Casa Eduardo Piraino, Casa Roberto Stelker, Casa Luciano',
+        'Industrial: Dulcería Norma, Limatco, APV S.A., TNB Alimento, Agrícola Mallarauco, Carnicería Soto, Botillería Juan Yevenes, Codam, Blue Light, Agrícola La Hornilla, Ferretería Lirquén, SOF South Organics Fruits, Flexi Chile, Thingstek'
+      ]
+    }
+  );
+}
+
+// ────────────────────────────────────────────────
 // EXPORTED FOR TESTING
 // ────────────────────────────────────────────────
 export { normalizeArray, normalizeStringArray, validateStringFields };
