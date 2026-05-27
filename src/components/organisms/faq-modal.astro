@@ -56,25 +56,20 @@ const faqJson = JSON.stringify(faqs);
 </dialog>
 
 <script is:inline>
-  interface FAQItem {
-    pregunta: string;
-    respuesta: string;
-  }
-
   // Get FAQ data from data attribute
-  const modal = document.getElementById('faq-modal') as HTMLElement;
+  const modal = document.getElementById('faq-modal');
   const faqJson = modal?.getAttribute('data-faq-json') || '[]';
-  const faqData: FAQItem[] = JSON.parse(faqJson);
+  const faqData = JSON.parse(faqJson);
 
   function toggleModal() {
-    const modal = document.getElementById('faq-modal') as HTMLDialogElement;
+    const modal = document.getElementById('faq-modal');
     if (modal) {
       modal.showModal();
     }
   }
 
   function closeModal() {
-    const modal = document.getElementById('faq-modal') as HTMLDialogElement;
+    const modal = document.getElementById('faq-modal');
     if (modal) {
       modal.close();
     }
@@ -93,7 +88,7 @@ const faqJson = JSON.stringify(faqs);
       return;
     }
 
-    container.innerHTML = faqData.map((faq: FAQItem, index: number) => `
+    container.innerHTML = faqData.map((faq, index) => `
       <div class="border border-gray-200 rounded-lg overflow-hidden">
         <details class="group">
           <summary class="flex justify-between items-center font-medium cursor-pointer list-none p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
@@ -113,7 +108,7 @@ const faqJson = JSON.stringify(faqs);
   }
 
   // Make toggleModal available globally
-  (window as any).toggleFAQModal = () => {
+  window.toggleFAQModal = function() {
     renderFAQs();
     toggleModal();
   };
@@ -128,7 +123,7 @@ const faqJson = JSON.stringify(faqs);
 
   // Close modal when clicking outside
   modal?.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).id === 'faq-modal') closeModal();
+    if (e.target.id === 'faq-modal') closeModal();
   });
 </script>
 
