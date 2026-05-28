@@ -4,7 +4,7 @@ import { join } from 'path';
 async function convertLogo() {
   try {
     // Rutas relativas a la raíz del proyecto (CWD)
-    const svgPath = 'desing/logos/Enercity_logo_FFF.svg';
+    const svgPath = 'src/assets/Enercity_logo_FFF.svg';
     const pngPath = 'src/assets/logoEnercity.png';
 
     await sharp(svgPath)

@@ -1,3 +1,7 @@
+
+
+
+
 /**
  * pdfGenerator.ts — Self-contained PDF generator for Enercity diagnostic reports.
  *
@@ -19,6 +23,8 @@ import type {
   PDFFont,
   RGB,
 } from 'pdf-lib';
+
+import { readFileSync } from 'fs';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +66,7 @@ const COLOR_DARK_GRAY: RGB = { red: 0.2, green: 0.2, blue: 0.2, type: 'RGB' } as
 const COLOR_GREEN: RGB = { red: 0.1, green: 0.6, blue: 0.3, type: 'RGB' } as RGB;
 const COLOR_LIGHT_GRAY: RGB = { red: 0.75, green: 0.75, blue: 0.75, type: 'RGB' } as RGB;
 const COLOR_MEDIUM_GRAY: RGB = { red: 0.45, green: 0.45, blue: 0.45, type: 'RGB' } as RGB;
+const COLOR_ACCENT_ORANGE: RGB = { red: 0.941, green: 0.494, blue: 0.016, type: 'RGB' } as RGB; // #F07E04
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -281,26 +288,21 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   const page: PDFPage = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
 
   // ========================================================================
-  // 1. HEADER (y ~800)
+  // 1. HEADER (y ~800) - LOGO EN COLOR ALINEADO A IZQUIERDA
   // ========================================================================
-  let y: number = PAGE_HEIGHT - 50;
+  const headerHeight: number = 70;
 
-  page.drawText(sanitizeText('ENERCITY'), {
+  // Load and embed logo (PNG-24 con transparencia)
+  const logoPath = new URL('../../public/Enercity_logo_color.png', import.meta.url).pathname;
+  const logoPngBytes: Buffer = readFileSync(logoPath);
+  const logoImage = await pdfDoc.embedPng(logoPngBytes);
+  const logoDims = logoImage.scale(0.5);
+
+  page.drawImage(logoImage, {
     x: MARGIN_LEFT,
-    y,
-    size: 24,
-    font: fontBold,
-    color: COLOR_DARK_BLUE,
-  });
-
-  y -= 28;
-
-  page.drawText(sanitizeText('Diagnóstico Solar Personalizado'), {
-    x: MARGIN_LEFT,
-    y,
-    size: 14,
-    font: fontRegular,
-    color: COLOR_MEDIUM_GRAY,
+    y: PAGE_HEIGHT - 60,
+    width: logoDims.width,
+    height: logoDims.height,
   });
 
   // Date on the right side
@@ -314,14 +316,14 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
     color: COLOR_MEDIUM_GRAY,
   });
 
-  y -= 16;
+  let y: number = PAGE_HEIGHT - headerHeight;
 
-  // Header separator
-  drawHorizontalLine(page, y, COLOR_DARK_BLUE, 1.5);
+  // Header separator (Naranja)
+  drawHorizontalLine(page, y, COLOR_ACCENT_ORANGE, 1.5);
   y -= 24;
 
   // ========================================================================
-  // 2. CUSTOMER INFO (y ~720)
+  // 2. CUSTOMER INFO (SIMPLE - SIN CARD)
   // ========================================================================
   y = drawSectionHeader(page, fontBold, 'Datos del Cliente', y);
 
@@ -475,10 +477,9 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
   y = drawSectionHeader(page, fontBold, 'Nota Legal', y);
 
   const disclaimerLines: string[] = [
-    'Esta cotización tiene carácter informativo y es válida por 30 días desde la fecha de emisión.',
-    'Los valores presentados son estimaciones basadas en los datos proporcionados y pueden variar',
-    'al momento de la instalación. Los cálculos de ahorro consideran condiciones promedio de',
-    'radiación solar y tarifas eléctricas vigentes. Enercity se reserva el derecho de',
+    'Esta cotización tiene carácter informativo y es válida por 30 días desde la fecha de emisión. Los valores presentados son estimaciones basadas',
+    'en los datos proporcionados y pueden variar al momento de la instalación.',
+    'Los cálculos de ahorro consideran condiciones promedio de radiación solar y tarifas eléctricas vigentes. Enercity se reserva el derecho de',
     'modificar precios y condiciones sin previo aviso.',
   ];
 

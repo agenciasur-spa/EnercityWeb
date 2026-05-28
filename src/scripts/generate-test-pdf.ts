@@ -1,4 +1,4 @@
-import { generatePDF } from '../lib/pdfGenerator.js';
+import { generatePDF } from '../lib/pdfGenerator_new.js';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';

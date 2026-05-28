@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendLeadEmails } from '../../lib/email';
-import { generatePDF } from '../../lib/pdfGenerator';
-import type { PDFData } from '../../lib/pdfGenerator';
+import { generatePDF } from '../../lib/pdfGenerator_new__';
+import type { PDFData } from '../../lib/pdfGenerator_new__';
 import type { LeadInput } from '../../types/simulation';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 import { verifyTurnstileToken } from '../../lib/turnstile';
