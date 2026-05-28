@@ -1,7 +1,14 @@
 import { Resend } from 'resend';
 import { getSettings } from './settings';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
+
+// Load logo file path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface ClienteData {
   nombre: string;
@@ -54,9 +61,13 @@ export async function sendLeadEmails(data: LeadEmailData) {
   const settings = await getSettings();
   const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
-  
+
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
+
+  // Load logo for email
+  const logoPath = join(__dirname, '../../desing/logos/Enercity_logo_FFF.svg');
+  const logoBuffer = readFileSync(logoPath);
 
   const clienteHtml = `
 <!DOCTYPE html>
@@ -74,10 +85,10 @@ export async function sendLeadEmails(data: LeadEmailData) {
           <!-- Header -->
           <tr>
             <td style="background:#154660;padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                ☀️ Enercity
-              </h1>
-              <p style="margin:8px 0 0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
+              <div style="margin-bottom:12px;">
+                <img src="cid:logo" alt="Enercity Logo" style="height:48px;width:auto;display:inline-block;" />
+              </div>
+              <p style="margin:0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
                 Tu Presupuesto Personalizado
               </p>
             </td>
@@ -309,10 +320,17 @@ export async function sendLeadEmails(data: LeadEmailData) {
         to: [cliente.email],
         subject: `☀️ Tu Presupuesto Solar Enercity - ${cliente.nombre}`,
         html: clienteHtml,
-        attachments: data.pdfBytes ? [{
-          filename: 'diagnostico-solar-enercity.pdf',
-          content: Buffer.from(data.pdfBytes),
-        }] : undefined,
+        attachments: [
+          {
+            filename: 'diagnostico-solar-enercity.pdf',
+            content: Buffer.from(data.pdfBytes),
+          },
+          {
+            filename: 'logo.svg',
+            content: logoBuffer,
+            contentType: 'image/svg+xml',
+          },
+        ],
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
@@ -338,10 +356,14 @@ export async function sendContactEmails(data: ContactEmailData) {
   const settings = await getSettings();
   const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
-  
+
   const { nombre, email, telefono, proyecto, mensaje } = data;
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
   const telefonoDisplay = telefono || 'No proporcionado';
+
+  // Load logo for email
+  const logoPath = join(__dirname, '../../desing/logos/Enercity_logo_FFF.svg');
+  const logoBuffer = readFileSync(logoPath);
 
   const usuarioHtml = `
 <!DOCTYPE html>
@@ -359,10 +381,10 @@ export async function sendContactEmails(data: ContactEmailData) {
           <!-- Header -->
           <tr>
             <td style="background:#154660;padding:32px 40px;text-align:center;">
-              <h1 style="margin:0;font-size:28px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">
-                ☀️ Enercity
-              </h1>
-              <p style="margin:8px 0 0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
+              <div style="margin-bottom:12px;">
+                <img src="cid:logo" alt="Enercity Logo" style="height:48px;width:auto;display:inline-block;" />
+              </div>
+              <p style="margin:0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
                 Consultoría Energética
               </p>
             </td>
@@ -603,8 +625,15 @@ export async function sendContactEmails(data: ContactEmailData) {
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
         to: [email],
-        subject: `¡Gracias por contactarnos! — Enercity`,
+        subject: '¡Gracias por contactarnos! — Enercity',
         html: usuarioHtml,
+        attachments: [
+          {
+            filename: 'logo.svg',
+            content: logoBuffer,
+            contentType: 'image/svg+xml',
+          },
+        ],
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
