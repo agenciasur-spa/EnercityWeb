@@ -65,8 +65,8 @@ export async function sendLeadEmails(data: LeadEmailData) {
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
 
-  // Load logo for email
-  const logoPath = join(__dirname, '../../desing/logos/Enercity_logo_FFF.svg');
+  // Load logo for email (PNG blanco - sin transparencia en fondo azul)
+  const logoPath = join(__dirname, '../../public/Enercity_logo_FFF.png');
   const logoBuffer = readFileSync(logoPath);
 
   const clienteHtml = `
@@ -326,9 +326,9 @@ export async function sendLeadEmails(data: LeadEmailData) {
             content: Buffer.from(data.pdfBytes),
           },
           {
-            filename: 'logo.svg',
+            filename: 'logo.png',
             content: logoBuffer,
-            contentType: 'image/svg+xml',
+            contentType: 'image/png',
           },
         ],
       }),
@@ -361,8 +361,8 @@ export async function sendContactEmails(data: ContactEmailData) {
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
   const telefonoDisplay = telefono || 'No proporcionado';
 
-  // Load logo for email
-  const logoPath = join(__dirname, '../../desing/logos/Enercity_logo_FFF.svg');
+  // Load logo for email (PNG blanco - sin transparencia en fondo azul)
+  const logoPath = join(__dirname, '../../public/Enercity_logo_FFF.png');
   const logoBuffer = readFileSync(logoPath);
 
   const usuarioHtml = `
@@ -629,9 +629,9 @@ export async function sendContactEmails(data: ContactEmailData) {
         html: usuarioHtml,
         attachments: [
           {
-            filename: 'logo.svg',
+            filename: 'logo.png',
             content: logoBuffer,
-            contentType: 'image/svg+xml',
+            contentType: 'image/png',
           },
         ],
       }),
