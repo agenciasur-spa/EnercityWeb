@@ -237,7 +237,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     }
     setIsDownloadingPdf(true);
     try {
-      const { downloadPDF } = await import('@/lib/pdfGenerator_new');
+      const { downloadPDF } = await import('@/lib/downloadPDF');
       await downloadPDF(data);
     } catch (err) {
       console.error('[PDF] Manual download failed:', err);
@@ -303,7 +303,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           setSavedPdfData(pdfData);
           // Auto-download best-effort: may be blocked by browser download gating
           // after the async fetch() gap. The Step 5 button is the reliable fallback.
-          const { downloadPDF } = await import('@/lib/pdfGenerator_new');
+          const { downloadPDF } = await import('@/lib/downloadPDF');
           await downloadPDF(pdfData);
         } else {
           console.warn('[PDF] Skipped — missing data for PDF build');

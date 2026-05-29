@@ -451,25 +451,3 @@ for (const item of itemsInclude) {
   // ========================================================================
   return await pdfDoc.save();
 }
-
-/**
- * Generates a PDF and triggers a browser download.
- */
-export async function downloadPDF(data: PDFData): Promise<void> {
-  try {
-    const pdfBytes: Uint8Array = await generatePDF(data);
-    const blob: Blob = new Blob([pdfBytes.buffer as ArrayBuffer], {
-      type: 'application/pdf',
-    });
-    const url: string = URL.createObjectURL(blob);
-    const link: HTMLAnchorElement = document.createElement('a');
-    link.href = url;
-    link.download = `Presupuesto-Solar-Enercity-${data.customerName.replace(/\s+/g, '-')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error: unknown) {
-    console.error('Error generating PDF:', error);
-  }
-}
