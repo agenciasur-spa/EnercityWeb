@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { PDFData } from "@/lib/pdfGenerator_new";
+import type { PDFData } from "@/lib-server/pdfGenerator_new";
 
 
 import {
@@ -237,7 +237,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     }
     setIsDownloadingPdf(true);
     try {
-      const { downloadPDF } = await import('@/lib/pdfGenerator_new');
+      const { downloadPDF } = await import('@/lib-server/pdfGenerator_new');
       await downloadPDF(data);
     } catch (err) {
       console.error('[PDF] Manual download failed:', err);
@@ -303,7 +303,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           setSavedPdfData(pdfData);
           // Auto-download best-effort: may be blocked by browser download gating
           // after the async fetch() gap. The Step 5 button is the reliable fallback.
-          const { downloadPDF } = await import('@/lib/pdfGenerator_new');
+          const { downloadPDF } = await import('@/lib-server/pdfGenerator_new');
           await downloadPDF(pdfData);
         } else {
           console.warn('[PDF] Skipped — missing data for PDF build');
