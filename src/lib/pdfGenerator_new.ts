@@ -254,7 +254,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
     });
   } catch (e) {
     // Fallback si no encuentra la imagen en ambiente local: Texto estilizado como el email
-    page.drawText('☀️ Enercity', {
+    page.drawText('Enercity', {
       x: MARGIN_LEFT,
       y: PAGE_HEIGHT - 45,
       size: 24,

@@ -1,8 +1,5 @@
 import { Resend } from 'resend';
 import { getSettings } from './settings';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
@@ -65,9 +62,10 @@ export async function sendLeadEmails(data: LeadEmailData) {
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
 
-  // Load logo for email (PNG blanco - sin transparencia en fondo azul)
-  const logoPath = join(__dirname, '../../public/Enercity_logo_FFF.png');
-  const logoBuffer = readFileSync(logoPath);
+  // Load logo for email — fetch from static asset URL (works in Vercel serverless)
+  const logoUrl = new URL('../../public/Enercity_logo_FFF.png', import.meta.url);
+  const logoResponse = await fetch(logoUrl);
+  const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
 
   const clienteHtml = `
 <!DOCTYPE html>
@@ -361,9 +359,10 @@ export async function sendContactEmails(data: ContactEmailData) {
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
   const telefonoDisplay = telefono || 'No proporcionado';
 
-  // Load logo for email (PNG blanco - sin transparencia en fondo azul)
-  const logoPath = join(__dirname, '../../public/Enercity_logo_FFF.png');
-  const logoBuffer = readFileSync(logoPath);
+  // Load logo for email — fetch from static asset URL (works in Vercel serverless)
+  const logoUrl = new URL('../../public/Enercity_logo_FFF.png', import.meta.url);
+  const logoResponse = await fetch(logoUrl);
+  const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
 
   const usuarioHtml = `
 <!DOCTYPE html>
