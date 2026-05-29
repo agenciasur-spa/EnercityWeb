@@ -3,10 +3,6 @@ import { getSettings } from './settings';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
-// Load logo file path
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 interface ClienteData {
   nombre: string;
   email: string;
