@@ -18,7 +18,7 @@ import type { PDFData } from './pdf-types.js';
 export type { PDFData } from './pdf-types.js';
 
 // Import logo as URL — Vite resolves this at build time
-import logoUrl from '../../public/Enercity_logo_fff.png';
+import logoUrl from '../../public/Enercity_logo_FFF.png';
 
 // ---------------------------------------------------------------------------
 // Color palette matching Email CSS exactly
