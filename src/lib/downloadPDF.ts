@@ -1,33 +1,34 @@
 /**
  * downloadPDF.ts — Client-safe PDF download helper.
  *
- * This file MUST NOT import any server-only modules (fs, path, etc.).
- * It dynamically imports generatePDF from pdfGenerator_new at runtime,
- * which keeps the server code out of the client bundle.
+ * Calls the server API to generate the PDF and triggers a browser download.
+ * No server-only modules (fs, pdf-lib, etc.) are imported in the client.
  */
 
 import type { PDFData } from './pdf-types.js';
 
 /**
- * Generates a PDF and triggers a browser download.
- * Uses dynamic import to avoid bundling server-only code in the client.
+ * Calls the server PDF endpoint and triggers a browser download.
  */
 export async function downloadPDF(data: PDFData): Promise<void> {
-  try {
-    const { generatePDF } = await import('./pdfGenerator_new.js');
-    const pdfBytes: Uint8Array = await generatePDF(data);
-    const blob: Blob = new Blob([pdfBytes.buffer as ArrayBuffer], {
-      type: 'application/pdf',
-    });
-    const url: string = URL.createObjectURL(blob);
-    const link: HTMLAnchorElement = document.createElement('a');
-    link.href = url;
-    link.download = `Presupuesto-Solar-Enercity-${data.customerName.replace(/\s+/g, '-')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  } catch (error: unknown) {
-    console.error('Error generating PDF:', error);
+  const response = await fetch('/api/generate-pdf', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(errorData.error || `PDF generation failed (${response.status})`);
   }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `Presupuesto-Solar-Enercity-${data.customerName.replace(/\s+/g, '-')}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
