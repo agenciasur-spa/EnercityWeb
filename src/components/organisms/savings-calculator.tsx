@@ -289,11 +289,17 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
         }),
       });
 
-      const responseData = await apiResponse.json();
-
       if (!apiResponse.ok) {
-        throw new Error(responseData.error || "Error al crear lead");
+        const errorText = await apiResponse.text();
+        let errorMessage = "Error al crear lead";
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch { /* use default message */ }
+        throw new Error(errorMessage);
       }
+
+      const responseData = await apiResponse.json();
 
       // --- PDF generation (silent failure, must NOT break lead flow) ---
       // Save PDF data for the manual download button on Step 5
