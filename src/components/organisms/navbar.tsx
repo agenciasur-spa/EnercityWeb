@@ -5,10 +5,10 @@ import logoEnercity from '/src/assets/logoEnercity.png';
 import type { NavLink } from '../../types/content';
 
 interface NavbarProps {
-  links: NavLink[];
+  links?: NavLink[];
 }
 
-export function Navbar({ links }: NavbarProps) {
+export function Navbar({ links = [] }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

@@ -7,13 +7,24 @@ import { resolveIcon } from '../../lib/icon-map';
 import type { NavLink, FooterContent } from '../../types/content';
 
 interface FooterProps {
-  links: NavLink[];
-  content: FooterContent;
+  links?: NavLink[];
+  content?: FooterContent;
 }
 
-export function Footer({ links, content }: FooterProps) {
+export function Footer({ links = [], content }: FooterProps) {
   const currentYear = new Date().getFullYear();
   const prefersReduced = useReducedMotion();
+
+  // Early return if content is missing (e.g. Supabase not configured in production)
+  if (!content) {
+    return (
+      <footer className="bg-[#0A1929] text-white py-20 font-sans">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-white/50">Enercity &copy; {currentYear}</p>
+        </div>
+      </footer>
+    );
+  }
 
   const sectionVariant = {
     hidden: { opacity: 0, y: 20 },
