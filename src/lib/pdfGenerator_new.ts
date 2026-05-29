@@ -17,8 +17,8 @@ import type { PDFData } from './pdf-types.js';
 // Re-export PDFData for convenience
 export type { PDFData } from './pdf-types.js';
 
-// Import logo as raw buffer — Vite resolves this at build time
-import logoBuffer from '../../public/Enercity_logo_FFF.png?buffer';
+// Import logo as raw buffer — Vite inlines this at build time
+import logoBuffer from '../assets/Enercity_logo_FFF.png?buffer';
 
 // ---------------------------------------------------------------------------
 // Color palette matching Email CSS exactly

@@ -1,6 +1,9 @@
 import { Resend } from 'resend';
 import { getSettings } from './settings';
 
+// Import logo as buffer — works in both dev and Vercel serverless
+import logoBuffer from '../assets/Enercity_logo_FFF.png?buffer';
+
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
 interface ClienteData {
@@ -57,11 +60,6 @@ export async function sendLeadEmails(data: LeadEmailData) {
 
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
-
-  // Load logo for email — fetch from static asset URL (works in Vercel serverless)
-  const logoUrl = new URL('../../public/Enercity_logo_FFF.png', import.meta.url);
-  const logoResponse = await fetch(logoUrl);
-  const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
 
   const clienteHtml = `
 <!DOCTYPE html>
@@ -321,7 +319,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
           },
           {
             filename: 'logo.png',
-            content: logoBuffer,
+            content: Buffer.from(logoBuffer),
             contentType: 'image/png',
           },
         ],
@@ -354,11 +352,6 @@ export async function sendContactEmails(data: ContactEmailData) {
   const { nombre, email, telefono, proyecto, mensaje } = data;
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
   const telefonoDisplay = telefono || 'No proporcionado';
-
-  // Load logo for email — fetch from static asset URL (works in Vercel serverless)
-  const logoUrl = new URL('../../public/Enercity_logo_FFF.png', import.meta.url);
-  const logoResponse = await fetch(logoUrl);
-  const logoBuffer = Buffer.from(await logoResponse.arrayBuffer());
 
   const usuarioHtml = `
 <!DOCTYPE html>
@@ -625,7 +618,7 @@ export async function sendContactEmails(data: ContactEmailData) {
         attachments: [
           {
             filename: 'logo.png',
-            content: logoBuffer,
+            content: Buffer.from(logoBuffer),
             contentType: 'image/png',
           },
         ],
