@@ -12,12 +12,13 @@ import type {
   RGB,
 } from 'pdf-lib';
 
-import { readFileSync } from 'fs';
-
 import type { PDFData } from './pdf-types.js';
 
 // Re-export PDFData for convenience
 export type { PDFData } from './pdf-types.js';
+
+// Import logo as URL — Vite resolves this at build time
+import logoUrl from '../../public/Enercity_logo_fff.png';
 
 // ---------------------------------------------------------------------------
 // Color palette matching Email CSS exactly
@@ -241,9 +242,9 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
 
   // Intentar cargar e incrustar el logo
   try {
-    const logoPath = new URL('../../public/Enercity_logo_fff.png', import.meta.url).pathname;
-    const logoPngBytes: Buffer = readFileSync(logoPath);
-    const logoImage = await pdfDoc.embedPng(logoPngBytes);
+    const logoResponse = await fetch(new URL(logoUrl, import.meta.url).href);
+    const logoArrayBuffer = await logoResponse.arrayBuffer();
+    const logoImage = await pdfDoc.embedPng(new Uint8Array(logoArrayBuffer));
     const logoDims = logoImage.scale(0.45);
     page.drawImage(logoImage, {
       x: MARGIN_LEFT,
