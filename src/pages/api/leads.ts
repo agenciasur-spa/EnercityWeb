@@ -73,7 +73,7 @@ export const POST: APIRoute = async ({ request }) => {
 
     let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion } = body;
 
-    if (!nombre || !email || !kitId || precioFinalIva === undefined) {
+    if (!nombre || !email || !telefono || !kitId || precioFinalIva === undefined) {
       return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -82,7 +82,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     nombre = sanitizeString(nombre);
     email = sanitizeString(email);
-    telefono = telefono ? sanitizeString(telefono) : '';
+    telefono = sanitizeString(telefono);
+
+    if (!/^\d{9}$/.test(telefono)) {
+      return new Response(JSON.stringify({ error: 'Teléfono debe tener exactamente 9 dígitos' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     if (!validateEmail(email)) {
       return new Response(JSON.stringify({ error: 'Email invalido' }), {
@@ -126,7 +133,7 @@ export const POST: APIRoute = async ({ request }) => {
       .insert({
         nombre,
         email,
-        telefono: telefono || null,
+        telefono,
         comuna_id: comunaId || null,
         monto_boleta_ingresado: montoBoletaIngresado,
         kit_id: kitId,

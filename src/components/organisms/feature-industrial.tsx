@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { 
   Building2, Leaf, ChevronLeft, ChevronRight, 
   CheckCircle2, ShieldCheck, BarChart3 
@@ -30,6 +30,9 @@ export function FeatureIndustrial({
   ctaText = 'Ver Catálogo de Proyectos',
 }: FeatureIndustrialProps) {
   const [activeProject, setActiveProject] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+  const isDragging = useRef(false);
 
   // Empty state: show placeholder when no active projects
   if (!projects || projects.length === 0) {
@@ -51,6 +54,27 @@ export function FeatureIndustrial({
   const goNext = () => setActiveProject((prev) => (prev + 1) % projects.length);
   const goPrev = () => setActiveProject((prev) => (prev - 1 + projects.length) % projects.length);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    isDragging.current = true;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+    if (Math.abs(diff) >= minSwipeDistance) {
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+  };
+
   return (
     <section id="nosotros" className="py-24 bg-[#F8FAFC] overflow-hidden">
       <div className="container mx-auto px-6">
@@ -62,7 +86,10 @@ export function FeatureIndustrial({
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="relative rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(10,25,41,0.15)] aspect-[4/3] bg-gray-100 border-4 border-white"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              className="relative rounded-[2.5rem] overflow-hidden shadow-[0_40px_80px_-20px_rgba(10,25,41,0.15)] aspect-[4/3] bg-gray-100 border-4 border-white touch-pan-y select-none"
             >
               <AnimatePresence mode="wait">
                 <motion.img 

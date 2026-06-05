@@ -138,6 +138,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     website: "",
   });
 
+  const [telefonoError, setTelefonoError] = useState<string | null>(null);
+  const [nombreError, setNombreError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+
   
 
   const canProceed = () => {
@@ -246,12 +250,54 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     }
   };
 
+  const validateNombre = (name: string): boolean => {
+    if (!name.trim()) {
+      setNombreError('El nombre es obligatorio');
+      return false;
+    }
+    if (name.trim().length < 2) {
+      setNombreError('El nombre debe tener al menos 2 caracteres');
+      return false;
+    }
+    setNombreError(null);
+    return true;
+  };
+
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) {
+      setEmailError('El email es obligatorio');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Ingresa un email válido');
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
+
+  const validateTelefono = (tel: string): boolean => {
+    const clean = tel.replace(/\s/g, '');
+    if (!clean) {
+      setTelefonoError('El teléfono es obligatorio');
+      return false;
+    }
+    if (!/^\d{9}$/.test(clean)) {
+      setTelefonoError('El teléfono debe tener exactamente 9 dígitos');
+      return false;
+    }
+    setTelefonoError(null);
+    return true;
+  };
+
   const handleSubmitLead = async () => {
     if (!result || result.estado !== "OK" || !result.calculo) return;
-    if (!formData.nombre || !formData.email) {
-      alert("Por favor completa tu nombre y email");
-      return;
-    }
+
+    const isNombreValid = validateNombre(formData.nombre);
+    const isEmailValid = validateEmail(formData.email);
+    const isTelefonoValid = validateTelefono(formData.telefono);
+
+    if (!isNombreValid || !isEmailValid || !isTelefonoValid) return;
 
     const timeTaken = Date.now() - pageLoadTime.current;
     if (timeTaken < 3000) return;
@@ -644,6 +690,9 @@ case 3:
                   email: "",
                   telefono: "",
                 });
+                setNombreError(null);
+                setEmailError(null);
+                setTelefonoError(null);
               }}
               className="w-full max-w-md mx-auto py-4 rounded-2xl bg-[#4AAF4D] text-white font-semibold hover:bg-[#3d8f3f] transition-all"
             >
@@ -789,19 +838,55 @@ const renderResults = () => {
         {/* Captura de Leads (Formulario) */}
         <div className="space-y-4 relative">
           <div className="grid grid-cols-1 gap-3">
-            <Input
-              value={formData.nombre}
-              onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-              placeholder="Tu nombre completo"
-              className="bg-white/10 border-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base"
-            />
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              placeholder="tu@email.com"
-              className="bg-white/10 border-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base"
-            />
+            <div className="space-y-1">
+              <Input
+                value={formData.nombre}
+                onChange={(e) => {
+                  setFormData({...formData, nombre: e.target.value});
+                  if (nombreError && e.target.value.trim()) setNombreError(null);
+                }}
+                onBlur={() => formData.nombre && validateNombre(formData.nombre)}
+                placeholder="Tu nombre completo"
+                className={`bg-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base ${nombreError ? 'border-red-500/50 bg-red-500/5' : 'border-white/10'}`}
+              />
+              {nombreError && (
+                <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest px-2">{nombreError}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Input
+                type="email"
+                value={formData.email}
+                onChange={(e) => {
+                  setFormData({...formData, email: e.target.value});
+                  if (emailError && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value)) setEmailError(null);
+                }}
+                onBlur={() => formData.email && validateEmail(formData.email)}
+                placeholder="tu@email.com"
+                className={`bg-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base ${emailError ? 'border-red-500/50 bg-red-500/5' : 'border-white/10'}`}
+              />
+              {emailError && (
+                <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest px-2">{emailError}</p>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Input
+                type="tel"
+                inputMode="numeric"
+                maxLength={9}
+                value={formData.telefono}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setFormData({...formData, telefono: val});
+                  if (telefonoError && val.length === 9) setTelefonoError(null);
+                }}
+                placeholder="9 dígitos (ej: 912345678)"
+                className={`bg-white/10 h-12 md:h-14 rounded-2xl text-white placeholder:text-white/30 px-4 md:px-6 focus:border-[#F07E04] transition-all text-sm md:text-base ${telefonoError ? 'border-red-500/50 bg-red-500/5' : 'border-white/10'}`}
+              />
+              {telefonoError && (
+                <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest px-2">{telefonoError}</p>
+              )}
+            </div>
           </div>
 
           {/* Honeypot — oculto para humanos, visible para bots */}
