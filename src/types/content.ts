@@ -115,3 +115,14 @@ export interface BlogFrontmatter {
   tags: string[];
   draft: boolean;
 }
+
+// Testimonials
+export interface Testimonial {
+  id: string;
+  name: string;
+  title: string;
+  text: string;
+  image_url: string | null;
+  sort_order: number;
+  active: boolean;
+}

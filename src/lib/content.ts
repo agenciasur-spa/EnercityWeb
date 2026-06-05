@@ -17,6 +17,7 @@ import type {
   FooterContent,
   SectionHeader,
   ProjectsSectionContent,
+  Testimonial,
 } from '../types/content';
 
 // ────────────────────────────────────────────────
@@ -702,6 +703,27 @@ export async function getBusinessInfo(): Promise<{
         'Industrial: Dulcería Norma, Limatco, APV S.A., TNB Alimento, Agrícola Mallarauco, Carnicería Soto, Botillería Juan Yevenes, Codam, Blue Light, Agrícola La Hornilla, Ferretería Lirquén, SOF South Organics Fruits, Flexi Chile, Thingstek'
       ]
     }
+  );
+}
+
+// ────────────────────────────────────────────────
+// TESTIMONIALS
+// ────────────────────────────────────────────────
+
+export async function getTestimonials(): Promise<Testimonial[]> {
+  return getCached<Testimonial[]>(
+    'testimonials',
+    async () => {
+      const { data, error } = await supabase
+        .from('testimonials')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+
+      if (error || !data) throw error || new Error('No testimonials data');
+      return data as Testimonial[];
+    },
+    [] // No fallback — empty array if no testimonials yet
   );
 }
 

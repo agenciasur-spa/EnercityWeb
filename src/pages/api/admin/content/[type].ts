@@ -12,7 +12,7 @@ function unauthorized(): Response {
   });
 }
 
-const ALLOWED_TYPES = ['stats', 'projects', 'solutions', 'nav_links', 'site_content'] as const;
+const ALLOWED_TYPES = ['stats', 'projects', 'solutions', 'nav_links', 'site_content', 'testimonials'] as const;
 type ContentType = (typeof ALLOWED_TYPES)[number];
 
 function isAllowedType(type: string): type is ContentType {

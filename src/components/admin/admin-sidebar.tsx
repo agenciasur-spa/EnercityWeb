@@ -11,6 +11,7 @@ import {
   Link,
   FileText,
   HelpCircle,
+  MessageSquareQuote,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -41,6 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/content/sections', label: 'Secciones', icon: FileText },
       { href: '/admin/content/projects', label: 'Proyectos', icon: Building2 },
       { href: '/admin/content/solutions', label: 'Soluciones', icon: Sun },
+      { href: '/admin/content/testimonials', label: 'Testimonios', icon: MessageSquareQuote },
       { href: '/admin/content/faq', label: 'FAQ', icon: HelpCircle },
       { href: '/admin/content/nav', label: 'Navegación', icon: Link },
     ],
