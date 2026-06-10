@@ -4,7 +4,7 @@ export async function verifyTurnstileToken(token: string): Promise<boolean> {
   const secretKey = import.meta.env.TURNSTILE_SECRET_KEY as string | undefined;
 
   if (!secretKey) {
-    console.log('[Turnstile] No secret key configured — skipping verification (relying on honeypot)');
+    console.log('[Turnstile] DEBUG: Secret key not configured — skipping verification (relying on honeypot)');
     return true;
   }
 

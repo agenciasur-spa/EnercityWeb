@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { getBusinessInfo } from '../lib/content';
+import WhatsAppFloat from '../components/atoms/whatsapp-float.astro';
 
 interface Props {
   title: string;
@@ -167,5 +168,6 @@ const jsonLd = {
   </head>
   <body class="min-h-screen bg-background font-sans antialiased">
     <slot />
+    <WhatsAppFloat />
   </body>
 </html>
