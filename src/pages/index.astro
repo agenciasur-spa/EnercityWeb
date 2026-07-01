@@ -12,6 +12,7 @@ import { TestimonialsCarousel } from '../components/organisms/testimonials-carou
 import { Footer } from '../components/organisms/footer';
 import FAQModal from '../components/organisms/faq-modal.astro';
 import { supabase } from '../lib/supabase';
+import type { NavLink } from '../types/content';
 import {
   getStats,
   getHeroContent,
@@ -82,7 +83,7 @@ const seoOgDescription = heroContent.subheadline;
 ---
 
 <Layout title={seoTitle} description={seoDescription} ogTitle={seoOgTitle} ogDescription={seoOgDescription}>
-  <Navbar client:load links={navbarLinks} />
+  <Navbar client:load links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
   
   <main>
     <Hero client:load content={heroContent} />
@@ -90,6 +91,9 @@ const seoOgDescription = heroContent.subheadline;
     <FeatureIndustrial client:visible projects={projects} sectionTag={projectsHeader.tag} sectionTitle={projectsHeader.title} sectionTitleAccent={projectsHeader.titleAccent} sectionDescription={projectsHeader.description} sectionFeatures={projectsHeader.features} ctaText={projectsHeader.ctaText} />
     <SolutionsGrid client:visible solutions={solutions} sectionTag={solutionsHeader.tag} sectionTitle={solutionsHeader.title} sectionTitleAccent={solutionsHeader.titleAccent} />
     <GuaranteeBanner client:visible content={guaranteesContent} />
+    {testimonials.length > 0 && (
+      <TestimonialsCarousel client:visible testimonials={testimonials} />
+    )}
     {hasErrors ? (
       <section className="py-20 bg-gray-50" id="simulador">
         <div className="container mx-auto px-4 text-center">
@@ -104,9 +108,6 @@ const seoOgDescription = heroContent.subheadline;
     )}
     
     <ContactCta client:visible content={contactCtaContent} />
-    {testimonials.length > 0 && (
-      <TestimonialsCarousel client:visible testimonials={testimonials} />
-    )}
   </main>
   
   <Footer client:visible links={footerLinks} content={footerContent} />

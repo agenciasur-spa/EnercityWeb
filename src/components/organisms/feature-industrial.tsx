@@ -236,15 +236,6 @@ export function FeatureIndustrial({
                 );
               })}
             </div>
-            
-            <motion.button 
-              whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-              whileTap={{ scale: 0.97 }}
-              className="mt-14 px-12 py-5 rounded-2xl bg-[#154660] text-white font-black font-sans text-xl hover:bg-[#0A1929] transition-colors shadow-2xl shadow-[#154660]/30 group/cta"
-            >
-              {ctaText}
-              <span className="inline-block ml-2 group-hover/cta:translate-x-1 transition-transform">→</span>
-            </motion.button>
           </motion.div>
 
         </div>
