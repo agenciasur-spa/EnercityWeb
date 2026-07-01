@@ -18,6 +18,13 @@ import type {
   SectionHeader,
   ProjectsSectionContent,
   Testimonial,
+  EmpresasHeroContent,
+  EmpresasCostProblemContent,
+  EmpresasValuePropositionContent,
+  EmpresasBenefitCardsContent,
+  EmpresasProcessContent,
+  EmpresasChecklistContent,
+  EmpresasContactContent,
 } from '../types/content';
 
 // ────────────────────────────────────────────────
@@ -304,13 +311,13 @@ const FALLBACK_NAVBAR_LINKS: NavLink[] = [
   { id: '2', location: 'navbar', label: 'Nosotros', href: '#nosotros', sort_order: 2, active: true },
   { id: '3', location: 'navbar', label: 'Soluciones', href: '#soluciones', sort_order: 3, active: true },
   { id: '4', location: 'navbar', label: 'Simulador', href: '#simulador-section', sort_order: 4, active: true },
+  { id: '5', location: 'navbar', label: 'Empresas', href: '/empresas', sort_order: 5, active: true },
 ];
 
 const FALLBACK_FOOTER_LINKS: NavLink[] = [
   { id: '5', location: 'footer', label: 'Inicio', href: '/#inicio', sort_order: 1, active: true },
   { id: '6', location: 'footer', label: 'Soluciones', href: '/#soluciones', sort_order: 2, active: true },
   { id: '7', location: 'footer', label: 'Simulador', href: '/#simulador-section', sort_order: 3, active: true },
-  { id: '8', location: 'footer', label: 'Proyectos', href: '/#proyectos', sort_order: 4, active: true },
 ];
 
 const FALLBACK_GUARANTEES: GuaranteeContent = {
@@ -724,6 +731,344 @@ export async function getTestimonials(): Promise<Testimonial[]> {
       return data as Testimonial[];
     },
     [] // No fallback — empty array if no testimonials yet
+  );
+}
+
+// ────────────────────────────────────────────────
+// EMPRESAS LANDING PAGE
+// ────────────────────────────────────────────────
+
+const FALLBACK_EMPRESAS_HERO: EmpresasHeroContent = {
+  badge: 'Energía Solar Empresarial',
+  headline: 'Reduce tus costos',
+  headlineAccent: 'eléctricos',
+  subheadline:
+    'Instalamos, operamos y monitoreamos tu sistema fotovoltaico con garantía de instalación y soporte técnico especializado.',
+  ctaPrimary: 'Evalúa tu proyecto',
+  ctaSecondary: 'Energía para tu hogar',
+};
+
+const FALLBACK_EMPRESAS_COST_PROBLEM: EmpresasCostProblemContent = {
+  tagline: 'Costos Eléctricos',
+  headline: 'Los costos eléctricos están',
+  headlineAccent: 'golpeando tus márgenes',
+  bulletPoints: [
+    'Tarifas eléctricas en alza que suben de forma sostenida.',
+    'Costos por kWh que disminuyen utilidades, especialmente en industrias, bodegas y PYMEs.',
+    'Alta dependencia de distribuidoras y exposición a volatilidad tarifaria.',
+    'Presión por cumplir estándares ESG y reducir huella de carbono en cadenas de suministro.',
+  ],
+};
+
+const FALLBACK_EMPRESAS_VALUE_PROP: EmpresasValuePropositionContent = {
+  tagline: 'Enercity',
+  headline: 'Enercity para',
+  headlineAccent: 'empresas y pymes',
+  description:
+    'Soluciones fotovoltaicas industriales con ingeniería de alto estándar. Somos especialistas en proyectos industriales y comerciales. Con más de 8 años en el rubro, diseñamos e instalamos sistemas fotovoltaicos llave en mano.',
+  points: [
+    { icon: 'Briefcase', text: 'Ingeniería y diseño técnico para tu negocio.' },
+    { icon: 'ShieldCheck', text: 'Instalación certificada y gestión completa SEC.' },
+    { icon: 'Zap', text: 'Equipos Huawei con garantía hasta 10 años y paneles 25.' },
+    { icon: 'Clock', text: 'Monitoreo 24/7 y servicio postventa real.' },
+    { icon: 'TrendingDown', text: 'Diferentes opciones de financiamiento / crédito verde.' },
+  ],
+  ctaText: 'Evaluar mi proyecto',
+  ctaHref: '#contacto',
+};
+
+const FALLBACK_EMPRESAS_BENEFIT_CARDS: EmpresasBenefitCardsContent = {
+  tagline: 'Beneficios',
+  headline: '¿Qué logras con una planta',
+  headlineAccent: 'solar industrial?',
+  cards: [
+    {
+      id: '1',
+      title: 'Reducción inmediata de costos',
+      summary: 'Impacto directo en OPEX desde el inicio.',
+      detail:
+        'Disminuye tu boleta eléctrica desde el primer mes con energía generada por tu propia planta.',
+      icon: 'TrendingDown',
+      color: '#F07E04',
+    },
+    {
+      id: '2',
+      title: 'Estabilidad ante alzas tarifarias',
+      summary: 'Menos volatilidad, más control financiero.',
+      detail:
+        'Fijas parte de tu costo eléctrico por más de 25 años, reduciendo exposición a volatilidad.',
+      icon: 'BarChart3',
+      color: '#154660',
+    },
+    {
+      id: '3',
+      title: 'Cumplimiento ESG',
+      summary: 'Mejor percepción y acceso a oportunidades.',
+      detail:
+        'Mejora tu imagen corporativa, cumple normativas y reduce la huella de carbono.',
+      icon: 'Leaf',
+      color: '#4AAF4D',
+    },
+    {
+      id: '4',
+      title: 'Operación continua y segura',
+      summary: 'Monitoreo y soporte para continuidad operacional.',
+      detail:
+        'Monitoreo en tiempo real, mantenimiento programado y soporte técnico especializado.',
+      icon: 'ShieldCheck',
+      color: '#F07E04',
+    },
+  ],
+};
+
+const FALLBACK_EMPRESAS_PROCESS: EmpresasProcessContent = {
+  tagline: 'Proceso',
+  headline: 'Un proceso claro, rápido y',
+  headlineAccent: 'diseñado para empresas',
+  steps: [
+    {
+      step: 1,
+      title: 'Reunión técnica y diagnóstico energético',
+      description:
+        'Revisamos tu consumo, boletas eléctricas, superficie disponible y factibilidad.',
+      icon: 'ClipboardList',
+    },
+    {
+      step: 2,
+      title: 'Diseño, instalación y certificación',
+      description:
+        'Diseñamos e instalamos tu planta con equipos certificados, en paralelo con la tramitaciones SEC.',
+      icon: 'Wrench',
+    },
+    {
+      step: 3,
+      title: 'Generación diaria y monitoreo 24/7',
+      description:
+        'Acceso a plataforma de monitoreo, reportes y soporte permanente.',
+      icon: 'Activity',
+    },
+  ],
+};
+
+const FALLBACK_EMPRESAS_WHATS_INCLUDED: EmpresasChecklistContent = {
+  tagline: 'Incluido',
+  headline: '¿Qué incluye tu proyecto',
+  headlineAccent: 'fotovoltaico?',
+  items: [
+    { title: 'Paneles solares industriales', description: 'Tier-1, garantía 25 años', icon: 'Sun' },
+    { title: 'Inversor Huawei', description: 'Con monitoreo integrado', icon: 'Cpu' },
+    { title: 'Cableado y protecciones industriales', description: 'Materiales certificados', icon: 'Cable' },
+    { title: 'Conexión y tramitación con distribuidora', description: 'Gestión completa', icon: 'Plug' },
+    { title: 'Certificación SEC', description: 'Cumplimiento normativo', icon: 'FileCheck' },
+    { title: 'Monitoreo 24/7 desde app y plataforma web', description: 'Control total', icon: 'MonitorSmartphone' },
+  ],
+};
+
+const FALLBACK_EMPRESAS_FAQ: { pregunta: string; respuesta: string }[] = [
+  {
+    pregunta: '¿Instalan sistemas On Grid u Off Grid?',
+    respuesta:
+      'Trabajamos principalmente con sistemas On Grid industriales, que permiten inyectar excedentes a la red. Para zonas sin conexión o con cortes frecuentes, evaluamos sistemas híbridos con respaldo de baterías.',
+  },
+  {
+    pregunta: '¿Cuánto dura la garantía?',
+    respuesta:
+      'Paneles solares hasta 25 años, inversores hasta 10 años según el fabricante. Adicionalmente entregamos garantía de instalación y soporte técnico postventa.',
+  },
+  {
+    pregunta: '¿Qué marca de inversores utilizan?',
+    respuesta:
+      'Huawei, Fronius, Sungrow, y otras marcas líderes del mercado con soporte técnico local y repuestos disponibles en Chile.',
+  },
+  {
+    pregunta: '¿Qué pasa si se corta la luz?',
+    respuesta:
+      'La planta se apaga por seguridad. En sistemas On Grid no hay generación sin red. Si necesitas respaldo ante cortes, evaluamos un sistema híbrido con baterías.',
+  },
+  {
+    pregunta: '¿Qué incluye la cotización?',
+    respuesta:
+      'Estudio de consumo, diseño preliminar, simulación de ahorro, propuesta técnica y económica detallada sin costo.',
+  },
+  {
+    pregunta: '¿Puedo mantener mi medidor actual?',
+    respuesta:
+      'Sólo si ya posees medidor inteligente. De lo contrario, gestionamos el cambio de medidor ante tu distribuidora como parte del proyecto.',
+  },
+];
+
+const FALLBACK_EMPRESAS_CONTACT: EmpresasContactContent = {
+  tagline: 'Contacto',
+  headline: 'Reduce tus costos eléctricos y',
+  headlineAccent: 'asegura tu operación',
+  description:
+    'Con energía solar tu empresa produce su propia electricidad, baja costos y gana independencia.',
+};
+
+// ────────────────────────────────────────────────
+// EMPRESAS FETCHER FUNCTIONS
+// ────────────────────────────────────────────────
+
+export async function getEmpresasHeroContent(): Promise<EmpresasHeroContent> {
+  return getCached<EmpresasHeroContent>(
+    'site_content:empresas_hero',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_hero')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_hero data');
+      validateStringFields(data.data as Record<string, unknown>, 'empresas_hero');
+      return data.data as EmpresasHeroContent;
+    },
+    FALLBACK_EMPRESAS_HERO
+  );
+}
+
+export async function getCostProblemContent(): Promise<EmpresasCostProblemContent> {
+  return getCached<EmpresasCostProblemContent>(
+    'site_content:empresas_cost_problem',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_cost_problem')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_cost_problem data');
+      const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'empresas_cost_problem');
+      return {
+        ...raw,
+        bulletPoints: normalizeStringArray(raw.bulletPoints),
+      } as EmpresasCostProblemContent;
+    },
+    FALLBACK_EMPRESAS_COST_PROBLEM
+  );
+}
+
+export async function getValuePropositionContent(): Promise<EmpresasValuePropositionContent> {
+  return getCached<EmpresasValuePropositionContent>(
+    'site_content:empresas_value_prop',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_value_prop')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_value_prop data');
+      const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'empresas_value_prop');
+      return {
+        ...raw,
+        points: normalizeArray<EmpresasValuePropositionContent['points'][number]>(raw.points),
+      } as EmpresasValuePropositionContent;
+    },
+    FALLBACK_EMPRESAS_VALUE_PROP
+  );
+}
+
+export async function getBenefitCardsContent(): Promise<EmpresasBenefitCardsContent> {
+  return getCached<EmpresasBenefitCardsContent>(
+    'site_content:empresas_benefit_cards',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_benefit_cards')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_benefit_cards data');
+      const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'empresas_benefit_cards');
+      return {
+        ...raw,
+        cards: normalizeArray<EmpresasBenefitCardsContent['cards'][number]>(raw.cards),
+      } as EmpresasBenefitCardsContent;
+    },
+    FALLBACK_EMPRESAS_BENEFIT_CARDS
+  );
+}
+
+export async function getProcessStepsContent(): Promise<EmpresasProcessContent> {
+  return getCached<EmpresasProcessContent>(
+    'site_content:empresas_process',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_process')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_process data');
+      const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'empresas_process');
+      return {
+        ...raw,
+        steps: normalizeArray<EmpresasProcessContent['steps'][number]>(raw.steps),
+      } as EmpresasProcessContent;
+    },
+    FALLBACK_EMPRESAS_PROCESS
+  );
+}
+
+export async function getWhatsIncludedContent(): Promise<EmpresasChecklistContent> {
+  return getCached<EmpresasChecklistContent>(
+    'site_content:empresas_whats_included',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_whats_included')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_whats_included data');
+      const raw = data.data as Record<string, unknown>;
+      validateStringFields(raw, 'empresas_whats_included');
+      return {
+        ...raw,
+        items: normalizeArray<EmpresasChecklistContent['items'][number]>(raw.items),
+      } as EmpresasChecklistContent;
+    },
+    FALLBACK_EMPRESAS_WHATS_INCLUDED
+  );
+}
+
+export async function getEmpresasFAQ(): Promise<{ pregunta: string; respuesta: string }[]> {
+  return getCached<{ pregunta: string; respuesta: string }[]>(
+    'site_content:empresas_faq',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_faq')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_faq data');
+      return data.data as { pregunta: string; respuesta: string }[];
+    },
+    FALLBACK_EMPRESAS_FAQ
+  );
+}
+
+export async function getEmpresasContactContent(): Promise<EmpresasContactContent> {
+  return getCached<EmpresasContactContent>(
+    'site_content:empresas_contact',
+    async () => {
+      const { data, error } = await supabase
+        .from('site_content')
+        .select('data')
+        .eq('section', 'empresas_contact')
+        .single();
+
+      if (error || !data?.data) throw error || new Error('No empresas_contact data');
+      validateStringFields(data.data as Record<string, unknown>, 'empresas_contact');
+      return data.data as EmpresasContactContent;
+    },
+    FALLBACK_EMPRESAS_CONTACT
   );
 }
 

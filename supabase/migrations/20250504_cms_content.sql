@@ -277,14 +277,14 @@ INSERT INTO public.nav_links (location, label, href, sort_order) VALUES
   ('navbar', 'Inicio', '#inicio', 1),
   ('navbar', 'Nosotros', '#nosotros', 2),
   ('navbar', 'Soluciones', '#soluciones', 3),
-  ('navbar', 'Simulador', '#simulador-section', 4);
+  ('navbar', 'Empresas', '/empresas', 4),
+  ('navbar', 'Simulador', '#simulador-section', 5);
 
 -- Footer links
 INSERT INTO public.nav_links (location, label, href, sort_order) VALUES
   ('footer', 'Inicio', '/#inicio', 1),
   ('footer', 'Soluciones', '/#soluciones', 2),
-  ('footer', 'Simulador', '/#simulador-section', 3),
-  ('footer', 'Proyectos', '/#proyectos', 4);
+  ('footer', 'Simulador', '/#simulador-section', 3);
 
 -- Contact email: add to existing settings table
 INSERT INTO public.settings (key, value, label) VALUES

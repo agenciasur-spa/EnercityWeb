@@ -1,0 +1,150 @@
+---
+import Layout from '../layouts/layout.astro';
+import { Navbar } from '../components/organisms/navbar';
+import { Hero } from '../components/organisms/hero';
+import { StatsBar } from '../components/organisms/stats-bar';
+import { TestimonialsCarousel } from '../components/organisms/testimonials-carousel';
+import { Footer } from '../components/organisms/footer';
+import { CostProblemSection } from '../components/organisms/empresas/cost-problem-section';
+import { ValuePropositionSection } from '../components/organisms/empresas/value-proposition-section';
+import { BenefitCards } from '../components/organisms/empresas/benefit-cards';
+import { ProcessSteps } from '../components/organisms/empresas/process-steps';
+import { WhatsIncludedChecklist } from '../components/organisms/empresas/whats-included-checklist';
+import { EmpresasContactForm } from '../components/organisms/empresas/empresas-contact-form';
+import type { NavLink, HeroContent } from '../types/content';
+import {
+  getStats,
+  getFooterContent,
+  getTestimonials,
+  getEmpresasHeroContent,
+  getCostProblemContent,
+  getValuePropositionContent,
+  getBenefitCardsContent,
+  getProcessStepsContent,
+  getWhatsIncludedContent,
+  getEmpresasFAQ,
+  getEmpresasContactContent,
+} from '../lib/content';
+
+// Hardcoded empresas-specific footer links
+const empresasFooterLinks: NavLink[] = [
+  { id: 'ef1', location: 'footer', label: 'Inicio', href: '/', sort_order: 1, active: true },
+  { id: 'ef2', location: 'footer', label: 'Empresas', href: '/empresas', sort_order: 2, active: true },
+  { id: 'ef3', location: 'footer', label: 'Contacto', href: '/empresas#contacto', sort_order: 3, active: true },
+];
+
+// Fetch ALL dynamic content server-side
+const [
+  empresasHero,
+  costProblem,
+  valueProp,
+  benefitCards,
+  processSteps,
+  whatsIncluded,
+  empresasFAQ,
+  empresasContactContent,
+  stats,
+  footerContent,
+  testimonials,
+] = await Promise.all([
+  getEmpresasHeroContent(),
+  getCostProblemContent(),
+  getValuePropositionContent(),
+  getBenefitCardsContent(),
+  getProcessStepsContent(),
+  getWhatsIncludedContent(),
+  getEmpresasFAQ(),
+  getEmpresasContactContent(),
+  getStats(),
+  getFooterContent(),
+  getTestimonials(),
+]);
+
+// Construct HeroContent-compatible object from empresas hero data
+// The existing Hero component expects card fields; provide empresas-relevant values
+const heroContent: HeroContent = {
+  badge: empresasHero.badge,
+  headline: empresasHero.headline,
+  headlineAccent: empresasHero.headlineAccent,
+  subheadline: empresasHero.subheadline,
+  ctaPrimary: empresasHero.ctaPrimary,
+  ctaSecondary: empresasHero.ctaSecondary,
+  cardTitle: 'Garantía',
+  cardSubtitle: 'Instalación Industrial',
+  cardStats: [
+    { value: '25 años', label: 'Garantía de paneles' },
+    { value: '10 años', label: 'Garantía de inversor' },
+  ],
+  backgroundImage:
+    'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80',
+};
+
+const seoTitle = 'Enercity para Empresas | Energía Solar Industrial';
+const seoDescription =
+  'Reduce tus costos eléctricos con energía solar para empresas. Sin inversión inicial, garantía de instalación y soporte especializado.';
+---
+
+<Layout title={seoTitle} description={seoDescription}>
+  <Navbar client:load variant="empresas" />
+
+  <main>
+    <Hero client:load content={heroContent} />
+    <div id="costos">
+      <CostProblemSection client:visible content={costProblem} />
+    </div>
+    <ValuePropositionSection client:visible content={valueProp} />
+    <StatsBar client:visible stats={stats} />
+    <div id="beneficios">
+      <BenefitCards client:visible content={benefitCards} />
+    </div>
+    <div id="proceso">
+      <ProcessSteps client:visible content={processSteps} />
+    </div>
+    <WhatsIncludedChecklist client:visible content={whatsIncluded} />
+    {testimonials.length > 0 && (
+      <TestimonialsCarousel client:visible testimonials={testimonials} />
+    )}
+
+    {/* FAQ — inline accordion */}
+    {empresasFAQ.length > 0 && (
+      <section class="py-24 bg-white" id="faq">
+        <div class="container mx-auto px-6 max-w-3xl">
+          <div class="text-center mb-12">
+            <p class="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]">
+              Preguntas Frecuentes
+            </p>
+            <h2 class="text-3xl md:text-4xl lg:text-5xl font-semibold font-sans text-[#154660] tracking-tighter">
+              Resolvemos tus dudas
+            </h2>
+          </div>
+          <div class="space-y-4">
+            {empresasFAQ.map((faq) => (
+              <details class="group border border-gray-200 rounded-2xl overflow-hidden bg-white hover:border-[#F07E04]/30 transition-colors">
+                <summary class="flex justify-between items-center font-bold cursor-pointer list-none p-5 bg-gray-50 hover:bg-gray-100 transition-colors text-[#154660]">
+                  <span class="pr-4">{faq.pregunta}</span>
+                  <svg
+                    class="shrink-0 transition-transform group-open:rotate-180 text-[#F07E04]"
+                    fill="none" height="24" width="24"
+                    shape-rendering="geometricPrecision"
+                    stroke="currentColor" stroke-width="1.5"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M6 9l6 6 6-6"></path>
+                  </svg>
+                </summary>
+                <div class="text-gray-600 px-5 pb-5 pt-3 leading-relaxed">
+                  {faq.respuesta}
+                </div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <EmpresasContactForm client:load content={empresasContactContent} />
+  </main>
+
+  <Footer client:visible links={empresasFooterLinks} content={footerContent} />
+</Layout>

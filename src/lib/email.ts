@@ -642,3 +642,352 @@ export async function sendContactEmails(data: ContactEmailData) {
     console.error('[Email] Error general (contacto):', err);
   }
 }
+
+// ────────────────────────────────────────────────
+// Enterprise (Empresas) contact emails
+// ────────────────────────────────────────────────
+
+interface EnterpriseContactEmailData {
+  nombre: string;
+  email: string;
+  telefono: string;
+  empresa: string;
+  rut: string;
+  costoElectrico: string;
+  region: string;
+  metodoContacto: string;
+  mensaje?: string;
+}
+
+export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailData) {
+  const settings = await getSettings();
+  const emailFromName = (settings.email_from_name as string) || 'Enercity';
+  const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
+
+  const { nombre, email, telefono, empresa, rut, costoElectrico, region, metodoContacto, mensaje } =
+    data;
+
+  const usuarioHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#154660;padding:32px 40px;text-align:center;">
+              <div style="margin-bottom:12px;">
+                <img src="cid:logo" alt="Enercity Logo" style="height:48px;width:auto;display:inline-block;" />
+              </div>
+              <p style="margin:0;font-size:13px;color:#ffffff;opacity:0.7;letter-spacing:0.5px;">
+                Soluciones Energéticas para Empresas
+              </p>
+            </td>
+          </tr>
+
+          <!-- Saludo -->
+          <tr>
+            <td style="padding:40px 40px 24px;">
+              <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#154660;">
+                ¡Hola, ${nombre}!
+              </h2>
+              <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.6;">
+                Gracias por contactar a <strong>Enercity</strong>. Hemos recibido la solicitud de <strong>${empresa}</strong>. Un asesor empresarial especializado se pondrá en contacto contigo en las próximas <strong>24 horas hábiles</strong> vía <strong>${metodoContacto}</strong>.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Resumen -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+                <tr>
+                  <td colspan="2" style="padding:16px 20px;background:#F07E04;">
+                    <span style="font-size:11px;font-weight:800;color:#ffffff;letter-spacing:1.5px;text-transform:uppercase;">
+                      Resumen de tu Solicitud Empresarial
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
+                    <span style="font-size:13px;color:#718096;font-weight:500;">Empresa</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;text-align:right;">
+                    <span style="font-size:14px;color:#154660;font-weight:700;">${empresa}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
+                    <span style="font-size:13px;color:#718096;font-weight:500;">RUT</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;text-align:right;">
+                    <span style="font-size:14px;color:#154660;font-weight:700;">${rut}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
+                    <span style="font-size:13px;color:#718096;font-weight:500;">Costo Eléctrico Mensual</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;text-align:right;">
+                    <span style="font-size:14px;color:#154660;font-weight:700;">${costoElectrico}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
+                    <span style="font-size:13px;color:#718096;font-weight:500;">Región</span>
+                  </td>
+                  <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;text-align:right;">
+                    <span style="font-size:14px;color:#154660;font-weight:700;">${region}</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 20px;">
+                    <span style="font-size:13px;color:#718096;font-weight:500;">Método de Contacto Preferido</span>
+                  </td>
+                  <td style="padding:14px 20px;text-align:right;">
+                    <span style="font-size:14px;color:#154660;font-weight:700;">${metodoContacto}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Qué sigue -->
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <h3 style="margin:0 0 16px;font-size:13px;font-weight:800;color:#154660;letter-spacing:1px;text-transform:uppercase;">
+                ¿Qué sigue?
+              </h3>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                ${[
+                  ['✓', 'Un asesor empresarial revisará tu solicitud'],
+                  ['✓', 'Análisis de viabilidad técnica y económica'],
+                  ['✓', 'Te contactaremos por ' + metodoContacto + ' en 24 horas hábiles'],
+                  ['✓', 'Propuesta comercial personalizada para tu empresa'],
+                ]
+                  .map(
+                    ([icon, text]) => `
+                <tr>
+                  <td style="padding:5px 0;width:28px;">
+                    <span style="color:#F07E04;font-size:16px;">${icon}</span>
+                  </td>
+                  <td style="padding:5px 0;">
+                    <span style="font-size:14px;color:#4a5568;">${text}</span>
+                  </td>
+                </tr>`,
+                  )
+                  .join('')}
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:0 40px 40px;text-align:center;">
+              <div style="display:inline-block;background:#F07E04;border-radius:12px;padding:16px 40px;">
+                <span style="font-size:15px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">
+                  Un asesor te contactará en 24 horas hábiles
+                </span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
+                Enercity · paneles-solares.cl<br>
+                Soluciones solares para empresas e industria.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  const managerHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#1a1a1a;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#1a1a1a;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;border-top:4px solid #F07E04;">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#154660;padding:20px 32px;">
+              <span style="font-size:11px;font-weight:900;color:#F07E04;letter-spacing:2px;text-transform:uppercase;">
+                🏢 Nueva Consulta Empresarial
+              </span>
+            </td>
+          </tr>
+
+          <!-- Contacto rápido -->
+          <tr>
+            <td style="padding:28px 32px 20px;background:#fffbeb;border-bottom:1px solid #fed7aa;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px;">Contacto</span>
+                    <span style="font-size:20px;font-weight:800;color:#154660;">${nombre}</span>
+                  </td>
+                  <td align="right">
+                    <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:4px;">Empresa</span>
+                    <span style="font-size:20px;font-weight:800;color:#154660;">${empresa}</span>
+                  </td>
+                </tr>
+              </table>
+              <div style="margin-top:16px;display:flex;gap:24px;flex-wrap:wrap;">
+                <div>
+                  <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;">Email</span>
+                  <a href="mailto:${email}" style="font-size:14px;font-weight:600;color:#2b6cb0;text-decoration:none;">${email}</a>
+                </div>
+                <div>
+                  <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;">Teléfono</span>
+                  <span style="font-size:14px;font-weight:700;color:#154660;">${telefono}</span>
+                </div>
+                <div>
+                  <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;">RUT</span>
+                  <span style="font-size:14px;font-weight:700;color:#154660;">${rut}</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Datos del contacto -->
+          <tr>
+            <td style="padding:24px 32px;">
+              <h3 style="margin:0 0 16px;font-size:11px;font-weight:800;color:#718096;letter-spacing:1.5px;text-transform:uppercase;">
+                Datos de la Consulta
+              </h3>
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafc;border-radius:8px;overflow:hidden;">
+                ${[
+                  ['Empresa', empresa],
+                  ['RUT', rut],
+                  ['Contacto', nombre],
+                  ['Email', email],
+                  ['Teléfono', telefono],
+                  ['Costo Eléctrico', costoElectrico],
+                  ['Región', region],
+                  ['Método de Contacto', metodoContacto],
+                ]
+                  .map(
+                    ([label, val], i, arr) => `
+                <tr${i === arr.length - 1 && !mensaje ? ' style="background:#F07E04;"' : ''}>
+                  <td style="padding:12px 16px;border-bottom:${i < arr.length - 1 ? '1px solid #e2e8f0' : 'none'};">
+                    <span style="font-size:13px;color:${i === arr.length - 1 && !mensaje ? '#ffffff' : '#718096'};font-weight:500;">${label}</span>
+                  </td>
+                  <td style="padding:12px 16px;border-bottom:${i < arr.length - 1 ? '1px solid #e2e8f0' : 'none'};text-align:right;">
+                    <span style="font-size:14px;font-weight:700;color:${i === arr.length - 1 && !mensaje ? '#ffffff' : '#154660'};">${val}</span>
+                  </td>
+                </tr>`,
+                  )
+                  .join('')}
+              </table>
+            </td>
+          </tr>
+
+          ${
+            mensaje
+              ? `
+          <!-- Mensaje del contacto -->
+          <tr>
+            <td style="padding:0 32px 24px;">
+              <h3 style="margin:0 0 12px;font-size:11px;font-weight:800;color:#718096;letter-spacing:1.5px;text-transform:uppercase;">
+                Mensaje
+              </h3>
+              <div style="background:#f7fafc;border-radius:8px;padding:16px 20px;border-left:4px solid #F07E04;">
+                <p style="margin:0;font-size:14px;color:#154660;line-height:1.6;">${mensaje}</p>
+              </div>
+            </td>
+          </tr>`
+              : ''
+          }
+
+          <!-- Acciones -->
+          <tr>
+            <td style="padding:0 32px 32px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:8px;">
+                    <a href="tel:${telefono.replace(/\s/g, '')}" style="display:block;background:#4AAF4D;text-align:center;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;letter-spacing:0.5px;">
+                      📞 LLAMAR AHORA
+                    </a>
+                  </td>
+                  <td style="padding-left:8px;">
+                    <a href="mailto:${email}" style="display:block;background:#154660;text-align:center;padding:14px 20px;border-radius:8px;font-size:14px;font-weight:800;color:#ffffff;text-decoration:none;letter-spacing:0.5px;">
+                      ✉️ ENVIAR EMAIL
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f7fafc;padding:16px 32px;text-align:center;border-top:1px solid #e2e8f0;">
+              <p style="margin:0;font-size:11px;color:#a0aec0;">
+                Generado automáticamente por Enercity · Formulario Empresarial
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const [usuarioRes, managerRes] = await Promise.all([
+      resend.emails.send({
+        from: `${emailFromName} <${emailFromAddress}>`,
+        to: [email],
+        subject: 'Gracias por contactar Enercity — Soluciones Empresariales',
+        html: usuarioHtml,
+        attachments: [
+          {
+            filename: 'logo.png',
+            content: Buffer.from(logoBuffer),
+            contentType: 'image/png',
+          },
+        ],
+      }),
+      resend.emails.send({
+        from: `${emailFromName} <${emailFromAddress}>`,
+        to: ['mojeda@agenciasur.cl'],
+        subject: `Nueva consulta empresarial: ${empresa} - ${nombre}`,
+        html: managerHtml,
+      }),
+    ]);
+
+    if (usuarioRes.error) console.error('[Email] Error usuario (empresas):', usuarioRes.error);
+    else console.log(`[Email] Enviado a usuario empresarial: ${email}`);
+
+    if (managerRes.error)
+      console.error('[Email] Error manager (empresas):', managerRes.error);
+    else console.log('[Email] Enviado a encargado empresarial: mojeda@agenciasur.cl');
+
+    return { usuario: usuarioRes, manager: managerRes };
+  } catch (err) {
+    console.error('[Email] Error general (empresas):', err);
+  }
+}

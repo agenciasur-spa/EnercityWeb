@@ -126,3 +126,77 @@ export interface Testimonial {
   sort_order: number;
   active: boolean;
 }
+
+// ────────────────────────────────────────────────
+// EMPRESAS LANDING PAGE
+// ────────────────────────────────────────────────
+
+export interface EmpresasHeroContent {
+  badge: string;
+  headline: string;
+  headlineAccent: string;
+  subheadline: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+}
+
+export interface EmpresasCostProblemContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  bulletPoints: string[];
+}
+
+export interface EmpresasValuePropositionContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  description: string;
+  points: { icon: string; text: string }[];
+  ctaText: string;
+  ctaHref: string;
+}
+
+export interface EmpresasBenefitCard {
+  id: string;
+  title: string;
+  summary: string;
+  detail: string;
+  icon: string;
+  color: string;
+}
+
+export interface EmpresasBenefitCardsContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  cards: EmpresasBenefitCard[];
+}
+
+export interface EmpresasProcessStep {
+  step: number;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface EmpresasProcessContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  steps: EmpresasProcessStep[];
+}
+
+export interface EmpresasChecklistContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  items: { title: string; description: string; icon: string }[];
+}
+
+export interface EmpresasContactContent {
+  tagline: string;
+  headline: string;
+  headlineAccent: string;
+  description: string;
+}

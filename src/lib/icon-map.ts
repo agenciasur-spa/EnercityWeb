@@ -28,6 +28,16 @@ import {
   Check,
   Building2,
   Leaf,
+  Briefcase,
+  TrendingDown,
+  Clock,
+  FileCheck,
+  ClipboardList,
+  Activity,
+  Cpu,
+  Cable,
+  Plug,
+  MonitorSmartphone,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -57,6 +67,16 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Check,
   Building2,
   Leaf,
+  Briefcase,
+  TrendingDown,
+  Clock,
+  FileCheck,
+  ClipboardList,
+  Activity,
+  Cpu,
+  Cable,
+  Plug,
+  MonitorSmartphone,
 } as const;
 
 /**
