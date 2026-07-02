@@ -87,10 +87,12 @@ const enterpriseContactSchema = z.object({
     .email('Email inválido')
     .transform((v) => v.trim().slice(0, 255)),
   telefono: z
-    .string()
-    .optional()
-    .or(z.literal(''))
-    .transform((v) => v?.trim().slice(0, 50) || undefined),
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (!v) return undefined;
+      const trimmed = v.trim();
+      return trimmed === '' ? undefined : trimmed.slice(0, 50);
+    }),
   empresa: z
     .string()
     .min(2, 'Nombre de empresa demasiado corto')
@@ -109,9 +111,12 @@ const enterpriseContactSchema = z.object({
     errorMap: () => ({ message: 'Selecciona un método de contacto' }),
   }),
   mensaje: z
-    .string()
-    .optional()
-    .transform((v) => v?.trim().slice(0, 2000) || undefined),
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (!v) return undefined;
+      const trimmed = v.trim();
+      return trimmed === '' ? undefined : trimmed.slice(0, 2000);
+    }),
   website: z
     .string()
     .optional()

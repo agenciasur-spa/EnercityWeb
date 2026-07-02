@@ -141,7 +141,11 @@ export function EmpresasContactForm({ content }: EmpresasContactFormProps) {
       const res = await fetch('/api/empresas-contacts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, captchaToken, timeTaken }),
+        body: JSON.stringify({
+          ...formData,
+          captchaToken: captchaToken || '',
+          timeTaken,
+        }),
       });
 
       const data = await res.json();
