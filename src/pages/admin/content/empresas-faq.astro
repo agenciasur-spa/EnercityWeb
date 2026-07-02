@@ -1,0 +1,37 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import FAQTable from '@/components/admin/content/faq-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('site_content')
+  .select('data')
+  .eq('section', 'empresas_faq')
+  .single();
+
+if (error) {
+  console.error('[empresas-faq.astro] Supabase query error:', error);
+}
+
+type FAQItem = {
+  pregunta: string;
+  respuesta: string;
+};
+
+const faqs = (data?.data ?? []) as FAQItem[];
+---
+
+<AdminLayout title="FAQ Empresas — Enercity Admin">
+  <FAQTable client:load faqs={faqs} onSave={async (newFaqs) => {
+    const { error } = await supabaseAdmin
+      .from('site_content')
+      .update({ data: newFaqs })
+      .eq('section', 'empresas_faq');
+
+    if (error) {
+      throw error;
+    }
+  }} />
+</AdminLayout>

@@ -1,0 +1,34 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import EmpresasContactsTable from '@/components/admin/empresas-contacts-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, count } = await supabaseAdmin
+  .from('enterprise_contacts')
+  .select('id, nombre, email, telefono, empresa, rut, costo_electrico, region, metodo_contacto, mensaje, estado, created_at', { count: 'exact' })
+  .order('created_at', { ascending: false });
+
+type EnterpriseContactRow = {
+  id: string;
+  nombre: string;
+  email: string;
+  telefono: string | null;
+  empresa: string;
+  rut: string;
+  costo_electrico: string;
+  region: string;
+  metodo_contacto: string;
+  mensaje: string | null;
+  estado: string;
+  created_at: string;
+};
+
+const contacts = (data ?? []) as unknown as EnterpriseContactRow[];
+const total = count ?? 0;
+---
+
+<AdminLayout title="Contactos Empresariales — Enercity Admin">
+  <EmpresasContactsTable client:load contacts={contacts} total={total} />
+</AdminLayout>

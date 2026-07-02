@@ -15,6 +15,7 @@ type SiteContentRow = {
 
 interface SectionsEditorProps {
   sections: SiteContentRow[];
+  sectionFilter?: 'principal' | 'empresas';
 }
 
 type SaveState = 'idle' | 'saving' | 'success' | 'error';
@@ -86,13 +87,93 @@ const SECTION_FIELDS: Record<string, { title: string; fields: FieldDef[] }> = {
 
 const SECTION_ORDER = ['hero', 'projects_section', 'solutions_section', 'guarantees', 'contact_cta', 'footer'];
 
-export default function SectionsEditor({ sections }: SectionsEditorProps) {
+const EMPRESAS_SECTION_FIELDS: Record<string, { title: string; fields: FieldDef[] }> = {
+  empresas_hero: {
+    title: 'Hero',
+    fields: [
+      { key: 'badge', label: 'Badge', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+      { key: 'subheadline', label: 'Subtítulo', type: 'textarea' },
+      { key: 'ctaPrimary', label: 'CTA Principal', type: 'text' },
+      { key: 'ctaSecondary', label: 'CTA Secundario', type: 'text' },
+    ],
+  },
+  empresas_cost_problem: {
+    title: 'Problema de Costos',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+    ],
+  },
+  empresas_value_prop: {
+    title: 'Propuesta de Valor',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+      { key: 'description', label: 'Descripción', type: 'textarea' },
+      { key: 'ctaText', label: 'Texto CTA', type: 'text' },
+      { key: 'ctaHref', label: 'Link CTA', type: 'text' },
+    ],
+  },
+  empresas_benefit_cards: {
+    title: 'Cards de Beneficios',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+    ],
+  },
+  empresas_process: {
+    title: 'Proceso',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+    ],
+  },
+  empresas_whats_included: {
+    title: 'Qué Incluye',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+    ],
+  },
+  empresas_contact: {
+    title: 'Sección Contacto',
+    fields: [
+      { key: 'tagline', label: 'Tagline', type: 'text' },
+      { key: 'headline', label: 'Título', type: 'text' },
+      { key: 'headlineAccent', label: 'Título (acento)', type: 'text' },
+      { key: 'description', label: 'Descripción', type: 'textarea' },
+    ],
+  },
+};
+
+const EMPRESAS_SECTION_ORDER = [
+  'empresas_hero',
+  'empresas_cost_problem',
+  'empresas_value_prop',
+  'empresas_benefit_cards',
+  'empresas_process',
+  'empresas_whats_included',
+  'empresas_contact',
+];
+
+export default function SectionsEditor({ sections, sectionFilter }: SectionsEditorProps) {
+  const isEmpresas = sectionFilter === 'empresas';
+  const fieldsMap = isEmpresas ? EMPRESAS_SECTION_FIELDS : SECTION_FIELDS;
+  const order = isEmpresas ? EMPRESAS_SECTION_ORDER : SECTION_ORDER;
+
   // Build a map: section -> data (stored as state for proper dirty tracking)
   const initialMap = Object.fromEntries(sections.map((s) => [s.section, s.data]));
 
   const [savedData, setSavedData] = useState<Record<string, Record<string, unknown>>>(initialMap);
   const [sectionData, setSectionData] = useState<Record<string, Record<string, unknown>>>(initialMap);
-  const [activeTab, setActiveTab] = useState<string>('hero');
+  const [activeTab, setActiveTab] = useState<string>(order[0] ?? 'hero');
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -189,7 +270,9 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#154660]">Secciones del Sitio</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-[#154660]">
+          {isEmpresas ? 'Secciones de Empresas' : 'Secciones del Sitio'}
+        </h1>
         <p className="text-sm text-muted-foreground">
           Editá el contenido de cada sección. Los cambios se reflejan en el sitio en hasta 5 minutos.
         </p>
@@ -197,8 +280,8 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b">
-        {SECTION_ORDER.map((section) => {
-          const config = SECTION_FIELDS[section];
+        {order.map((section) => {
+          const config = fieldsMap[section];
           if (!config) return null;
           const changed = hasChanges(section);
           return (
@@ -221,9 +304,9 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
       </div>
 
       {/* Active section editor */}
-      {SECTION_ORDER.map((section) => {
+      {order.map((section) => {
         if (section !== activeTab) return null;
-        const config = SECTION_FIELDS[section];
+        const config = fieldsMap[section];
         if (!config) return null;
 
         const state = saveStates[section] ?? 'idle';
@@ -399,6 +482,77 @@ export default function SectionsEditor({ sections }: SectionsEditorProps) {
                   { key: 'icon', label: 'Icono' },
                   { key: 'href', label: 'URL' },
                   { key: 'label', label: 'Label' },
+                ]}
+                onChange={(field, items) => handleChange(section, field, items)}
+              />
+            )}
+
+            {section === 'empresas_cost_problem' && (
+              <ArrayEditor
+                label="Bullets de Problema"
+                data={data}
+                field="bulletPoints"
+                subfields={[
+                  { key: 'text', label: 'Texto' },
+                ]}
+                onChange={(field, items) => handleChange(section, field, items)}
+              />
+            )}
+
+            {section === 'empresas_value_prop' && (
+              <ArrayEditor
+                label="Puntos de Valor"
+                data={data}
+                field="points"
+                subfields={[
+                  { key: 'icon', label: 'Icono' },
+                  { key: 'text', label: 'Texto' },
+                ]}
+                onChange={(field, items) => handleChange(section, field, items)}
+              />
+            )}
+
+            {section === 'empresas_benefit_cards' && (
+              <ArrayEditor
+                label="Cards de Beneficios"
+                data={data}
+                field="cards"
+                subfields={[
+                  { key: 'id', label: 'ID' },
+                  { key: 'title', label: 'Título' },
+                  { key: 'summary', label: 'Resumen' },
+                  { key: 'detail', label: 'Detalle' },
+                  { key: 'icon', label: 'Icono' },
+                  { key: 'color', label: 'Color' },
+                ]}
+                onChange={(field, items) => handleChange(section, field, items)}
+              />
+            )}
+
+            {section === 'empresas_process' && (
+              <ArrayEditor
+                label="Pasos del Proceso"
+                data={data}
+                field="steps"
+                subfields={[
+                  { key: 'step', label: 'Número' },
+                  { key: 'title', label: 'Título' },
+                  { key: 'description', label: 'Descripción' },
+                  { key: 'icon', label: 'Icono' },
+                ]}
+                onChange={(field, items) => handleChange(section, field, items)}
+              />
+            )}
+
+            {section === 'empresas_whats_included' && (
+              <ArrayEditor
+                label="Items Incluidos"
+                data={data}
+                field="items"
+                subfields={[
+                  { key: 'title', label: 'Título' },
+                  { key: 'description', label: 'Descripción' },
+                  { key: 'icon', label: 'Icono' },
                 ]}
                 onChange={(field, items) => handleChange(section, field, items)}
               />

@@ -25,5 +25,5 @@ const sections = (data ?? []) as unknown as SiteContentRow[];
 ---
 
 <AdminLayout title="Secciones — Enercity Admin">
-  <SectionsEditor client:load sections={sections} />
+  <SectionsEditor client:load sections={sections} sectionFilter="principal" />
 </AdminLayout>

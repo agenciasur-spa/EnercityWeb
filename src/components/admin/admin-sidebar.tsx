@@ -12,6 +12,7 @@ import {
   FileText,
   HelpCircle,
   MessageSquareQuote,
+  Briefcase,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -33,10 +34,11 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
       { href: '/admin/leads', label: 'Leads', icon: Users },
       { href: '/admin/contacts', label: 'Contactos', icon: Mail },
+      { href: '/admin/empresas-contacts', label: 'Contactos Empresariales', icon: Briefcase },
     ],
   },
   {
-    label: 'Contenido',
+    label: 'Contenido — Principal',
     items: [
       { href: '/admin/content/stats', label: 'Estadísticas', icon: BarChart3 },
       { href: '/admin/content/sections', label: 'Secciones', icon: FileText },
@@ -45,6 +47,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/content/testimonials', label: 'Testimonios', icon: MessageSquareQuote },
       { href: '/admin/content/faq', label: 'FAQ', icon: HelpCircle },
       { href: '/admin/content/nav', label: 'Navegación', icon: Link },
+    ],
+  },
+  {
+    label: 'Contenido — Empresas',
+    items: [
+      { href: '/admin/content/empresas-sections', label: 'Secciones Empresas', icon: FileText },
+      { href: '/admin/content/empresas-faq', label: 'FAQ Empresas', icon: HelpCircle },
     ],
   },
   {
