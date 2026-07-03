@@ -10,6 +10,10 @@
  */
 
 const gtmId = import.meta.env.PUBLIC_GTM_ID;
+// Debug: log en build time
+if (!gtmId) {
+  console.warn('[GTM] PUBLIC_GTM_ID is not defined');
+}
 const gtmScript = gtmId ? `
 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
