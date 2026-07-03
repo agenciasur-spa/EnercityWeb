@@ -88,7 +88,7 @@ const seoDescription =
   <Navbar client:load variant="empresas" />
 
   <main>
-    <Hero client:load content={heroContent} />
+    <Hero client:load content={heroContent} scrollTarget="contacto" />
     <div id="costos">
       <CostProblemSection client:visible content={costProblem} />
     </div>
@@ -143,7 +143,9 @@ const seoDescription =
       </section>
     )}
 
-    <EmpresasContactForm client:load content={empresasContactContent} />
+    <div id="contacto">
+      <EmpresasContactForm client:load content={empresasContactContent} />
+    </div>
   </main>
 
   <Footer client:visible links={empresasFooterLinks} content={footerContent} />

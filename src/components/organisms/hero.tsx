@@ -5,9 +5,10 @@ import type { HeroContent } from '../../types/content';
 
 interface HeroProps {
   content: HeroContent;
+  scrollTarget?: string;
 }
 
-export function Hero({ content }: HeroProps) {
+export function Hero({ content, scrollTarget = 'simulador-section' }: HeroProps) {
   const { backgroundImage, backgroundVideo } = content;
 
   // Variables para el efecto Parallax del mouse
@@ -25,8 +26,8 @@ export function Hero({ content }: HeroProps) {
     mouseY.set(clientY - innerHeight / 2);
   }
 
-  const scrollToSimulator = () => {
-    const element = document.getElementById('simulador-section');
+  const scrollToTarget = () => {
+    const element = document.getElementById(scrollTarget);
     element?.scrollIntoView({ behavior: 'smooth' });
   };
 
@@ -120,12 +121,12 @@ export function Hero({ content }: HeroProps) {
               className="flex flex-col sm:flex-row gap-5"
             >
               {content.ctaPrimary && (
-                <motion.button 
-                  onClick={scrollToSimulator} 
-                  whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-                  whileTap={{ scale: 0.97 }}
-                  className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#4AAF4D] hover:bg-[#3d8f3f] transition-colors shadow-2xl shadow-[#4AAF4D]/40"
-                >
+            <motion.button 
+              onClick={scrollToTarget} 
+              whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+              whileTap={{ scale: 0.97 }}
+              className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#4AAF4D] hover:bg-[#3d8f3f] transition-colors shadow-2xl shadow-[#4AAF4D]/40"
+            >
                   {content.ctaPrimary}
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                 </motion.button>
