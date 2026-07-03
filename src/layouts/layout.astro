@@ -2,7 +2,8 @@
 import '../styles/global.css';
 import { getBusinessInfo } from '../lib/content';
 import WhatsAppFloat from '../components/atoms/whatsapp-float.astro';
-import GoogleAnalytics from '../components/GoogleAnalytics.astro';
+import GTM from '../components/GTM.astro';
+import GTMNoscript from '../components/GTMNoscript.astro';
 
 interface Props {
   title: string;
@@ -167,10 +168,12 @@ const jsonLd = {
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-    <!-- Google Analytics -->
-    <GoogleAnalytics />
+    <!-- Google Tag Manager -->
+    <GTM />
   </head>
   <body class="min-h-screen bg-background font-sans antialiased">
+    <!-- Google Tag Manager (noscript) -->
+    <GTMNoscript />
     <slot />
     <WhatsAppFloat />
   </body>

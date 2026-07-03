@@ -1,0 +1,31 @@
+---
+/**
+ * Google Tag Manager Component
+ * 
+ * GTM acts as a container for GA4, Google Ads, and other marketing tags.
+ * Configure GA4 (G-XXXXX) and Google Ads (AW-XXXXX) from GTM dashboard.
+ * 
+ * Usage: Add this component to your layout and set PUBLIC_GTM_ID in .env
+ * Example: PUBLIC_GTM_ID=GTM-XXXXXXX
+ * 
+ * This component provides two parts:
+ * 1. Head script - loads GTM (add to <head>)
+ * 2. Body noscript fallback - for users with JS disabled (add after <body>)
+ */
+
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+---
+
+{gtmId && (
+  <>
+    <!-- Google Tag Manager (Head) -->
+    <script is:inline define:vars={{ gtmId }}>
+      (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','{gtmId}');
+    </script>
+    <!-- End Google Tag Manager -->
+  </>
+)}

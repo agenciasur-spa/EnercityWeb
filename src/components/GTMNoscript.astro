@@ -1,0 +1,25 @@
+---
+/**
+ * Google Tag Manager Noscript Component
+ * 
+ * Fallback for users with JavaScript disabled.
+ * Add this immediately after <body> tag.
+ * 
+ * Usage: <GTMNoscript />
+ */
+
+const gtmId = import.meta.env.PUBLIC_GTM_ID;
+---
+
+{gtmId && (
+  <!-- Google Tag Manager (noscript) -->
+  <noscript>
+    <iframe
+      src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+      height="0"
+      width="0"
+      style="display:none;visibility:hidden"
+    />
+  </noscript>
+  <!-- End Google Tag Manager (noscript) -->
+)}
