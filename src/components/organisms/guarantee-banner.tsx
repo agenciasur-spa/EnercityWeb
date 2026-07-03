@@ -26,23 +26,32 @@ export function GuaranteeBanner({ content }: GuaranteeBannerProps) {
       
       <div className="container mx-auto px-6 relative z-10">
         {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="text-center max-w-2xl mx-auto mb-16"
-        >
-          <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#4AAF4D]">
-            {content.headerTag}
-          </p>
-          <h2 className="text-4xl md:text-5xl font-semibold font-sans text-white mb-6 leading-tight">
-            {content.headerTitle} <span style={{ color: '#F09C0A' }}>{content.headerTitleAccent}</span>
-          </h2>
-          <p className="text-white/60 text-lg">
-            {content.headerDescription}
-          </p>
-        </motion.div>
+        {(content.headerTag || content.headerTitle || content.headerTitleAccent || content.headerDescription) && (
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center max-w-2xl mx-auto mb-16"
+          >
+            {content.headerTag && (
+              <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#4AAF4D]">
+                {content.headerTag}
+              </p>
+            )}
+            {(content.headerTitle || content.headerTitleAccent) && (
+              <h2 className="text-4xl md:text-5xl font-semibold font-sans text-white mb-6 leading-tight">
+                {content.headerTitle && <>{content.headerTitle} </>}
+                {content.headerTitleAccent && <span style={{ color: '#F09C0A' }}>{content.headerTitleAccent}</span>}
+              </h2>
+            )}
+            {content.headerDescription && (
+              <p className="text-white/60 text-lg">
+                {content.headerDescription}
+              </p>
+            )}
+          </motion.div>
+        )}
 
         {/* Guarantee Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">

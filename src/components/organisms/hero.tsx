@@ -77,16 +77,18 @@ export function Hero({ content }: HeroProps) {
         <div className="max-w-4xl">
           
           {/* Badge de confianza */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-3 px-4 py-2 rounded-full mb-8 bg-white/10 backdrop-blur-md border border-white/20 shadow-xl"
-          >
-            <div className="w-2.5 h-2.5 rounded-full bg-[#4AAF4D] animate-pulse" />
-            <span className="text-xs md:text-sm font-black font-sans tracking-[0.2em] uppercase text-white">
-              {content.badge}
-            </span>
-          </motion.div>
+          {content.badge && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="inline-flex items-center gap-3 px-4 py-2 rounded-full mb-8 bg-white/10 backdrop-blur-md border border-white/20 shadow-xl"
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-[#4AAF4D] animate-pulse" />
+              <span className="text-xs md:text-sm font-black font-sans tracking-[0.2em] uppercase text-white">
+                {content.badge}
+              </span>
+            </motion.div>
+          )}
 
           {/* Headline con sombra de texto para legibilidad extrema */}
           <motion.h1 
@@ -143,31 +145,37 @@ export function Hero({ content }: HeroProps) {
         </div>
 
         {/* ── TARJETA FLOTANTE (Desktop Only) ───────────────────────────── */}
-        <motion.div 
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.6, type: "spring" }}
-          className="absolute right-6 top-1/2 -translate-y-1/2 hidden lg:block p-8 rounded-[2.5rem] bg-[#0A1929]/80 backdrop-blur-2xl border border-white/10 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] w-80"
-        >
-          <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#4AAF4D] flex items-center justify-center shadow-lg shadow-[#4AAF4D]/20">
-              <Zap className="w-6 h-6 text-white" fill="white" />
-            </div>
-            <div>
-              <div className="text-xl font-black font-sans text-white">{content.cardTitle}</div>
-              <div className="text-[#4AAF4D] text-xs font-black font-sans uppercase tracking-widest">{content.cardSubtitle}</div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            {Array.isArray(content.cardStats) && content.cardStats.map((stat, idx) => (
-              <div key={idx} className="bg-white/5 rounded-2xl p-5 border border-white/5 group hover:bg-white/10 transition-colors">
-                <div className="text-4xl font-black font-sans text-white">{stat.value}</div>
-                <div className="text-white/40 text-[10px] uppercase tracking-tighter font-bold">{stat.label}</div>
+        {(content.cardTitle || content.cardSubtitle || (Array.isArray(content.cardStats) && content.cardStats.length > 0)) && (
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, type: "spring" }}
+            className="absolute right-6 top-1/2 -translate-y-1/2 hidden lg:block p-8 rounded-[2.5rem] bg-[#0A1929]/80 backdrop-blur-2xl border border-white/10 shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] w-80"
+          >
+            {(content.cardTitle || content.cardSubtitle) && (
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-[#4AAF4D] flex items-center justify-center shadow-lg shadow-[#4AAF4D]/20">
+                  <Zap className="w-6 h-6 text-white" fill="white" />
+                </div>
+                <div>
+                  {content.cardTitle && <div className="text-xl font-black font-sans text-white">{content.cardTitle}</div>}
+                  {content.cardSubtitle && <div className="text-[#4AAF4D] text-xs font-black font-sans uppercase tracking-widest">{content.cardSubtitle}</div>}
+                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
+            )}
+            
+            {Array.isArray(content.cardStats) && content.cardStats.length > 0 && (
+              <div className="space-y-4">
+                {content.cardStats.map((stat, idx) => (
+                  <div key={idx} className="bg-white/5 rounded-2xl p-5 border border-white/5 group hover:bg-white/10 transition-colors">
+                    <div className="text-4xl font-black font-sans text-white">{stat.value}</div>
+                    <div className="text-white/40 text-[10px] uppercase tracking-tighter font-bold">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
 
       {/* ── INDICADOR DE SCROLL MEJORADO ────────────────────────────────── */}

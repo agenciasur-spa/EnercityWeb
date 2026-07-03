@@ -113,31 +113,37 @@ export function ContactCta({ content }: ContactCtaProps) {
           
           {/* COLUMNA IZQUIERDA — Dynamic content from props */}
           <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-            <p className="text-sm font-black font-sans uppercase tracking-[0.3em] mb-4 text-[#F07E04]">{content.tagline}</p>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.1] mb-8 text-[#154660] tracking-tighter">
-              {content.headline} <br />
-              <span className="text-[#F07E04]">{content.headlineAccent}</span>
-            </h2>
-            <div className="space-y-6">
-              {Array.isArray(content.benefits) && content.benefits.map((benefit, idx) => {
-                const BenefitIcon = resolveIcon(benefit.icon);
-                return (
-                  <motion.div 
-                    key={idx} 
-                    className="flex items-center gap-5 group"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: idx * 0.15, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#4AAF4D10] text-[#4AAF4D]">
-                      {BenefitIcon && <BenefitIcon className="w-6 h-6" />}
-                    </div>
-                    <span className="text-lg font-bold text-[#154660]">{benefit.text}</span>
-                  </motion.div>
-                );
-              })}
-            </div>
+            {content.tagline && (
+              <p className="text-sm font-black font-sans uppercase tracking-[0.3em] mb-4 text-[#F07E04]">{content.tagline}</p>
+            )}
+            {(content.headline || content.headlineAccent) && (
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.1] mb-8 text-[#154660] tracking-tighter">
+                {content.headline && <>{content.headline} <br /></>}
+                {content.headlineAccent && <span className="text-[#F07E04]">{content.headlineAccent}</span>}
+              </h2>
+            )}
+            {Array.isArray(content.benefits) && content.benefits.length > 0 && (
+              <div className="space-y-6">
+                {content.benefits.map((benefit, idx) => {
+                  const BenefitIcon = resolveIcon(benefit.icon);
+                  return (
+                    <motion.div 
+                      key={idx} 
+                      className="flex items-center gap-5 group"
+                      initial={{ opacity: 0, x: -20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: idx * 0.15, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#4AAF4D10] text-[#4AAF4D]">
+                        {BenefitIcon && <BenefitIcon className="w-6 h-6" />}
+                      </div>
+                      <span className="text-lg font-bold text-[#154660]">{benefit.text}</span>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
           </motion.div>
 
           {/* COLUMNA DERECHA: FORMULARIO CON VALIDACIÓN — Labels stay FIXED */}

@@ -11,24 +11,33 @@ interface BenefitCardsProps {
 export function BenefitCards({ content }: BenefitCardsProps) {
   const [activeCard, setActiveCard] = useState<string | null>(null);
 
+  // Don't render if no cards
+  if (!content.cards || content.cards.length === 0) return null;
+
   return (
     <section className="py-24 bg-[#F8FAFC]">
       <div className="container mx-auto px-6">
         {/* Section header */}
-        <motion.div
-          className="text-center max-w-2xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]">
-            {content.tagline}
-          </p>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.05] text-[#154660] tracking-tighter">
-            {content.headline}{' '}
-            <span className="text-[#F07E04]">{content.headlineAccent}</span>
-          </h2>
-        </motion.div>
+        {(content.tagline || content.headline || content.headlineAccent) && (
+          <motion.div
+            className="text-center max-w-2xl mx-auto mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            {content.tagline && (
+              <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]">
+                {content.tagline}
+              </p>
+            )}
+            {(content.headline || content.headlineAccent) && (
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.05] text-[#154660] tracking-tighter">
+                {content.headline && <>{content.headline} </>}
+                {content.headlineAccent && <span className="text-[#F07E04]">{content.headlineAccent}</span>}
+              </h2>
+            )}
+          </motion.div>
+        )}
 
         {/* Cards grid */}
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
