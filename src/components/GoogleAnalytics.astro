@@ -1,0 +1,26 @@
+---
+/**
+ * Google Analytics 4 Component
+ * 
+ * Usage: Add this component to your layout and set PUBLIC_GA_ID in .env
+ * Example: PUBLIC_GA_ID=G-XXXXXXXXXX
+ */
+
+const gaId = import.meta.env.PUBLIC_GA_ID;
+---
+
+{gaId && (
+  <>
+    <!-- Google tag (gtag.js) -->
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
+    <script
+      is:inline
+      define:vars={{ gaId }}
+    >
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', gaId);
+    </script>
+  </>
+)}
