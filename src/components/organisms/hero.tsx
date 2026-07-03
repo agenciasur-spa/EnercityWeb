@@ -110,30 +110,36 @@ export function Hero({ content }: HeroProps) {
           </motion.p>
 
           {/* Botones de Acción */}
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row gap-5"
-          >
-            <motion.button 
-              onClick={scrollToSimulator} 
-              whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
-              whileTap={{ scale: 0.97 }}
-              className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#4AAF4D] hover:bg-[#3d8f3f] transition-colors shadow-2xl shadow-[#4AAF4D]/40"
+          {(content.ctaPrimary || content.ctaSecondary) && (
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex flex-col sm:flex-row gap-5"
             >
-              {content.ctaPrimary}
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
-            <motion.a 
-              href="#proyectos"
-              whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center justify-center px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-white/5 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-colors shadow-xl"
-            >
-              {content.ctaSecondary}
-            </motion.a>
-          </motion.div>
+              {content.ctaPrimary && (
+                <motion.button 
+                  onClick={scrollToSimulator} 
+                  whileHover={{ scale: 1.03, transition: { duration: 0.2 } }}
+                  whileTap={{ scale: 0.97 }}
+                  className="group flex items-center justify-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#4AAF4D] hover:bg-[#3d8f3f] transition-colors shadow-2xl shadow-[#4AAF4D]/40"
+                >
+                  {content.ctaPrimary}
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </motion.button>
+              )}
+              {content.ctaSecondary && (
+                <motion.a 
+                  href="#proyectos"
+                  whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                  whileTap={{ scale: 0.97 }}
+                  className="flex items-center justify-center px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-white/5 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-colors shadow-xl"
+                >
+                  {content.ctaSecondary}
+                </motion.a>
+              )}
+            </motion.div>
+          )}
         </div>
 
         {/* ── TARJETA FLOTANTE (Desktop Only) ───────────────────────────── */}
