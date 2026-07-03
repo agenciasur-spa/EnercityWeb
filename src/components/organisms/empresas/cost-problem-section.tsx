@@ -7,30 +7,41 @@ interface CostProblemSectionProps {
 }
 
 export function CostProblemSection({ content }: CostProblemSectionProps) {
+  // Don't render if no bullet points
+  if (!content.bulletPoints || content.bulletPoints.length === 0) return null;
+
   return (
     <section className="py-24 bg-[#154660] text-white">
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
           {/* Section header */}
-          <motion.p
-            className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            {content.tagline}
-          </motion.p>
+          {(content.tagline || content.headline || content.headlineAccent) && (
+            <>
+              {content.tagline && (
+                <motion.p
+                  className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                >
+                  {content.tagline}
+                </motion.p>
+              )}
 
-          <motion.h2
-            className="text-4xl md:text-5xl font-semibold font-sans leading-[1.05] mb-12 tracking-tighter"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-          >
-            {content.headline}{' '}
-            <span className="text-[#F07E04]">{content.headlineAccent}</span>
-          </motion.h2>
+              {(content.headline || content.headlineAccent) && (
+                <motion.h2
+                  className="text-4xl md:text-5xl font-semibold font-sans leading-[1.05] mb-12 tracking-tighter"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.1 }}
+                >
+                  {content.headline && <>{content.headline} </>}
+                  {content.headlineAccent && <span className="text-[#F07E04]">{content.headlineAccent}</span>}
+                </motion.h2>
+              )}
+            </>
+          )}
 
           {/* Bullet points grid */}
           <div className="grid md:grid-cols-2 gap-6">

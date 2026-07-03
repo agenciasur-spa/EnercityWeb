@@ -8,24 +8,33 @@ interface WhatsIncludedChecklistProps {
 }
 
 export function WhatsIncludedChecklist({ content }: WhatsIncludedChecklistProps) {
+  // Don't render if no items
+  if (!content.items || content.items.length === 0) return null;
+
   return (
     <section className="py-24 bg-[#154660]">
       <div className="container mx-auto px-6">
         {/* Section header */}
-        <motion.div
-          className="text-center max-w-2xl mx-auto mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]">
-            {content.tagline}
-          </p>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.05] text-white tracking-tighter">
-            {content.headline}{' '}
-            <span className="text-[#F07E04]">{content.headlineAccent}</span>
-          </h2>
-        </motion.div>
+        {(content.tagline || content.headline || content.headlineAccent) && (
+          <motion.div
+            className="text-center max-w-2xl mx-auto mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            {content.tagline && (
+              <p className="text-sm font-black font-sans uppercase tracking-[0.25em] mb-4 text-[#F07E04]">
+                {content.tagline}
+              </p>
+            )}
+            {(content.headline || content.headlineAccent) && (
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-semibold font-sans leading-[1.05] text-white tracking-tighter">
+                {content.headline && <>{content.headline} </>}
+                {content.headlineAccent && <span className="text-[#F07E04]">{content.headlineAccent}</span>}
+              </h2>
+            )}
+          </motion.div>
+        )}
 
         {/* Checklist items */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">

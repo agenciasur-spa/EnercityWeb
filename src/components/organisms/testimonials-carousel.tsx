@@ -107,30 +107,36 @@ export function TestimonialsCarousel({
               </div>
 
               {/* Testimonial Text */}
-              <p className="text-xl md:text-2xl lg:text-3xl text-white/90 font-medium leading-relaxed mb-10 italic">
-                &ldquo;{current.text}&rdquo;
-              </p>
+              {current.text && (
+                <p className="text-xl md:text-2xl lg:text-3xl text-white/90 font-medium leading-relaxed mb-10 italic">
+                  &ldquo;{current.text}&rdquo;
+                </p>
+              )}
 
               {/* Author */}
-              <div className="flex items-center justify-center gap-4">
-                {current.image_url ? (
-                  <img
-                    src={current.image_url}
-                    alt={current.name}
-                    className="w-14 h-14 rounded-full object-cover border-2 border-[#F07E04]"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-[#F07E04] flex items-center justify-center text-white font-bold text-lg">
-                    {current.name.charAt(0).toUpperCase()}
+              {current.name && (
+                <div className="flex items-center justify-center gap-4">
+                  {current.image_url ? (
+                    <img
+                      src={current.image_url}
+                      alt={current.name}
+                      className="w-14 h-14 rounded-full object-cover border-2 border-[#F07E04]"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-[#F07E04] flex items-center justify-center text-white font-bold text-lg">
+                      {current.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="text-left">
+                    <p className="text-white font-bold text-lg">{current.name}</p>
+                    {current.title && (
+                      <p className="text-[#F07E04] text-sm font-semibold uppercase tracking-wider">
+                        {current.title}
+                      </p>
+                    )}
                   </div>
-                )}
-                <div className="text-left">
-                  <p className="text-white font-bold text-lg">{current.name}</p>
-                  <p className="text-[#F07E04] text-sm font-semibold uppercase tracking-wider">
-                    {current.title}
-                  </p>
                 </div>
-              </div>
+              )}
             </motion.div>
           </AnimatePresence>
 

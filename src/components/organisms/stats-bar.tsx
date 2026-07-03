@@ -84,14 +84,18 @@ export function StatsBar({ stats }: StatsBarProps) {
                 </motion.div>
 
                 {/* Label */}
-                <div className="font-black font-sans uppercase tracking-[0.15em] text-[10px] md:text-xs text-[#154660] mb-2">
-                  {stat.label}
-                </div>
+                {stat.label && (
+                  <div className="font-black font-sans uppercase tracking-[0.15em] text-[10px] md:text-xs text-[#154660] mb-2">
+                    {stat.label}
+                  </div>
+                )}
 
                 {/* Descripción */}
-                <p className="text-gray-400 text-sm leading-tight max-w-[150px]">
-                  {stat.description}
-                </p>
+                {stat.description && (
+                  <p className="text-gray-400 text-sm leading-tight max-w-[150px]">
+                    {stat.description}
+                  </p>
+                )}
 
                 {/* Separador visual (Desktop) */}
                 {index < stats.length - 1 && (
