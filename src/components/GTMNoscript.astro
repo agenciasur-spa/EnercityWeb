@@ -8,18 +8,17 @@
  * Usage: <GTMNoscript />
  */
 
-const gtmId = import.meta.env.PUBLIC_GTM_ID;
+// Hardcoded GTM ID (Vercel env variables not working with Astro adapter)
+const gtmId = 'GTM-P7SGCGL4';
 ---
 
-{gtmId && (
-  <!-- Google Tag Manager (noscript) -->
-  <noscript>
-    <iframe
-      src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
-      height="0"
-      width="0"
-      style="display:none;visibility:hidden"
-    />
-  </noscript>
-  <!-- End Google Tag Manager (noscript) -->
-)}
+<!-- Google Tag Manager (noscript) -->
+<noscript>
+  <iframe
+    src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+    height="0"
+    width="0"
+    style="display:none;visibility:hidden"
+  />
+</noscript>
+<!-- End Google Tag Manager (noscript) -->
