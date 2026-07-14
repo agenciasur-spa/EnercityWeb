@@ -2,164 +2,280 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { getSettings } from '../../lib/settings';
 import {
-  calculateQuoteWithROI,
-  type QuoteInput,
-  type QuoteSettings,
-  type ComunaData,
-  type QuoteResult
-} from '../../lib/services/quote';
-import type { Kit } from '../../lib/types/simulation';
+  findKitByConsumoAnual,
+  calculateFinalPrice,
+  calculateROI,
+  classifyInvestment,
+} from '../../lib/services/pricing';
+import { getActiveTechos, getActiveMedidores } from '../../lib/services/variables';
+import { ROI_CONSTANTS } from '../../lib/constants/roi';
+import type { Kit } from '../../types/simulation';
+import type { VariablesTecho, VariablesMedidor } from '../../types/simulation';
 
 export const prerender = false;
 
-type RoofType = 'Losa' | 'Zinc/Pizarreño' | 'Teja Chilena' | 'Teja Asfáltica' | 'Teja Colonial' | 'Industrial' | 'Otro';
-type MeterType = 'Muro de la casa' | 'Reja' | 'Fuera de la casa (Poste)';
-type EstadoResultado = 'OK' | 'NO_VIABLE' | 'EJECUTIVO' | 'ERROR';
+type EstadoResultado = 'OK' | 'LIMITE' | 'EJECUTIVO' | 'ERROR';
 
 interface RequestBody {
   montoBoleta: number;
   comunaId: number;
-  tipoTecho: RoofType;
-  tipoMedidor: MeterType;
+  // New: numeric IDs from DB
+  techoId?: number;
+  medidorId?: number;
+  // Backward compat: string labels
+  tipoTecho?: string;
+  tipoMedidor?: string;
 }
 
-function mapDBToKit(dbKit: { id: string; consumo_bruto: number; precio_neto_base: number; kwp: number; inversor_kw: number; paneles: number }): Kit {
-  return {
-    id: dbKit.id,
-    nombre: '',
-    consumoBruto: dbKit.consumo_bruto,
-    precioNetoBase: dbKit.precio_neto_base,
-    kwp: dbKit.kwp,
-    inversorKw: Number(dbKit.inversor_kw),
-    paneles: dbKit.paneles,
-  };
-}
-
-function mapSettingsToQuoteSettings(settings: Awaited<ReturnType<typeof getSettings>>): QuoteSettings {
-  return {
-    limiteInferior: Number(settings.limite_inferior),
-    limiteSuperior: Number(settings.limite_superior),
-    factorTeja: Number(settings.factor_teja),
-    factorZincPizarreño: Number(settings.factor_zinc_pizarreño),
-    factorTejaAsfaltica: Number(settings.factor_teja_asfaltica),
-    factorTejaColonial: Number(settings.factor_teja_colonial),
-    factorIndustrial: Number(settings.factor_industrial),
-    costoMedidorReja: Number(settings.costo_medidor_reja),
-    costoMedidorPoste: Number(settings.costo_medidor_poste),
-    iva: Number(settings.iva),
-    performanceRatio: Number(settings.performance_ratio),
-  };
-}
-
-function mapComunaToQuoteComuna(comuna: { id: number; nombre: string; region: string; radiacion_ghi: number; tarifa_est: number }): ComunaData {
-  return {
-    id: comuna.id,
-    nombre: comuna.nombre,
-    region: comuna.region,
-    radiacionGhi: Number(comuna.radiacion_ghi) || 5.5,
-    tarifaEst: Number(comuna.tarifa_est) || 175,
-  };
-}
-
-function mapQuoteResultToAPIResponse(result: QuoteResult): Record<string, unknown> {
-  if (!result.calculo) {
-    return {
-      estado: result.estado,
-      mensaje: result.mensaje,
-      precioFinal: 0,
-    };
+/**
+ * Resolve the techo variable: prefer numeric ID, fall back to name match.
+ */
+function resolveTecho(
+  techos: VariablesTecho[],
+  techoId?: number,
+  tipoTecho?: string
+): VariablesTecho | null {
+  if (techoId != null) {
+    return techos.find((t) => t.id === techoId) ?? null;
   }
+  if (tipoTecho) {
+    return techos.find((t) => t.nombre.toLowerCase() === tipoTecho.toLowerCase()) ?? null;
+  }
+  return null;
+}
 
-  return {
-    estado: result.estado,
-    mensaje: result.mensaje,
-    input: result.input,
-    datosComuna: result.datosComuna,
-    kit: result.kit,
-    calculo: {
-      ...result.calculo,
-      precioFinalIva: result.calculo.precioFinal,
-    },
-    resumenInversion: result.resumenInversion,
-  };
+/**
+ * Resolve the medidor variable: prefer numeric ID, fall back to name match.
+ */
+function resolveMedidor(
+  medidores: VariablesMedidor[],
+  medidorId?: number,
+  tipoMedidor?: string
+): VariablesMedidor | null {
+  if (medidorId != null) {
+    return medidores.find((m) => m.id === medidorId) ?? null;
+  }
+  if (tipoMedidor) {
+    return medidores.find((m) => m.nombre.toLowerCase() === tipoMedidor.toLowerCase()) ?? null;
+  }
+  return null;
 }
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const dbSettings = await getSettings();
-    
-    const body: RequestBody = await request.json();
-    const { montoBoleta, comunaId, tipoTecho, tipoMedidor } = body;
+    const limiteInferior = Number(dbSettings.limite_inferior) || 50000;
+    const limiteSuperior = Number(dbSettings.limite_superior) || 230000;
 
-    if (!montoBoleta || !comunaId || !tipoTecho || !tipoMedidor) {
-      return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const body: RequestBody = await request.json();
+    const { montoBoleta, comunaId, techoId, medidorId, tipoTecho, tipoMedidor } = body;
+
+    if (!montoBoleta || !comunaId) {
+      return new Response(
+        JSON.stringify({ error: 'Faltan campos requeridos' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
+    if (!(techoId ?? tipoTecho) || !(medidorId ?? tipoMedidor)) {
+      return new Response(
+        JSON.stringify({ error: 'Faltan campos requeridos: techo y medidor' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // --- Validate limits ---
+    if (montoBoleta < limiteInferior) {
+      return new Response(
+        JSON.stringify({
+          estado: 'LIMITE' as EstadoResultado,
+          mensaje: `El monto mínimo para un sistema solar es de $${limiteInferior.toLocaleString('es-CL')}.`,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (montoBoleta > limiteSuperior) {
+      return new Response(
+        JSON.stringify({
+          estado: 'EJECUTIVO' as EstadoResultado,
+          mensaje: 'Tu consumo es alto. Un ejecutivo te contactará.',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // --- Fetch comuna (backward compat: savings-calculator reads datosComuna) ---
     const { data: comuna, error: errorComuna } = await supabase
       .from('comunas')
       .select('id, nombre, region, radiacion_ghi, tarifa_est')
       .eq('id', comunaId)
       .single();
 
-    if (errorComuna || !comuna) {
-      console.error('Error fetching comuna:', errorComuna);
-      return new Response(JSON.stringify({
-        estado: 'ERROR' as EstadoResultado,
-        mensaje: 'No se encontró la comuna seleccionada.',
-        precioFinal: 0,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    const { data: kit, error: errorKit } = await supabase
+    // --- Fetch all kits and find by annual consumption range ---
+    const { data: dbKits, error: errorKits } = await supabase
       .from('precios_kits')
       .select('*')
-      .lte('consumo_bruto', montoBoleta)
-      .order('consumo_bruto', { ascending: false })
-      .limit(1)
-      .single();
+      .order('rango_desde', { ascending: true });
 
-    if (errorKit || !kit) {
-      return new Response(JSON.stringify({
-        estado: 'ERROR' as EstadoResultado,
-        mensaje: 'No se encontró un kit compatible.',
-        precioFinal: 0,
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    if (errorKits || !dbKits) {
+      return new Response(
+        JSON.stringify({
+          estado: 'ERROR' as EstadoResultado,
+          mensaje: 'No se pudieron cargar los kits.',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
 
-    const kits: Kit[] = [mapDBToKit(kit)];
-    const quoteSettings = mapSettingsToQuoteSettings(dbSettings);
-    const comunaData = mapComunaToQuoteComuna(comuna);
+    const kits: Kit[] = dbKits.map((k: any) => ({
+      id: k.id,
+      nombre: '',
+      consumoBruto: k.consumo_bruto ?? 0,
+      amperajeNecesario: k.amperaje_necesario ?? '',
+      inversorKw: Number(k.inversor_kw),
+      paneles: k.paneles,
+      kwp: Number(k.kwp),
+      precioNetoBase: Number(k.precio_neto_base ?? k.precio_transferencia ?? 0),
+      rangoDesde: k.rango_desde != null ? Number(k.rango_desde) : undefined,
+      rangoHasta: k.rango_hasta != null ? Number(k.rango_hasta) : undefined,
+      precioLista: k.precio_lista != null ? Number(k.precio_lista) : undefined,
+      precioTransferencia: k.precio_transferencia != null ? Number(k.precio_transferencia) : undefined,
+      potenciaPanel: k.potencia_panel != null ? Number(k.potencia_panel) : undefined,
+      potenciaTotalSistema: k.potencia_total_sistema != null ? Number(k.potencia_total_sistema) : undefined,
+      generacionAnual: k.generacion_anual != null ? Number(k.generacion_anual) : undefined,
+    }));
 
-    const input: QuoteInput = {
-      montoBoleta,
-      comunaId,
-      tipoTecho,
-      tipoMedidor,
+    // Calculate annual consumption from monthly bill
+    const consumoAnual = (montoBoleta / ROI_CONSTANTS.tarifaEst) * 12;
+
+    const kit = findKitByConsumoAnual(kits, Math.round(consumoAnual));
+
+    if (!kit) {
+      return new Response(
+        JSON.stringify({
+          estado: 'ERROR' as EstadoResultado,
+          mensaje: 'No se encontró un kit compatible.',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // --- Fetch techo and medidor variables from DB ---
+    const [techos, medidores] = await Promise.all([
+      getActiveTechos(),
+      getActiveMedidores(),
+    ]);
+
+    const techo = resolveTecho(techos, techoId, tipoTecho);
+    const medidor = resolveMedidor(medidores, medidorId, tipoMedidor);
+
+    // Default to factor 1.0 if not found (graceful degradation)
+    const factorTecho = techo?.factor ?? 1.0;
+    const factorMedidor = medidor?.factor ?? 1.0;
+    const techoNombre = techo?.nombre ?? 'Standard';
+    const medidorNombre = medidor?.nombre ?? 'Standard';
+
+    // --- Calculate prices ---
+    const precioTransferencia = kit.precioTransferencia ?? kit.precioNetoBase;
+    const precioLista = kit.precioLista ?? Math.round(precioTransferencia * 1.11); // fallback 11% markup
+    const precioFinal = calculateFinalPrice(precioTransferencia, factorTecho, factorMedidor);
+
+    // --- Calculate ROI ---
+    const roi = calculateROI(
+      kit.potenciaTotalSistema ?? kit.kwp,
+      kit.generacionAnual ?? 0,
+      precioFinal,
+      montoBoleta
+    );
+    const clasificacion = classifyInvestment(roi.paybackAnos);
+
+    // --- Build response (new + backward compat) ---
+    const response = {
+      estado: 'OK' as EstadoResultado,
+      mensaje: null,
+
+      // New dual-pricing fields
+      kit: {
+        id: kit.id,
+        paneles: kit.paneles,
+        potenciaTotalSistema: kit.potenciaTotalSistema ?? kit.kwp,
+        inversorKw: kit.inversorKw,
+        generacionAnual: kit.generacionAnual ?? 0,
+        rangoDesde: kit.rangoDesde,
+        rangoHasta: kit.rangoHasta,
+        // Backward compat: savings-calculator reads kwp
+        kwp: kit.kwp,
+        consumoBruto: kit.consumoBruto,
+        precioNetoBase: kit.precioNetoBase,
+      },
+      precio_lista: precioLista,
+      precio_transferencia: precioTransferencia,
+      precio_final: precioFinal,
+      factors: {
+        techo_nombre: techoNombre,
+        techo_factor: factorTecho,
+        medidor_nombre: medidorNombre,
+        medidor_factor: factorMedidor,
+      },
+      roi: {
+        ahorro_mensual: roi.ahorroMensual,
+        ahorro_anual: roi.ahorroAnual,
+        payback_years: roi.paybackAnos,
+        cobertura_porcentaje: roi.coberturaPorcentaje,
+      },
+
+      // --- Backward compat fields (savings-calculator.tsx reads these until PR 4) ---
+      input: {
+        montoBoleta,
+        comunaId,
+        tipoTecho: tipoTecho ?? '',
+        tipoMedidor: tipoMedidor ?? '',
+      },
+      datosComuna: comuna
+        ? {
+            id: comuna.id,
+            nombre: comuna.nombre,
+            region: comuna.region,
+            radiacionGhi: Number(comuna.radiacion_ghi) || ROI_CONSTANTS.radiacionGhi,
+            tarifaEst: Number(comuna.tarifa_est) || ROI_CONSTANTS.tarifaEst,
+          }
+        : undefined,
+      calculo: {
+        precioBase: precioTransferencia,
+        factorTecho,
+        recargoTecho: 0,
+        costoMedidor: 0,
+        precioSinIva: precioFinal, // backward compat alias
+        iva: 0,
+        precioFinal: precioFinal,
+        precioFinalIva: precioFinal, // savings-calculator reads this
+        consumoKwhAnual: roi.consumoKwhAnual,
+        generacionAnualKwh: roi.generacionAnualKwh,
+        ahorroAnual: roi.ahorroAnual,
+        ahorroMensual: roi.ahorroMensual,
+        coberturaPorcentaje: roi.coberturaPorcentaje,
+        paybackAnos: roi.paybackAnos,
+      },
+      resumenInversion: {
+        ahorroMensual: roi.ahorroMensual,
+        ahorroAnual: roi.ahorroAnual,
+        inversionTotal: precioFinal,
+        anosRecuperacion: roi.paybackAnos,
+        cobertura: roi.coberturaPorcentaje,
+        clasificacion,
+      },
     };
-
-    const result = calculateQuoteWithROI(input, kits, quoteSettings, comunaData);
-
-    const response = mapQuoteResultToAPIResponse(result);
 
     return new Response(JSON.stringify(response), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     });
-
   } catch (err) {
     console.error('Error calculating quote:', err);
-    return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+      JSON.stringify({ error: 'Error interno del servidor' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
   }
 };
