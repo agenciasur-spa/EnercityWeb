@@ -13,6 +13,8 @@ import {
   HelpCircle,
   MessageSquareQuote,
   Briefcase,
+  Calculator,
+  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -54,6 +56,13 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/content/empresas-sections', label: 'Secciones Empresas', icon: FileText },
       { href: '/admin/content/empresas-faq', label: 'FAQ Empresas', icon: HelpCircle },
+    ],
+  },
+  {
+    label: 'Simulador',
+    items: [
+      { href: '/admin/content/precios', label: 'Precios Kits', icon: Calculator },
+      { href: '/admin/content/variables', label: 'Variables', icon: SlidersHorizontal },
     ],
   },
   {
