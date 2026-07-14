@@ -1,0 +1,23 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import VariablesTable from '@/components/admin/content/variables-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const [{ data: techos, error: techosError }, { data: medidores, error: medidoresError }] = await Promise.all([
+  supabaseAdmin.from('variables_techo').select('*').order('factor'),
+  supabaseAdmin.from('variables_medidor').select('*').order('factor'),
+]);
+
+if (techosError) {
+  console.error('[variables.astro] Techos query error:', techosError);
+}
+if (medidoresError) {
+  console.error('[variables.astro] Medidores query error:', medidoresError);
+}
+---
+
+<AdminLayout title="Variables Simulador — Enercity Admin">
+  <VariablesTable client:load initialTechos={techos ?? []} initialMedidores={medidores ?? []} />
+</AdminLayout>
