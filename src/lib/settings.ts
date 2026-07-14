@@ -6,13 +6,6 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 const DEFAULT_SETTINGS: Record<string, number | string> = {
   iva: 1.19,
-  factor_teja: 1.142,
-  costo_medidor_reja: 350000,
-  costo_medidor_poste: 450000,
-  factor_zinc_pizarreño: 1.0,
-  factor_teja_asfaltica: 1.05,
-  factor_teja_colonial: 1.12,
-  factor_industrial: 1.0,
   limite_inferior: 50000,
   limite_superior: 230000,
   performance_ratio: 0.80,
