@@ -13,17 +13,18 @@ interface Props {
   ogImage?: string;
 }
 
+const siteName = "Enercity";
+const siteUrl = "https://paneles-solares.cl";
+
 const {
   title,
   description = "Simula tu ahorro con paneles solares. Cotización personalizada en minutos para tu hogar o empresa en Chile.",
   ogTitle,
   ogDescription,
-  ogImage,
+  ogImage = `${siteUrl}/og-image.png`,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
-const siteName = "Enercity";
-const siteUrl = "https://paneles-solares.cl";
 
 const businessInfo = await getBusinessInfo();
 
