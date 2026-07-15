@@ -6,6 +6,31 @@ export interface Kit {
   paneles: number;
   kwp: number;
   precioNetoBase: number;
+  // Q4 fields:
+  rangoDesde?: number;
+  rangoHasta?: number;
+  precioLista?: number;
+  precioTransferencia?: number;
+  potenciaPanel?: number;
+  potenciaTotalSistema?: number;
+  generacionAnual?: number;
+}
+
+export interface VariablesTecho {
+  id: number;
+  nombre: string;
+  factor: number;
+  descripcion?: string;
+  activo: boolean;
+}
+
+export interface VariablesMedidor {
+  id: number;
+  nombre: string;
+  factor: number;
+  descripcion?: string;
+  requiereVisitaTecnica: boolean;
+  activo: boolean;
 }
 
 export interface Comuna {
