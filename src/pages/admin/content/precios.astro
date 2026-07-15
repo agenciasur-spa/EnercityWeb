@@ -1,0 +1,22 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import PreciosTable from '@/components/admin/content/precios-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('precios_kits')
+  .select('id, rango_desde, rango_hasta, inversor_kw, paneles, potencia_panel, potencia_total_sistema, generacion_anual, precio_lista, precio_transferencia')
+  .order('rango_desde', { ascending: true });
+
+if (error) {
+  console.error('[precios.astro] Supabase query error:', error);
+}
+
+const kits = data ?? [];
+---
+
+<AdminLayout title="Precios Kits — Enercity Admin">
+  <PreciosTable client:load initialKits={kits} />
+</AdminLayout>
