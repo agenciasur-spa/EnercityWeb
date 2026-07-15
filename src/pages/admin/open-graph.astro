@@ -14,7 +14,14 @@ if (error) {
   console.error('Error fetching open_graph_data:', error);
 }
 
-const ogData = data ?? [];
+// Convertir a array simple para evitar problemas de serialización
+const ogData = (data ?? []).map(item => ({
+  id: item.id,
+  route: item.route,
+  title: item.title,
+  description: item.description,
+  image_url: item.image_url,
+}));
 ---
 
 <AdminLayout title="Open Graph — Enercity Admin">

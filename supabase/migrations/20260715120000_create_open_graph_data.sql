@@ -39,4 +39,6 @@ CREATE POLICY "Allow authenticated write access to open_graph_data"
 -- Grant permissions
 GRANT SELECT ON open_graph_data TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON open_graph_data TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON open_graph_data TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE open_graph_data_id_seq TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE open_graph_data_id_seq TO service_role;
