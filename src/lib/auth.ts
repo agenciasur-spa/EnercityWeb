@@ -23,7 +23,9 @@ export function getAuthCookieName(): string {
       const ref = hostname.split('.')[0];
       return `sb-${ref}-auth-token`;
     }
-  } catch {}
+  } catch {
+    // hostname parsing is best-effort; fall through to default
+  }
   return 'sb-local-auth-token';
 }
 
