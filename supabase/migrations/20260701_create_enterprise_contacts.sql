@@ -33,8 +33,8 @@ CREATE POLICY "Allow authenticated read on enterprise_contacts"
     USING (true);
 
 -- Indexes for admin sorting/filtering
-CREATE INDEX idx_enterprise_contacts_created_at
+CREATE INDEX IF NOT EXISTS idx_enterprise_contacts_created_at
     ON public.enterprise_contacts (created_at DESC);
 
-CREATE INDEX idx_enterprise_contacts_estado
+CREATE INDEX IF NOT EXISTS idx_enterprise_contacts_estado
     ON public.enterprise_contacts (estado);
