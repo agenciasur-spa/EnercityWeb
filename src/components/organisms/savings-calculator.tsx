@@ -579,17 +579,14 @@ case 3:
               key={techo.id}
               onClick={() => setFormData({ ...formData, techoId: techo.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group",
+                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
                 formData.techoId === techo.id
                   ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.15)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-              <span className="text-[11px] font-black uppercase leading-tight tracking-wider">
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wider break-words">
                 {techo.nombre}
-              </span>
-              <span className="text-[9px] font-bold bg-white/10 px-2 py-0.5 rounded-full">
-                x{techo.factor}
               </span>
             </button>
           ))}
@@ -605,16 +602,13 @@ case 3:
               key={medidor.id}
               onClick={() => setFormData({ ...formData, medidorId: medidor.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group",
+                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
                 formData.medidorId === medidor.id
                   ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.1)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-              <span className="text-[11px] font-black uppercase tracking-widest">{medidor.nombre}</span>
-              <span className="text-[9px] font-bold bg-white/10 px-2 py-0.5 rounded-full">
-                x{medidor.factor}
-              </span>
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wider break-words">{medidor.nombre}</span>
               {medidor.requiere_visita_tecnica && (
                 <span className="text-[8px] font-bold text-[#F07E04] uppercase tracking-tighter">
                   Requiere visita técnica
