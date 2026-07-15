@@ -28,4 +28,10 @@ export interface PDFData {
   roi25Years: number;
   quoteDate: string;
   validUntil?: string;
+  // Dual pricing fields (PR 2)
+  precioLista?: number; // strikethrough price
+  precioTransferencia?: number; // highlighted price
+  precioFinal?: number; // final price after factors
+  factorTechoDisplay?: string; // "Teja asfáltica (x1.0)"
+  factorMedidorDisplay?: string; // "Pegado a la pared (x1.0)"
 }
