@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { PDFData } from "@/lib/pdf-types";
+import { buildPricingDisplay, buildPdfDataFromResult } from "@/lib/services/simulator-display";
 
 
 import {
@@ -27,35 +28,37 @@ interface Comuna {
   tarifa_est: string;
 }
 
-type TipoTecho = "Losa" | "Zinc/Pizarreño" | "Teja Chilena" | "Teja Asfáltica" | "Teja Colonial" | "Industrial" | "Otro";
-type TipoMedidor = "Muro de la casa" | "Reja" | "Fuera de la casa (Poste)";
-type EstadoResultado = "OK" | "NO_VIABLE" | "EJECUTIVO" | "ERROR";
+type EstadoResultado = "OK" | "LIMITE" | "EJECUTIVO" | "ERROR";
 type Clasificacion = "ALTA_RETORNO" | "MEDIO_RETORNO" | "BAJA_RETORNO";
 
 interface QuoteResult {
   estado: EstadoResultado;
   mensaje?: string;
-  input?: {
-    montoBoleta: number;
-    comunaId: number;
-    tipoTecho: string;
-    tipoMedidor: string;
-  };
-  datosComuna?: {
-    id: number;
-    nombre: string;
-    region: string;
-    radiacionGhi: number;
-    tarifaEst: number;
-  };
   kit?: {
     id: number;
-    consumoBruto: number;
-    inversorKw: number;
     paneles: number;
-    kwp: number;
-    precioNetoBase: number;
+    potenciaTotalSistema: number;
+    inversorKw: number;
+    generacionAnual: number;
+    rangoDesde: number;
+    rangoHasta: number;
   };
+  precio_lista?: number;
+  precio_transferencia?: number;
+  precio_final?: number;
+  factors?: {
+    techo_nombre: string;
+    techo_factor: number;
+    medidor_nombre: string;
+    medidor_factor: number;
+  };
+  roi?: {
+    ahorro_mensual: number;
+    ahorro_anual: number;
+    payback_years: number;
+    cobertura_porcentaje: number;
+  };
+  // Backward compatibility fields
   calculo?: {
     consumoKwhAnual: number;
     generacionAnualKwh: number;
@@ -79,27 +82,33 @@ interface QuoteResult {
     cobertura: number;
     clasificacion: Clasificacion;
   };
+  datosComuna?: {
+    id: number;
+    nombre: string;
+    region: string;
+    radiacionGhi: number;
+    tarifaEst: number;
+  };
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
 
 
-const TIPOS_TECHO = [
-  { value: "Losa", label: "Losa", desc: "Sin recargo", recargo: 0 },
-  { value: "Zinc/Pizarreño", label: "Zinc / Pizarreño", desc: "Sin recargo", recargo: 0 },
-  { value: "Teja Chilena", label: "Teja Chilena", desc: "+14.2% recargo", recargo: 14.2 },
-  { value: "Teja Asfáltica", label: "Teja Asfáltica", desc: "+5% recargo", recargo: 5 },
-  { value: "Teja Colonial", label: "Teja Colonial", desc: "+12% recargo", recargo: 12 },
-  { value: "Industrial", label: "Industrial", desc: "Sin recargo", recargo: 0 },
-  { value: "Otro", label: "Otro", desc: "Sin recargo", recargo: 0 },
-];
+interface VariableTecho {
+  id: number;
+  nombre: string;
+  factor: number;
+  descripcion: string;
+}
 
-const TIPOS_MEDIDOR = [
-  { value: "Muro de la casa", label: "Muro de la casa", desc: "Dentro de la propiedad", costo: 0 },
-  { value: "Reja", label: "Reja", desc: "Fuera de la propiedad", costo: 350000 },
-  { value: "Fuera de la casa (Poste)", label: "Fuera de la casa (Poste)", desc: "Poste exterior", costo: 450000 },
-];
+interface VariableMedidor {
+  id: number;
+  nombre: string;
+  factor: number;
+  descripcion: string;
+  requiere_visita_tecnica: boolean;
+}
 
 function formatCLP(amount: number): string {
   return new Intl.NumberFormat("es-CL", {
@@ -122,16 +131,31 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaError, setCaptchaError] = useState(false);
+  const [tiposTecho, setTiposTecho] = useState<VariableTecho[]>([]);
+  const [tiposMedidor, setTiposMedidor] = useState<VariableMedidor[]>([]);
 
   const pageLoadTime = useRef(Date.now());
 
   const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
 
+  // Fetch dynamic variables on mount
+  useEffect(() => {
+    fetch('/api/variables?type=techo')
+      .then((r) => r.json())
+      .then((data) => setTiposTecho(Array.isArray(data) ? data : []))
+      .catch(() => setTiposTecho([]));
+
+    fetch('/api/variables?type=medidor')
+      .then((r) => r.json())
+      .then((data) => setTiposMedidor(Array.isArray(data) ? data : []))
+      .catch(() => setTiposMedidor([]));
+  }, []);
+
   const [formData, setFormData] = useState({
     comunaId: 0,
     montoBoleta: 100000,
-    tipoTecho: "Losa" as TipoTecho,
-    tipoMedidor: "Muro de la casa" as TipoMedidor,
+    techoId: 0,
+    medidorId: 0,
     nombre: "",
     email: "",
     telefono: "",
@@ -151,7 +175,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       case 2:
         return formData.montoBoleta >= 50000;
       case 3:
-        return !!formData.tipoTecho && !!formData.tipoMedidor;
+        return formData.techoId > 0 && formData.medidorId > 0;
       case 4:
         return true;
       case 5:
@@ -172,8 +196,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           body: JSON.stringify({
             montoBoleta: formData.montoBoleta,
             comunaId: formData.comunaId,
-            tipoTecho: formData.tipoTecho,
-            tipoMedidor: formData.tipoMedidor,
+            techoId: formData.techoId,
+            medidorId: formData.medidorId,
           }),
         });
 
@@ -200,37 +224,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   };
 
   const buildPdfData = (): PDFData | null => {
-    if (!result || result.estado !== "OK" || !result.calculo) return null;
-    const kit = result.kit;
-    const calculo = result.calculo;
-    const resumen = result.resumenInversion;
-    const datosComuna = result.datosComuna;
-    if (!kit || !calculo || !resumen) return null;
-
-    return {
-      customerName: formData.nombre,
-      customerEmail: formData.email,
-      customerPhone: formData.telefono,
-      kitName: `Kit ${kit.kwp} kWP — ${kit.paneles} paneles`,
-      kitPower: `${kit.kwp} kWP`,
-      panelCount: kit.paneles,
-      panelWattage: Math.round((kit.kwp * 1000) / kit.paneles),
-      roofType: formData.tipoTecho,
-      meterLocation: formData.tipoMedidor,
-      comunaName: datosComuna?.nombre ?? comunas.find(c => c.id === formData.comunaId)?.nombre ?? '',
-      regionName: datosComuna?.region,
-      monthlyBill: formData.montoBoleta,
-      annualSavings: resumen.ahorroAnual,
-      monthlySavings: resumen.ahorroMensual,
-      systemPrice: calculo.precioFinalIva,
-      systemPriceNoIva: calculo.precioSinIva,
-      paybackYears: resumen.anosRecuperacion,
-      coveragePercent: resumen.cobertura,
-      co2Reduction: Math.round(calculo.generacionAnualKwh * 0.5),
-      investmentClassification: resumen.clasificacion,
-      roi25Years: resumen.ahorroAnual * 25,
-      quoteDate: new Date().toISOString(),
-    };
+    if (!result || result.estado !== "OK") return null;
+    return buildPdfDataFromResult(result, formData, comunas);
   };
 
   const handleDownloadPdf = async () => {
@@ -305,6 +300,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     setIsSubmitting(true);
 
     try {
+      const pricing = buildPricingDisplay(result);
+
       const apiResponse = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -314,20 +311,28 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           telefono: formData.telefono,
           comunaId: formData.comunaId || null,
           montoBoletaIngresado: formData.montoBoleta,
+          techoId: formData.techoId || null,
+          medidorId: formData.medidorId || null,
           kitId: result.kit?.id,
-          factorTechoAplicado: result.calculo.factorTecho,
-          costoFijoMedidorAplicado: result.calculo.costoMedidor,
-          precioFinalIva: result.calculo.precioFinalIva,
+          factorTechoAplicado: result.factors?.techo_factor ?? result.calculo?.factorTecho ?? 1,
+          techoNombreAplicado: result.factors?.techo_nombre ?? '',
+          medidorFactorAplicado: result.factors?.medidor_factor ?? 1,
+          medidorNombreAplicado: result.factors?.medidor_nombre ?? '',
+          costoFijoMedidorAplicado: result.calculo?.costoMedidor ?? 0,
+          precioLista: pricing.precioLista || null,
+          precioTransferencia: pricing.precioTransferencia || null,
+          precioFinal: pricing.precioFinal || null,
+          precioFinalIva: result.calculo?.precioFinalIva ?? pricing.precioFinal ?? 0,
           precioSinIva: result.calculo?.precioSinIva || 0,
-          generacionAnualKwh: result.calculo?.generacionAnualKwh || 0,
-          kitKwp: result.kit?.kwp || 0,
+          generacionAnualKwh: result.calculo?.generacionAnualKwh ?? result.kit?.generacionAnual ?? 0,
+          kitKwp: result.kit?.potenciaTotalSistema ?? result.kit?.kwp ?? 0,
           kitPaneles: result.kit?.paneles || 0,
           comunaNombre: result.datosComuna?.nombre ?? '',
           comunaRegion: result.datosComuna?.region ?? '',
-          ahorroAnual: result.resumenInversion?.ahorroAnual || 0,
-          ahorroMensual: result.resumenInversion?.ahorroMensual || 0,
-          anosRecuperacion: result.resumenInversion?.anosRecuperacion || 0,
-          cobertura: result.resumenInversion?.cobertura || 0,
+          ahorroAnual: result.resumenInversion?.ahorroAnual ?? result.roi?.ahorro_anual ?? 0,
+          ahorroMensual: result.resumenInversion?.ahorroMensual ?? result.roi?.ahorro_mensual ?? 0,
+          anosRecuperacion: result.resumenInversion?.anosRecuperacion ?? result.roi?.payback_years ?? 0,
+          cobertura: result.resumenInversion?.cobertura ?? result.roi?.cobertura_porcentaje ?? 0,
           clasificacion: result.resumenInversion?.clasificacion || '',
           website: formData.website,
           captchaToken,
@@ -529,30 +534,27 @@ case 3:
         <p className="text-white/40 text-xs italic">Detalles finales para tu presupuesto certificado SEC.</p>
       </div>
 
-      {/* SELECCIÓN DE TECHO (Building | House | Settings) */}
+      {/* SELECCIÓN DE TECHO */}
       <div className="space-y-4">
         <span aria-label="Seleccione el tipo de techumbre" className="text-[10px] font-black text-[#F07E04] uppercase tracking-[0.2em] ml-2">Tipo de Techumbre</span>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
-          {TIPOS_TECHO.map((techo) => (
+          {tiposTecho.map((techo) => (
             <button
-              key={techo.value}
-              onClick={() => setFormData({ ...formData, tipoTecho: techo.value as TipoTecho })}
+              key={techo.id}
+              onClick={() => setFormData({ ...formData, techoId: techo.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 text-center group",
-                formData.tipoTecho === techo.value 
-                  ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.15)]" 
+                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group",
+                formData.techoId === techo.id
+                  ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.15)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-               <div className={cn(
-                 "transition-transform duration-300 group-hover:scale-110",
-                 formData.tipoTecho === techo.value ? "text-[#F07E04]" : "text-white/20 group-hover:text-white/40"
-               )}>
-                 <span className="text-[10px] font-black uppercase leading-tight tracking-wider">
-                   {techo.label}
-                 </span>
-               </div>
-             
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wider">
+                {techo.nombre}
+              </span>
+              <span className="text-[9px] font-bold bg-white/10 px-2 py-0.5 rounded-full">
+                x{techo.factor}
+              </span>
             </button>
           ))}
         </div>
@@ -562,36 +564,33 @@ case 3:
       <div className="space-y-4">
         <span className="text-[10px] font-black text-[#F07E04] uppercase tracking-[0.2em] ml-2">Ubicación del Medidor</span>
         <div className="grid grid-cols-2 gap-3">
-          {TIPOS_MEDIDOR.map((medidor) => (
+          {tiposMedidor.map((medidor) => (
             <button
-              key={medidor.value}
-              onClick={() => setFormData({ ...formData, tipoMedidor: medidor.value as TipoMedidor })}
+              key={medidor.id}
+              onClick={() => setFormData({ ...formData, medidorId: medidor.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 text-center group",
-                formData.tipoMedidor === medidor.value 
-                  ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.1)]" 
+                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group",
+                formData.medidorId === medidor.id
+                  ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.1)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-              <div className={cn(
-                "transition-colors",
-                formData.tipoMedidor === medidor.value ? "text-[#F07E04]" : "text-white/20 group-hover:text-white/40"
-              )}>
-                
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[11px] font-black uppercase tracking-widest">{medidor.label}</span>
-                <span className="text-[9px] opacity-40 font-bold uppercase tracking-tighter">
-                  {medidor.value === "Muro de la casa" ? "Interior Propiedad" : "Perímetro Exterior"}
+              <span className="text-[11px] font-black uppercase tracking-widest">{medidor.nombre}</span>
+              <span className="text-[9px] font-bold bg-white/10 px-2 py-0.5 rounded-full">
+                x{medidor.factor}
+              </span>
+              {medidor.requiere_visita_tecnica && (
+                <span className="text-[8px] font-bold text-[#F07E04] uppercase tracking-tighter">
+                  Requiere visita técnica
                 </span>
-              </div>
+              )}
             </button>
           ))}
         </div>
 
-        {/* ALERTA KIT ADECUACIÓN SEC */}
+        {/* ALERTA KIT ADECUACIÓN SEC — dinámica según requiere_visita_tecnica */}
         <AnimatePresence>
-          {formData.tipoMedidor === "Reja" && (
+          {tiposMedidor.find(m => m.id === formData.medidorId)?.requiere_visita_tecnica && (
             <motion.div
               initial={{ opacity: 0, y: -10, height: 0 }}
               animate={{ opacity: 1, y: 0, height: "auto" }}
@@ -607,10 +606,6 @@ case 3:
                   <p className="text-white/60 text-[11px] leading-relaxed italic">
                     Incluye canalización blindada y protecciones adicionales para cumplir con la norma de seguridad en medidores fuera del perímetro.
                   </p>
-                  <div className="pt-2 flex justify-between items-center border-t border-white/5 mt-1">
-                    <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Valor Adicional</span>
-                    <span className="text-sm font-black text-white">$350.000</span>
-                  </div>
                 </div>
               </div>
             </motion.div>
@@ -620,14 +615,14 @@ case 3:
 
       {/* NAVEGACIÓN */}
       <div className="flex gap-4 pt-4">
-        <button 
-          onClick={handleBack} 
+        <button
+          onClick={handleBack}
           className="w-16 h-14 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors"
         >
           <ChevronLeft className="w-6 h-6 stroke-[1.5]" />
         </button>
-        <button 
-          onClick={handleNext} 
+        <button
+          onClick={handleNext}
           disabled={isCalculating || !canProceed()}
           className="flex-grow bg-[#F07E04] text-white font-black rounded-2xl hover:bg-[#F09C0A] transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#F07E04]/20"
         >
@@ -639,7 +634,7 @@ case 3:
         </button>
       </div>
     </motion.div>
-      );
+  );
       
       case 5:
         return (
@@ -684,11 +679,12 @@ case 3:
                 setFormData({
                   comunaId: 0,
                   montoBoleta: 100000,
-                  tipoTecho: "Losa" as TipoTecho,
-                  tipoMedidor: "Muro de la casa" as TipoMedidor,
+                  techoId: 0,
+                  medidorId: 0,
                   nombre: "",
                   email: "",
                   telefono: "",
+                  website: "",
                 });
                 setNombreError(null);
                 setEmailError(null);
@@ -810,9 +806,9 @@ const renderResults = () => {
         <div className="space-y-3">
           {[
             { label: "Comuna", val: comuna.nombre },
-            { label: "Sistema", val: `${kit.kwp} kWP / ${kit.paneles} paneles` },
+            { label: "Sistema", val: `${kit.potenciaTotalSistema ?? kit.kwp} kWP / ${kit.paneles} paneles` },
             { label: "Inversor", val: `${kit.inversorKw} kW` },
-            { label: "Generación anual", val: `${calculo.generacionAnualKwh.toLocaleString("es-CL")} kWh` }
+            { label: "Generación anual", val: `${(calculo.generacionAnualKwh ?? kit.generacionAnual ?? 0).toLocaleString("es-CL")} kWh` }
           ].map((item, i) => (
             <div key={i} className="flex flex-col md:flex-row justify-between items-start md:items-center text-xs md:text-sm border-b border-white/5 pb-2 last:border-0 gap-1 md:gap-0">
               <span className="text-white/40 font-medium">{item.label}</span>
@@ -822,8 +818,59 @@ const renderResults = () => {
         </div>
       </div>
 
-      {/* SECCIÓN 5: EL CIERRE (Inversión vs Ahorro) */}
+      {/* SECCIÓN 5: DUAL PRICING (Inversión vs Ahorro) */}
       <div className="bg-[#154660] border-t border-white/10 rounded-[2rem] md:rounded-[2.5rem] p-4 md:p-6 lg:p-8 shadow-2xl space-y-4 md:space-y-6">
+        {(() => {
+          const pricing = buildPricingDisplay(result);
+          return (
+            <div className="space-y-3">
+              {/* Precio Lista (tachado) */}
+              {pricing.hasDualPricing && pricing.precioLista > 0 && (
+                <div className="text-center">
+                  <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Precio Lista</span>
+                  <div className="text-lg md:text-xl font-bold text-white/50 line-through break-all">
+                    {formatCLP(pricing.precioLista)}
+                  </div>
+                </div>
+              )}
+
+              {/* Precio Transferencia (destacado) */}
+              <div className="text-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/5">
+                <span className="text-[9px] md:text-[10px] font-black text-[#F07E04] uppercase tracking-widest">Precio Transferencia</span>
+                <div className="text-2xl md:text-3xl lg:text-4xl font-black text-[#F07E04] break-all">
+                  {formatCLP(pricing.precioTransferencia || calculo.precioFinalIva)}
+                </div>
+              </div>
+
+              {/* Precio Final (si difiere por factores) */}
+              {pricing.hasDualPricing && pricing.precioFinal > 0 && pricing.precioFinal !== pricing.precioTransferencia && (
+                <div className="text-center">
+                  <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Precio Final Ajustado</span>
+                  <div className="text-xl md:text-2xl font-black text-white break-all">
+                    {formatCLP(pricing.precioFinal)}
+                  </div>
+                </div>
+              )}
+
+              {/* Desglose de factores */}
+              {(pricing.techoDisplay || pricing.medidorDisplay) && (
+                <div className="text-center space-y-1 pt-2">
+                  {pricing.techoDisplay && (
+                    <p className="text-[10px] text-white/50">
+                      Techumbre: <span className="text-white/70 font-bold">{pricing.techoDisplay}</span>
+                    </p>
+                  )}
+                  {pricing.medidorDisplay && (
+                    <p className="text-[10px] text-white/50">
+                      Medidor: <span className="text-white/70 font-bold">{pricing.medidorDisplay}</span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <div className="flex flex-col md:flex-row justify-between items-center bg-white/5 p-3 md:p-4 rounded-2xl border border-white/5 gap-4 md:gap-0">
           <div className="space-y-1 text-center md:text-left flex-1">
             <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Inversión Total (IVA inc.)</span>
@@ -834,6 +881,11 @@ const renderResults = () => {
              <div className="text-xs md:text-sm font-bold text-white italic break-all">{formatCLP(resumen.ahorroAnual)}/año</div>
           </div>
         </div>
+
+        {/* ROI Footnote */}
+        <p className="text-[9px] text-white/30 text-center italic leading-tight">
+          * Cálculos basados en promedios de la zona central de Chile.
+        </p>
 
         {/* Captura de Leads (Formulario) */}
         <div className="space-y-4 relative">
