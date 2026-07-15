@@ -579,13 +579,13 @@ case 3:
               key={techo.id}
               onClick={() => setFormData({ ...formData, techoId: techo.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
+                "min-w-0 w-full p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
                 formData.techoId === techo.id
                   ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.15)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-              <span className="text-[11px] font-black uppercase leading-tight tracking-wider break-words">
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wide break-all">
                 {techo.nombre}
               </span>
             </button>
@@ -602,7 +602,7 @@ case 3:
               key={medidor.id}
               onClick={() => setFormData({ ...formData, medidorId: medidor.id })}
               className={cn(
-                "p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
+                "min-w-0 w-full p-5 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 text-center group min-h-[80px]",
                 formData.medidorId === medidor.id
                   ? "border-[#F07E04] bg-[#F07E04]/10 text-white shadow-[0_0_20px_rgba(240,126,4,0.1)]"
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
