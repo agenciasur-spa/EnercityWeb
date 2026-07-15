@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { getBusinessInfo } from '../lib/content';
+import { getOpenGraphData } from '../lib/open-graph';
 import WhatsAppFloat from '../components/atoms/whatsapp-float.astro';
 import GTM from '../components/GTM.astro';
 import GTMNoscript from '../components/GTMNoscript.astro';
@@ -13,6 +14,9 @@ interface Props {
   ogImage?: string;
 }
 
+const siteName = "Enercity";
+const siteUrl = "https://paneles-solares.cl";
+
 const {
   title,
   description = "Simula tu ahorro con paneles solares. Cotización personalizada en minutos para tu hogar o empresa en Chile.",
@@ -22,14 +26,17 @@ const {
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
-const siteName = "Enercity";
-const siteUrl = "https://paneles-solares.cl";
+const currentPath = Astro.url.pathname;
 
 const businessInfo = await getBusinessInfo();
 
-// OG tags: use dynamic values if provided, otherwise derive from page props
-const resolvedOgTitle = ogTitle || `${title} — ${siteName}`;
-const resolvedOgDescription = ogDescription || description;
+// Obtener datos de Open Graph desde la base de datos
+const ogData = await getOpenGraphData(currentPath);
+
+// Prioridad: props del componente > datos de BD > valores por defecto
+const resolvedOgTitle = ogTitle || ogData?.title || `${title} — ${siteName}`;
+const resolvedOgDescription = ogDescription || ogData?.description || description;
+const resolvedOgImage = ogImage || ogData?.image_url || `${siteUrl}/og-image.png`;
 
 // JSON-LD Structured Data
 const jsonLd = {
@@ -157,13 +164,13 @@ const jsonLd = {
     <meta property="og:description" content={resolvedOgDescription} />
     <meta property="og:site_name" content={siteName} />
     <meta property="og:locale" content="es_CL" />
-    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta property="og:image" content={resolvedOgImage} />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={resolvedOgTitle} />
     <meta name="twitter:description" content={resolvedOgDescription} />
-    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    <meta name="twitter:image" content={resolvedOgImage} />
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

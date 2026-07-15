@@ -340,20 +340,120 @@ y -= 35;
   y -= (specsCardHeight + 25);
 
   /// ========================================================================
-  // 4. CARD: DETALLE ECONÓMICO E INVERSIÓN (Sin fondo amarillo)
+  // 4. CARD: DETALLE ECONÓMICO E INVERSIÓN (Dual Pricing)
   // ========================================================================
-  const priceCardHeight = 90;
+  // Dynamic height based on how many pricing rows we show
+  const hasDualPricing = !!(data.precioLista || data.precioTransferencia);
+  const showFinalPrice = hasDualPricing && data.precioFinal && data.precioFinal !== data.precioTransferencia;
+  const showFactors = !!(data.factorTechoDisplay || data.factorMedidorDisplay);
+  const extraRows = (hasDualPricing ? 1 : 0) + (showFinalPrice ? 1 : 0) + (showFactors ? 1 : 0);
+  const priceCardHeight = 90 + extraRows * 20;
+
   drawCardBackground(page, y, priceCardHeight, COLOR_DARK_BLUE);
   drawCardHeaderLabel(page, fontBold, 'Detalle de Valores', y);
 
   cardY = y - 36;
-  cardY = drawCardRow(page, fontBold, fontRegular, 'Inversión Neto', formatCLP(data.systemPriceNoIva), cardY);
-  
-  // Renderizado limpio: solo el texto destaca en color naranja, sin el fondo amarillo
-  drawCardRow(page, fontBold, fontRegular, 'Inversión Total (IVA inc.)', formatCLP(data.systemPrice), cardY, {
-    isBoldValue: true,
-    valueColor: COLOR_ACCENT_ORANGE
-  });
+
+  // Precio Lista (tachado)
+  if (hasDualPricing && data.precioLista) {
+    const listaLabel = 'Precio Lista';
+    const listaValue = formatCLP(data.precioLista);
+    const labelWidth = fontRegular.widthOfTextAtSize(sanitizeText(listaLabel), 10);
+    const valueWidth = fontRegular.widthOfTextAtSize(sanitizeText(listaValue), 10);
+
+    page.drawText(sanitizeText(listaLabel), {
+      x: MARGIN_LEFT + 15,
+      y: cardY,
+      size: 10,
+      font: fontRegular,
+      color: COLOR_TEXT_DARK,
+    });
+    page.drawText(sanitizeText(listaValue), {
+      x: PAGE_WIDTH - MARGIN_RIGHT - 15 - valueWidth,
+      y: cardY,
+      size: 10,
+      font: fontRegular,
+      color: { red: 0.62, green: 0.68, blue: 0.75, type: 'RGB' } as RGB,
+    });
+    // Strikethrough line
+    page.drawLine({
+      start: { x: PAGE_WIDTH - MARGIN_RIGHT - 15 - valueWidth - 2, y: cardY + 3 },
+      end: { x: PAGE_WIDTH - MARGIN_RIGHT - 15 + 2, y: cardY + 3 },
+      thickness: 0.8,
+      color: { red: 0.62, green: 0.68, blue: 0.75, type: 'RGB' } as RGB,
+    });
+    cardY -= 20;
+  }
+
+  // Precio Transferencia (destacado, naranja)
+  if (hasDualPricing && data.precioTransferencia) {
+    const transLabel = 'Precio Transferencia';
+    const transValue = formatCLP(data.precioTransferencia);
+    const transValueWidth = fontBold.widthOfTextAtSize(sanitizeText(transValue), 11);
+
+    page.drawText(sanitizeText(transLabel), {
+      x: MARGIN_LEFT + 15,
+      y: cardY,
+      size: 10,
+      font: fontRegular,
+      color: COLOR_TEXT_DARK,
+    });
+    page.drawText(sanitizeText(transValue), {
+      x: PAGE_WIDTH - MARGIN_RIGHT - 15 - transValueWidth,
+      y: cardY,
+      size: 11,
+      font: fontBold,
+      color: COLOR_ACCENT_ORANGE,
+    });
+    cardY -= 20;
+  }
+
+  // Precio Final (si difiere por factores)
+  if (showFinalPrice && data.precioFinal) {
+    const finalLabel = 'Precio Final Ajustado';
+    const finalValue = formatCLP(data.precioFinal);
+    cardY = drawCardRow(page, fontBold, fontRegular, finalLabel, finalValue, cardY, {
+      isBoldValue: true,
+      valueColor: COLOR_WHITE,
+    });
+  }
+
+  // Fallback: old single-price display when no dual pricing data
+  if (!hasDualPricing) {
+    cardY = drawCardRow(page, fontBold, fontRegular, 'Inversión Neto', formatCLP(data.systemPriceNoIva), cardY);
+    drawCardRow(page, fontBold, fontRegular, 'Inversión Total (IVA inc.)', formatCLP(data.systemPrice), cardY, {
+      isBoldValue: true,
+      valueColor: COLOR_ACCENT_ORANGE,
+    });
+  }
+
+  // Factor breakdown
+  if (showFactors) {
+    cardY -= 4;
+    if (data.factorTechoDisplay) {
+      const factorText = `Techumbre: ${data.factorTechoDisplay}`;
+      const factorWidth = fontRegular.widthOfTextAtSize(sanitizeText(factorText), 8);
+      page.drawText(sanitizeText(factorText), {
+        x: (PAGE_WIDTH - factorWidth) / 2,
+        y: cardY,
+        size: 8,
+        font: fontRegular,
+        color: { red: 0.62, green: 0.68, blue: 0.75, type: 'RGB' } as RGB,
+      });
+      cardY -= 12;
+    }
+    if (data.factorMedidorDisplay) {
+      const factorText = `Medidor: ${data.factorMedidorDisplay}`;
+      const factorWidth = fontRegular.widthOfTextAtSize(sanitizeText(factorText), 8);
+      page.drawText(sanitizeText(factorText), {
+        x: (PAGE_WIDTH - factorWidth) / 2,
+        y: cardY,
+        size: 8,
+        font: fontRegular,
+        color: { red: 0.62, green: 0.68, blue: 0.75, type: 'RGB' } as RGB,
+      });
+    }
+  }
 
   y -= (priceCardHeight + 25);
   // ========================================================================

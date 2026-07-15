@@ -15,6 +15,7 @@ import {
   Briefcase,
   Calculator,
   SlidersHorizontal,
+  Share2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -63,6 +64,12 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/content/precios', label: 'Precios Kits', icon: Calculator },
       { href: '/admin/content/variables', label: 'Variables', icon: SlidersHorizontal },
+    ],
+  },
+  {
+    label: 'SEO',
+    items: [
+      { href: '/admin/open-graph', label: 'Open Graph', icon: Share2 },
     ],
   },
   {

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { 
-  Building2, Leaf, ChevronLeft, ChevronRight, 
+  Building2,Zap, Leaf, ChevronLeft, ChevronRight, 
   CheckCircle2, ShieldCheck, BarChart3 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -157,7 +157,9 @@ export function FeatureIndustrial({
               className="absolute -top-8 -right-8 hidden lg:flex items-center gap-5 px-7 py-5 rounded-[2rem] bg-white shadow-[0_25px_50px_-12px_rgba(10,25,41,0.12)] border border-gray-100 z-20 group/badge"
             >
               <div className="relative w-14 h-14 rounded-2xl bg-[#4AAF4D15] flex items-center justify-center text-[#4AAF4D]">
-                <Leaf className="w-7 h-7 group-hover/badge:rotate-12 transition-transform duration-300" fill="currentColor" />
+                
+                <Zap className="w-7 h-7 group-hover/badge:rotate-12 transition-transform duration-300" fill="currentColor" />
+
                 <div className="absolute inset-0 rounded-2xl bg-[#4AAF4D]/10 animate-pulse scale-110" />
               </div>
               <div>

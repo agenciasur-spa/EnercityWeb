@@ -1,0 +1,29 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import OpenGraphForm from '@/components/admin/open-graph-form';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('open_graph_data')
+  .select('id, route, title, description, image_url')
+  .order('route', { ascending: true });
+
+if (error) {
+  console.error('Error fetching open_graph_data:', error);
+}
+
+// Convertir a array simple para evitar problemas de serialización
+const ogData = (data ?? []).map(item => ({
+  id: item.id,
+  route: item.route,
+  title: item.title,
+  description: item.description,
+  image_url: item.image_url,
+}));
+---
+
+<AdminLayout title="Open Graph — Enercity Admin">
+  <OpenGraphForm client:load initialData={ogData} />
+</AdminLayout>
