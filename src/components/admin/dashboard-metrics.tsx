@@ -1,9 +1,9 @@
-import type { DashboardMetrics, LeadStatus, ContactStatus } from '@/types/admin';
+import type { DashboardMetrics as DashboardMetricsType } from '@/types/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 interface DashboardMetricsProps {
-  metrics: DashboardMetrics;
+  metrics: DashboardMetricsType;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function RecentLeadsTable({ leads }: { leads: DashboardMetrics['recent_leads'] }) {
+function RecentLeadsTable({ leads }: { leads: DashboardMetricsType['recent_leads'] }) {
   return (
     <Card>
       <CardHeader>
@@ -79,7 +79,7 @@ function RecentLeadsTable({ leads }: { leads: DashboardMetrics['recent_leads'] }
   );
 }
 
-function RecentContactsTable({ contacts }: { contacts: DashboardMetrics['recent_contacts'] }) {
+function RecentContactsTable({ contacts }: { contacts: DashboardMetricsType['recent_contacts'] }) {
   return (
     <Card>
       <CardHeader>

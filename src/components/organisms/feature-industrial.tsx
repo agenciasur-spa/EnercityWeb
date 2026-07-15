@@ -217,7 +217,7 @@ export function FeatureIndustrial({
 
             <div className="space-y-7">
               {(Array.isArray(sectionFeatures) ? sectionFeatures : []).map((featureText, idx) => {
-                const icons = [<CheckCircle2 />, <ShieldCheck />, <BarChart3 />];
+                const icons = [<CheckCircle2 key="check" />, <ShieldCheck key="shield" />, <BarChart3 key="chart" />];
                 const icon = icons[idx % icons.length];
                 return (
                   <motion.div 
