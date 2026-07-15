@@ -9,15 +9,17 @@ import type { PDFData } from "@/lib/pdf-types";
 import { buildPricingDisplay, buildPdfDataFromResult } from "@/lib/services/simulator-display";
 
 
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert, Download } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert, Download, ChevronsUpDown } from 'lucide-react';
 
 interface Comuna {
   id: number;
@@ -133,6 +135,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [captchaError, setCaptchaError] = useState(false);
   const [tiposTecho, setTiposTecho] = useState<VariableTecho[]>([]);
   const [tiposMedidor, setTiposMedidor] = useState<VariableMedidor[]>([]);
+  const [comunaOpen, setComunaOpen] = useState(false);
 
   const pageLoadTime = useRef(Date.now());
 
@@ -409,23 +412,56 @@ const renderStepContent = () => {
             </div>
 
             <div className="relative">
-              <Select
-                value={formData.comunaId.toString()}
-                onValueChange={(value) => setFormData({ ...formData, comunaId: parseInt(value) })}
-              >
-                 <SelectTrigger
-                   className="w-full px-4 py-3 md:px-5 md:py-4 h-auto bg-white/5 border border-white/10 rounded-xl md:rounded-2xl focus:ring-0 focus:border-[#F07E04] text-white/50 data-[placeholder]:text-white/50 flex justify-between items-center transition-all text-sm md:text-base"
-                 >
-                  <SelectValue placeholder="Selecciona una comuna" />
-                </SelectTrigger>
-                <SelectContent className="bg-[#154660] border-white/10 text-white rounded-xl">
-                  {comunas.filter((c: Comuna) => c.activa).map((comuna: Comuna) => (
-                    <SelectItem key={comuna.id} value={comuna.id.toString()} className="focus:bg-[#F07E04] focus:text-white cursor-pointer">
-                      {comuna.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={comunaOpen} onOpenChange={setComunaOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    aria-expanded={comunaOpen}
+                    className="w-full px-4 py-3 md:px-5 md:py-4 h-auto bg-white/5 border border-white/10 rounded-xl md:rounded-2xl focus:ring-0 focus:border-[#F07E04] text-white flex justify-between items-center transition-all text-sm md:text-base cursor-pointer"
+                  >
+                    {formData.comunaId
+                      ? comunas.find((c: Comuna) => c.id === formData.comunaId)?.nombre
+                      : <span className="text-white/50">Selecciona una comuna</span>}
+                    <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className="p-0 bg-[#154660] border-white/10 rounded-xl"
+                  align="start"
+                  style={{ width: 'var(--radix-popover-trigger-width)' }}
+                >
+                  <Command className="bg-[#154660] text-white [&_[data-slot=command-input-wrapper]]:border-white/10 [&_[data-slot=command-input-wrapper]_svg]:text-white/50 [&_[data-slot=command-item]]:text-white/80 [&_[data-slot=command-item][data-selected=true]]:bg-[#F07E04] [&_[data-slot=command-item][data-selected=true]]:text-white [&_[data-slot=command-empty]]:text-white/50">
+                    <CommandInput
+                      placeholder="Buscar comuna..."
+                      className="text-white placeholder:text-white/40"
+                    />
+                    <CommandList className="max-h-[200px]">
+                      <CommandEmpty className="text-white/50 py-4 text-sm">Sin resultados.</CommandEmpty>
+                      <CommandGroup>
+                        {comunas.filter((c: Comuna) => c.activa).map((comuna: Comuna) => (
+                          <CommandItem
+                            key={comuna.id}
+                            value={comuna.nombre}
+                            onSelect={() => {
+                              setFormData({ ...formData, comunaId: comuna.id });
+                              setComunaOpen(false);
+                            }}
+                            className="cursor-pointer data-[selected=true]:bg-[#F07E04] data-[selected=true]:text-white"
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.comunaId === comuna.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {comuna.nombre}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {(() => {
