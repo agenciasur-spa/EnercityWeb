@@ -19,10 +19,10 @@ export function buildPricingDisplay(result: any): PricingDisplay {
     (precioLista !== precioTransferencia || precioTransferencia !== precioFinal);
 
   const techoDisplay = result?.factors?.techo_nombre
-    ? `${result.factors.techo_nombre} (x${result.factors.techo_factor})`
+    ? `${result.factors.techo_nombre}`
     : '';
   const medidorDisplay = result?.factors?.medidor_nombre
-    ? `${result.factors.medidor_nombre} (x${result.factors.medidor_factor})`
+    ? `${result.factors.medidor_nombre}`
     : '';
 
   return {

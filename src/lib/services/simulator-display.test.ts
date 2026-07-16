@@ -105,8 +105,8 @@ describe('buildPricingDisplay', () => {
     const result = makeQuoteResult();
     const display = buildPricingDisplay(result);
 
-    expect(display.techoDisplay).toBe('Teja Chilena (x1.14)');
-    expect(display.medidorDisplay).toBe('Reja (x1.05)');
+    expect(display.techoDisplay).toBe('Teja Chilena');
+    expect(display.medidorDisplay).toBe('Reja');
   });
 
   it('returns empty factors when factors field is missing', () => {
@@ -140,8 +140,8 @@ describe('buildPdfDataFromResult', () => {
     expect(pdf.precioLista).toBe(5166937);
     expect(pdf.precioTransferencia).toBe(4650243);
     expect(pdf.precioFinal).toBe(5300243);
-    expect(pdf.factorTechoDisplay).toBe('Teja Chilena (x1.14)');
-    expect(pdf.factorMedidorDisplay).toBe('Reja (x1.05)');
+    expect(pdf.factorTechoDisplay).toBe('Teja Chilena');
+    expect(pdf.factorMedidorDisplay).toBe('Reja');
   });
 
   it('preserves all existing PDFData fields', () => {
