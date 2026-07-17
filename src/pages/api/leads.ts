@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Turnstile check
     if (!await verifyTurnstileToken(body.captchaToken || '')) {
       console.log(`[Turnstile] Bot detected from IP: ${clientIP}`);
-      return new Response(JSON.stringify({ error: 'Captcha invalido' }), {
+      return new Response(JSON.stringify({ error: 'Captcha invalido 00' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
