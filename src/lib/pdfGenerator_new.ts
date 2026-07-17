@@ -510,39 +510,16 @@ for (const item of itemsInclude) {
 }
 
   // ========================================================================
-  // 7. FOOTER & NOTA LEGAL (Estilo caja gris de fondo del Email)
+  // 7. FOOTER - Nota legal
   // ========================================================================
-  const footerY = 85;
-  
-  // Caja contenedora del footer
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: PAGE_WIDTH,
-    height: footerY,
-    color: COLOR_BG_CARD,
-    borderColor: COLOR_LIGHT_GRAY,
-    borderWidth: 1
-  });
-
   const disclaimerText = 'Este presupuesto tiene validez por 30 días desde la fecha de emisión. Valores estimados sujetos a confirmación técnica en terreno.';
   const discWidth = fontRegular.widthOfTextAtSize(disclaimerText, 8);
   page.drawText(sanitizeText(disclaimerText), {
     x: (PAGE_WIDTH - discWidth) / 2,
-    y: footerY - 25,
+    y: 50,
     size: 8,
     font: fontRegular,
     color: { red: 0.62, green: 0.68, blue: 0.75, type: 'RGB' } as RGB, // #a0aec0
-  });
-
-  const companyInfo = 'Enercity  ·  paneles-solares.cl  ·  contacto@enercity.cl';
-  const infoWidth = fontBold.widthOfTextAtSize(companyInfo, 9);
-  page.drawText(sanitizeText(companyInfo), {
-    x: (PAGE_WIDTH - infoWidth) / 2,
-    y: footerY - 45,
-    size: 9,
-    font: fontBold,
-    color: COLOR_DARK_BLUE,
   });
 
   // ========================================================================

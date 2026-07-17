@@ -574,7 +574,7 @@ case 3:
       {/* SELECCIÓN DE TECHO */}
       <div className="space-y-4">
         <span aria-label="Seleccione el tipo de techumbre" className="text-[10px] font-black text-[#F07E04] uppercase tracking-[0.2em] ml-2">Tipo de Techumbre</span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {tiposTecho.map((techo) => (
             <button
               key={techo.id}
