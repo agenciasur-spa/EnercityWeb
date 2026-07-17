@@ -25,7 +25,7 @@ const {
   ogImage,
 } = Astro.props;
 
-const canonicalURL = new URL(Astro.url.pathname, Astro.site).href;
+const canonicalURL = `${siteUrl}${Astro.url.pathname}`;
 const currentPath = Astro.url.pathname;
 
 const businessInfo = await getBusinessInfo();
@@ -36,7 +36,11 @@ const ogData = await getOpenGraphData(currentPath);
 // Prioridad: props del componente > datos de BD > valores por defecto
 const resolvedOgTitle = ogTitle || ogData?.title || `${title} — ${siteName}`;
 const resolvedOgDescription = ogDescription || ogData?.description || description;
-const resolvedOgImage = ogImage || ogData?.image_url || `${siteUrl}/og-image.png`;
+// Normalizar URL de OG image: si tiene dominio viejo, usar siteUrl actual
+const rawOgImage = ogImage || ogData?.image_url || `/og-image.png`;
+const resolvedOgImage = rawOgImage.startsWith('http')
+  ? rawOgImage.replace(/^https?:\/\/[^\/]+/, siteUrl)
+  : `${siteUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`;
 
 // JSON-LD Structured Data
 const jsonLd = {
