@@ -28,7 +28,7 @@ export function ContactCta({ content }: ContactCtaProps) {
 
   const pageLoadTime = useRef(Date.now());
 
-  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '';
+  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADX2Lum539ZQz4dt';
 
   // Validaciones en tiempo real
   const validateField = (name: string, value: string) => {
