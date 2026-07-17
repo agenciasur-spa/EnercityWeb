@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Save, Check, X } from 'lucide-react';
+import { Loader2, Save, Check, Upload, Eye, X } from 'lucide-react';
 
 interface OpenGraphData {
   id: number;
@@ -24,6 +24,8 @@ export default function OpenGraphForm({ initialData }: Props) {
   const [editForm, setEditForm] = useState<Partial<OpenGraphData>>({});
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<number | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleEdit = (item: OpenGraphData) => {
     setEditingId(item.id);
@@ -37,6 +39,36 @@ export default function OpenGraphForm({ initialData }: Props) {
   const handleCancel = () => {
     setEditingId(null);
     setEditForm({});
+  };
+
+  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/content/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error al subir imagen');
+      }
+
+      const { url } = await res.json();
+      setEditForm(prev => ({ ...prev, image_url: url }));
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert(err instanceof Error ? err.message : 'Error al subir la imagen');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleSave = async (id: number) => {
@@ -127,14 +159,59 @@ export default function OpenGraphForm({ initialData }: Props) {
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">URL de Imagen</label>
-                    <Input
-                      value={editForm.image_url || ''}
-                      onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
-                      placeholder="https://ejemplo.com/og-image.png"
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        value={editForm.image_url || ''}
+                        onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })}
+                        placeholder="https://ejemplo.com/og-image.png"
+                        className="flex-1"
+                      />
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleUploadImage}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        disabled={uploadingImage}
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Subir imagen"
+                      >
+                        {uploadingImage ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Recomendado: 1200x630px para Facebook, LinkedIn y WhatsApp
+                      Recomendado: 1200x630px para Facebook, LinkedIn y WhatsApp. Máx 5MB. JPEG, PNG o WebP.
                     </p>
+                    {editForm.image_url && (
+                      <div className="mt-2 relative group">
+                        <img
+                          src={editForm.image_url}
+                          alt="Preview"
+                          className="w-full max-w-md h-32 object-cover rounded-md border"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                        <a
+                          href={editForm.image_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded-md p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Abrir imagen en nueva pestaña"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
