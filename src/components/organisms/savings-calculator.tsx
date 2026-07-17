@@ -140,10 +140,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
 
   const pageLoadTime = useRef(Date.now());
 
-  const siteKey = import.meta.env.PUBLIC_TURNSTILE站点_KEY || '0x4AAAAAADX2Lum539ZQz4dt';
-  
-  // TEMPORARY: Use dummy token when Turnstile is disabled
-  const captchaToken = siteKey ? '0xdummyToken' : null;
+  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADX2Lum539ZQz4dt';
 
   // Fetch dynamic variables on mount
   useEffect(() => {
