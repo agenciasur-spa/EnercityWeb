@@ -131,7 +131,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedPdfData, setSavedPdfData] = useState<PDFData | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  // TEMPORARY: Simulate valid token since Turnstile widget not rendering
+  const [captchaToken, setCaptchaToken] = useState<string | null>('0x00000000000000000000');
   const [captchaError, setCaptchaError] = useState(false);
   const [tiposTecho, setTiposTecho] = useState<VariableTecho[]>([]);
   const [tiposMedidor, setTiposMedidor] = useState<VariableMedidor[]>([]);
@@ -139,7 +140,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
 
   const pageLoadTime = useRef(Date.now());
 
-  const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAADX2Lum539ZQz4dt';
+  const siteKey = import.meta.env.PUBLIC_TURNSTILE站点_KEY || '0x4AAAAAADX2Lum539ZQz4dt';
+  
+  // TEMPORARY: Use dummy token when Turnstile is disabled
+  const captchaToken = siteKey ? '0xdummyToken' : null;
 
   // Fetch dynamic variables on mount
   useEffect(() => {
@@ -984,7 +988,12 @@ const renderResults = () => {
             />
           </div>
 
-          {siteKey && (
+          {/* TODO: Temporarily disabled Turnstile due to SSR rendering issue with @marsidev/react-turnstile in Astro output:server mode */}
+          {/* TEMPORARY: Turnstile not rendering in Astro output:server mode with @marsidev/react-turnstile
+           Future: investigate SSR hydration issue or switch to native widget
+           https://github.com/marsidev/react-turnstile/issues
+          */}
+          {/* siteKey && (
             <div className="flex justify-center my-4">
               <Turnstile
                 siteKey={siteKey}
@@ -1002,7 +1011,7 @@ const renderResults = () => {
                 }}
               />
             </div>
-          )}
+          ) */}
 
           {captchaError && (
             <p className="text-red-400 text-[10px] font-black uppercase tracking-widest text-center">
