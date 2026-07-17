@@ -15,7 +15,12 @@ interface Props {
 }
 
 const siteName = "Enercity";
-const siteUrl = "https://asur-enercity-web.vercel.app";
+const siteUrl = import.meta.env.PUBLIC_SITE_URL
+  || (typeof import.meta.env.VERCEL_PROJECT_PRODUCTION_URL === 'string'
+    ? `https://${import.meta.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : typeof import.meta.env.VERCEL_URL === 'string'
+      ? `https://${import.meta.env.VERCEL_URL}`
+      : 'http://localhost:4321');
 
 const {
   title,
