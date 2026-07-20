@@ -146,10 +146,7 @@ export const POST: APIRoute = async ({ request }) => {
       generacionAnual: k.generacion_anual != null ? Number(k.generacion_anual) : undefined,
     }));
 
-    // Calculate annual consumption from monthly bill
-    const consumoAnual = (montoBoleta / ROI_CONSTANTS.tarifaEst) * 12;
-
-    const kit = findKitByConsumoAnual(kits, Math.round(consumoAnual));
+    const kit = findKitByConsumoAnual(kits, montoBoleta);
 
     if (!kit) {
       return new Response(
