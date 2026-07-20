@@ -6,6 +6,8 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 const DEFAULT_SETTINGS: Record<string, number | string> = {
   iva: 1.19,
+  limite_inferior: 50000,
+  limite_superior: 400000,
   performance_ratio: 0.80,
   potencia_modulo_wp: 450,
   email_from_name: 'Enercity',

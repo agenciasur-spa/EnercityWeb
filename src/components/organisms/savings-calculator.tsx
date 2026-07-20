@@ -137,6 +137,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [tiposTecho, setTiposTecho] = useState<VariableTecho[]>([]);
   const [tiposMedidor, setTiposMedidor] = useState<VariableMedidor[]>([]);
   const [comunaOpen, setComunaOpen] = useState(false);
+  const [sliderLimits, setSliderLimits] = useState({ min: 30000, max: 400000 });
 
   const pageLoadTime = useRef(Date.now());
 
@@ -153,6 +154,18 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       .then((r) => r.json())
       .then((data) => setTiposMedidor(Array.isArray(data) ? data : []))
       .catch(() => setTiposMedidor([]));
+
+    fetch('/api/slider-limits')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.limiteInferior && data.limiteSuperior) {
+          setSliderLimits({
+            min: Math.max(30000, data.limiteInferior - 20000), // Allow sliding below minimum
+            max: data.limiteSuperior,
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const [formData, setFormData] = useState({
@@ -177,7 +190,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       case 1:
         return formData.comunaId > 0;
       case 2:
-        return formData.montoBoleta >= 50000;
+        return formData.montoBoleta >= sliderLimits.min + 20000; // Minimum valid amount
       case 3:
         return formData.techoId > 0 && formData.medidorId > 0;
       case 4:
@@ -519,26 +532,26 @@ const renderStepContent = () => {
             <div className="px-2 md:px-4 space-y-4">
               <input
                 type="range"
-                min="30000"
-                max="400000"
+                min={sliderLimits.min}
+                max={sliderLimits.max}
                 step="5000"
                 value={formData.montoBoleta || 100000}
                 onChange={(e) => setFormData({ ...formData, montoBoleta: parseInt(e.target.value) })}
                 className="w-full h-8 md:h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#F07E04]"
                 style={{
-                  background: `linear-gradient(to right, #F07E04 0%, #F07E04 ${(((formData.montoBoleta || 100000) - 30000) * 100) / (400000 - 30000)}%, rgba(255,255,255,0.1) ${(((formData.montoBoleta || 100000) - 30000) * 100) / (400000 - 30000)}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(to right, #F07E04 0%, #F07E04 ${(((formData.montoBoleta || 100000) - sliderLimits.min) * 100) / (sliderLimits.max - sliderLimits.min)}%, rgba(255,255,255,0.1) ${(((formData.montoBoleta || 100000) - sliderLimits.min) * 100) / (sliderLimits.max - sliderLimits.min)}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
               <div className="flex justify-between text-[9px] md:text-[10px] font-black text-white/30 uppercase tracking-widest">
-                <span>$30.000</span>
-                <span>$400.000+</span>
+                <span>{formatCLP(sliderLimits.min)}</span>
+                <span>{formatCLP(sliderLimits.max)}+</span>
               </div>
             </div>
 
             {/* Alertas Lógicas del HTML */}
             <div className="min-h-[60px]">
               <AnimatePresence mode="wait">
-                {formData.montoBoleta > 0 && formData.montoBoleta < 50000 && (
+                {formData.montoBoleta > 0 && formData.montoBoleta < sliderLimits.min + 20000 && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                     className="bg-[#4AAF4D]/10 border border-[#4AAF4D]/20 p-4 rounded-2xl flex items-center gap-3 text-[#4AAF4D] text-xs">
                     <Check className="w-4 h-4" />
