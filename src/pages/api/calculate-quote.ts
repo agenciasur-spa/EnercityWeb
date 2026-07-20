@@ -1,6 +1,5 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
-import { getSettings } from '../../lib/settings';
 import {
   findKitByConsumoAnual,
   calculateFinalPrice,
@@ -63,10 +62,6 @@ function resolveMedidor(
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const dbSettings = await getSettings();
-    const limiteInferior = Number(dbSettings.limite_inferior) || 50000;
-    const limiteSuperior = Number(dbSettings.limite_superior) || 230000;
-
     const body: RequestBody = await request.json();
     const { montoBoleta, comunaId, techoId, medidorId, tipoTecho, tipoMedidor } = body;
 
@@ -83,6 +78,26 @@ export const POST: APIRoute = async ({ request }) => {
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // --- Fetch all kits first (limits derived from actual data) ---
+    const { data: dbKits, error: errorKits } = await supabase
+      .from('precios_kits')
+      .select('*')
+      .order('rango_desde', { ascending: true });
+
+    if (errorKits || !dbKits) {
+      return new Response(
+        JSON.stringify({
+          estado: 'ERROR' as EstadoResultado,
+          mensaje: 'No se pudieron cargar los kits.',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Derive limits from actual kit ranges
+    const limiteInferior = dbKits[0]?.rango_desde ?? 50000;
+    const limiteSuperior = dbKits[dbKits.length - 1]?.rango_hasta ?? 404024;
 
     // --- Validate limits ---
     if (montoBoleta < limiteInferior) {
@@ -111,22 +126,6 @@ export const POST: APIRoute = async ({ request }) => {
       .select('id, nombre, region, radiacion_ghi, tarifa_est')
       .eq('id', comunaId)
       .single();
-
-    // --- Fetch all kits and find by annual consumption range ---
-    const { data: dbKits, error: errorKits } = await supabase
-      .from('precios_kits')
-      .select('*')
-      .order('rango_desde', { ascending: true });
-
-    if (errorKits || !dbKits) {
-      return new Response(
-        JSON.stringify({
-          estado: 'ERROR' as EstadoResultado,
-          mensaje: 'No se pudieron cargar los kits.',
-        }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
 
     const kits: Kit[] = dbKits.map((k: any) => ({
       id: k.id,
