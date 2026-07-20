@@ -599,7 +599,7 @@ case 3:
                   : "border-white/5 bg-white/5 text-white/40 hover:border-white/20"
               )}
             >
-              <span className="text-[11px] font-black uppercase leading-tight tracking-wide break-all">
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wide break-words">
                 {techo.nombre}
               </span>
             </button>
