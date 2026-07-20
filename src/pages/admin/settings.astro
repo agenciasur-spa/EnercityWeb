@@ -13,7 +13,9 @@ if (error) {
   console.error('Error fetching settings:', error);
 }
 
-const settings = (data ?? []) as AdminSetting[];
+// Filter out dynamic limits (now derived from kit ranges)
+const FILTERED_KEYS = ['limite_inferior', 'limite_superior'];
+const settings = (data ?? []).filter((s: any) => !FILTERED_KEYS.includes(s.key)) as AdminSetting[];
 ---
 
 <AdminLayout title="Configuración — Enercity Admin">
