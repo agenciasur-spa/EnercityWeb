@@ -520,18 +520,18 @@ const renderStepContent = () => {
               <input
                 type="range"
                 min="30000"
-                max="230000"
+                max="404024"
                 step="5000"
                 value={formData.montoBoleta || 100000}
                 onChange={(e) => setFormData({ ...formData, montoBoleta: parseInt(e.target.value) })}
                 className="w-full h-8 md:h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#F07E04]"
                 style={{
-                  background: `linear-gradient(to right, #F07E04 0%, #F07E04 ${(((formData.montoBoleta || 100000) - 30000) * 100) / (230000 - 30000)}%, rgba(255,255,255,0.1) ${(((formData.montoBoleta || 100000) - 30000) * 100) / (230000 - 30000)}%, rgba(255,255,255,0.1) 100%)`
+                  background: `linear-gradient(to right, #F07E04 0%, #F07E04 ${(((formData.montoBoleta || 100000) - 30000) * 100) / (404024 - 30000)}%, rgba(255,255,255,0.1) ${(((formData.montoBoleta || 100000) - 30000) * 100) / (404024 - 30000)}%, rgba(255,255,255,0.1) 100%)`
                 }}
               />
               <div className="flex justify-between text-[9px] md:text-[10px] font-black text-white/30 uppercase tracking-widest">
                 <span>$30.000</span>
-                <span>$230.000+</span>
+                <span>$404.024+</span>
               </div>
             </div>
 
