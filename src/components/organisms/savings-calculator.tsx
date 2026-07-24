@@ -868,7 +868,7 @@ const renderResults = () => {
           const pricing = buildPricingDisplay(result);
           return (
             <div className="space-y-3">
-              {/* Precio Lista (tachado) */}
+              {/* Precio Lista (tachado) — with factors applied */}
               {pricing.hasDualPricing && pricing.precioLista > 0 && (
                 <div className="text-center">
                   <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Precio Lista</span>
@@ -878,23 +878,13 @@ const renderResults = () => {
                 </div>
               )}
 
-              {/* Precio Transferencia (destacado) */}
+              {/* Precio Transferencia (destacado) — with factors applied */}
               <div className="text-center bg-white/5 p-4 md:p-5 rounded-2xl border border-white/5">
                 <span className="text-[9px] md:text-[10px] font-black text-[#F07E04] uppercase tracking-widest">Precio Transferencia</span>
                 <div className="text-2xl md:text-3xl lg:text-4xl font-black text-[#F07E04] break-all">
                   {formatCLP(pricing.precioTransferencia || calculo.precioFinalIva)}
                 </div>
               </div>
-
-              {/* Precio Final (si difiere por factores) */}
-              {pricing.hasDualPricing && pricing.precioFinal > 0 && pricing.precioFinal !== pricing.precioTransferencia && (
-                <div className="text-center">
-                  <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Precio Final Ajustado</span>
-                  <div className="text-xl md:text-2xl font-black text-white break-all">
-                    {formatCLP(pricing.precioFinal)}
-                  </div>
-                </div>
-              )}
 
               {/* Desglose de factores */}
               {(pricing.techoDisplay || pricing.medidorDisplay) && (

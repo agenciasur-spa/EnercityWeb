@@ -10,13 +10,14 @@ interface PricingDisplay {
 }
 
 export function buildPricingDisplay(result: any): PricingDisplay {
-  const precioLista = result?.precio_lista ?? result?.calculo?.precioBase ?? 0;
-  const precioTransferencia = result?.precio_transferencia ?? result?.calculo?.precioBase ?? 0;
-  const precioFinal = result?.precio_final ?? result?.calculo?.precioFinalIva ?? result?.calculo?.precioFinal ?? 0;
+  // After API fix: precio_lista and precio_transferencia BOTH have factors applied.
+  // precio_lista = precioListaBase × factorTecho × factorMedidor
+  // precio_transferencia (= precio_final) = precioTransferenciaBase × factorTecho × factorMedidor
+  const precioLista = result?.precio_lista ?? 0;
+  const precioFinal = result?.precio_final ?? result?.precio_transferencia ?? 0;
+  const precioTransferencia = precioFinal; // transferencia WITH factors = the highlighted price
 
-  const hasDualPricing =
-    (result?.precio_lista != null || result?.precio_transferencia != null) &&
-    (precioLista !== precioTransferencia || precioTransferencia !== precioFinal);
+  const hasDualPricing = precioLista > 0 && precioLista !== precioTransferencia;
 
   const techoDisplay = result?.factors?.techo_nombre
     ? `${result.factors.techo_nombre}`

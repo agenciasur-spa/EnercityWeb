@@ -172,10 +172,11 @@ export const POST: APIRoute = async ({ request }) => {
     const techoNombre = techo?.nombre ?? 'Standard';
     const medidorNombre = medidor?.nombre ?? 'Standard';
 
-    // --- Calculate prices ---
-    const precioTransferencia = kit.precioTransferencia ?? kit.precioNetoBase;
-    const precioLista = kit.precioLista ?? Math.round(precioTransferencia * 1.11); // fallback 11% markup
-    const precioFinal = calculateFinalPrice(precioTransferencia, factorTecho, factorMedidor);
+    // --- Calculate prices (factors apply to BOTH lista and transferencia) ---
+    const precioTransferenciaBase = kit.precioTransferencia ?? kit.precioNetoBase;
+    const precioListaBase = kit.precioLista ?? Math.round(precioTransferenciaBase * 1.11); // fallback 11% markup
+    const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor);
+    const precioFinal = calculateFinalPrice(precioTransferenciaBase, factorTecho, factorMedidor);
 
     // --- Calculate ROI ---
     const roi = calculateROI(
@@ -206,7 +207,7 @@ export const POST: APIRoute = async ({ request }) => {
         precioNetoBase: kit.precioNetoBase,
       },
       precio_lista: precioLista,
-      precio_transferencia: precioTransferencia,
+      precio_transferencia: precioFinal,
       precio_final: precioFinal,
       factors: {
         techo_nombre: techoNombre,
@@ -238,7 +239,7 @@ export const POST: APIRoute = async ({ request }) => {
           }
         : undefined,
       calculo: {
-        precioBase: precioTransferencia,
+        precioBase: precioTransferenciaBase,
         factorTecho,
         recargoTecho: 0,
         costoMedidor: 0,
