@@ -1,0 +1,209 @@
+---
+import Layout from '../../layouts/layout.astro';
+import { Navbar } from '../../components/organisms/navbar';
+import { Footer } from '../../components/organisms/footer';
+import { ProjectSpecs } from '../../components/organisms/project-specs';
+import { supabase } from '../../lib/supabase';
+import { getNavLinks, getFooterContent } from '../../lib/content';
+import type { NavLink } from '../../types/content';
+import type { ProyectoDetalle } from '../../types/proyecto-detalle';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+const [navbarLinks, footerLinks, footerContent] = await Promise.all([
+  getNavLinks('navbar'),
+  getNavLinks('footer'),
+  getFooterContent(),
+]);
+
+const { data, error } = await supabase
+  .from('proyectos')
+  .select('*')
+  .eq('slug', slug)
+  .eq('activo', true)
+  .limit(1)
+  .maybeSingle();
+
+if (error) {
+  console.error('[proyectos/[slug].astro] Supabase query error:', error);
+}
+
+const proyecto = data as unknown as ProyectoDetalle | null;
+
+if (!proyecto) {
+  return Astro.redirect('/proyectos');
+}
+
+const siteUrl =
+  import.meta.env.PUBLIC_SITE_URL ||
+  (typeof import.meta.env.VERCEL_PROJECT_PRODUCTION_URL === 'string'
+    ? `https://${import.meta.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : typeof import.meta.env.VERCEL_URL === 'string'
+      ? `https://${import.meta.env.VERCEL_URL}`
+      : 'http://localhost:4321');
+
+const pageUrl = `${siteUrl}/proyectos/${proyecto.slug}`;
+
+const seoTitle = `${proyecto.nombre} | Proyectos Enercity`;
+const seoDescription =
+  proyecto.descripcion ?? `Proyecto solar ${proyecto.nombre} — ${proyecto.potencia_kwp ?? ''} kWp en ${proyecto.ubicacion ?? 'Chile'}.`;
+
+// JSON-LD: BreadcrumbList + Place
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: siteUrl },
+        { '@type': 'ListItem', position: 2, name: 'Proyectos', item: `${siteUrl}/proyectos` },
+        { '@type': 'ListItem', position: 3, name: proyecto.nombre, item: pageUrl },
+      ],
+    },
+    {
+      '@type': 'Place',
+      '@id': `${pageUrl}#place`,
+      name: proyecto.nombre,
+      description: proyecto.descripcion ?? undefined,
+      image: proyecto.imagen_portada ?? undefined,
+      url: pageUrl,
+      address:
+        proyecto.ubicacion || proyecto.region
+          ? {
+              '@type': 'PostalAddress',
+              addressLocality: proyecto.ubicacion ?? undefined,
+              addressRegion: proyecto.region ?? undefined,
+              addressCountry: 'CL',
+            }
+          : undefined,
+    },
+  ],
+};
+
+// Specs array (only non-null entries)
+const specs: { icon: string; label: string; value: string }[] = [];
+if (proyecto.potencia_kwp != null) specs.push({ icon: 'Zap', label: 'Potencia', value: `${proyecto.potencia_kwp} kWp` });
+if (proyecto.cantidad_paneles != null) specs.push({ icon: 'SolarPanel', label: 'Paneles', value: String(proyecto.cantidad_paneles) });
+if (proyecto.cantidad_inversores != null) specs.push({ icon: 'Bolt', label: 'Inversores', value: String(proyecto.cantidad_inversores) });
+if (proyecto.generacion_mwh_anual != null) specs.push({ icon: 'Activity', label: 'Generación', value: `${proyecto.generacion_mwh_anual} MWh/año` });
+if (proyecto.tipo_estructura) specs.push({ icon: 'Building', label: 'Estructura', value: proyecto.tipo_estructura });
+if (proyecto.ano != null) specs.push({ icon: 'Calendar', label: 'Año', value: String(proyecto.ano) });
+if (proyecto.ubicacion) specs.push({ icon: 'MapPin', label: 'Ubicación', value: proyecto.ubicacion });
+if (proyecto.cliente) specs.push({ icon: 'User', label: 'Cliente', value: proyecto.cliente });
+---
+
+<Layout title={seoTitle} description={seoDescription} ogImage={proyecto.imagen_portada ?? undefined}>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <Navbar client:load links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
+
+  {/* Hero header — full-width image with dark overlay for navbar legibility */}
+  <section class="relative flex min-h-[55vh] w-full items-end overflow-hidden bg-[#0A1929]">
+    {proyecto.imagen_portada && (
+      <div class="absolute inset-0 z-0">
+        <img
+          src={proyecto.imagen_portada}
+          alt={proyecto.nombre}
+          class="size-full object-cover"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <div class="absolute inset-0 bg-[#0A1929]/60 mix-blend-multiply"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0A1929] via-[#0A1929]/30 to-transparent"></div>
+      </div>
+    )}
+
+    <div class="container mx-auto px-6 relative z-10 pb-10 pt-32">
+      {/* Breadcrumb */}
+      <nav class="mb-6 flex items-center gap-2 text-sm text-white/60" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-[#F07E04]">Inicio</a>
+        <span>/</span>
+        <a href="/proyectos" class="hover:text-[#F07E04]">Proyectos</a>
+        <span>/</span>
+        <span class="font-medium text-white">{proyecto.nombre}</span>
+      </nav>
+
+      {/* Title + badge */}
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-4xl font-bold tracking-tight text-white drop-shadow-2xl md:text-5xl lg:text-6xl">
+          {proyecto.nombre}
+        </h1>
+        {proyecto.segmento && (
+          <span class="rounded-full bg-[#F07E04] px-4 py-1 text-sm font-bold text-white shadow-lg">
+            {proyecto.segmento}
+          </span>
+        )}
+      </div>
+
+      {proyecto.descripcion && (
+        <p class="mt-4 max-w-3xl text-lg leading-relaxed text-white/80 drop-shadow-md">
+          {proyecto.descripcion}
+        </p>
+      )}
+    </div>
+  </section>
+
+  <main>
+    <div class="container mx-auto max-w-6xl px-6 py-12">
+
+      {/* Cover image — clean, no filter */}
+      {proyecto.imagen_portada && (
+        <div class="mb-12 overflow-hidden rounded-[2rem] shadow-lg">
+          <img
+            src={proyecto.imagen_portada}
+            alt={proyecto.nombre}
+            class="max-h-[500px] w-full object-cover"
+            loading="eager"
+          />
+        </div>
+      )}
+
+      {/* Specs grid with icons */}
+      {specs.length > 0 && (
+        <section class="mb-12">
+          <h2 class="mb-6 text-2xl font-bold text-[#154660]">Especificaciones</h2>
+          <ProjectSpecs client:visible specs={specs} marcaPanel={proyecto.marca_panel} marcaInversor={proyecto.marca_inversor} />
+        </section>
+      )}
+
+      {/* Gallery — 3 columns, square, rounded */}
+      {proyecto.galeria && proyecto.galeria.length > 0 && (
+        <section class="mb-12">
+          <h2 class="mb-6 text-2xl font-bold text-[#154660]">Galería</h2>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            {proyecto.galeria.map((img, idx) => (
+              <div key={idx} class="overflow-hidden rounded-2xl">
+                <img
+                  src={img}
+                  alt={`${proyecto.nombre} — imagen ${idx + 1}`}
+                  class="aspect-square w-full object-cover transition-transform duration-500 hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* CTA */}
+      <section class="my-16 overflow-hidden rounded-[2rem] bg-[#154660] px-8 py-12 text-center text-white md:px-16 md:py-16">
+        <h2 class="text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl">
+          ¿Quieres un proyecto como este?
+        </h2>
+        <p class="mx-auto mt-3 max-w-xl text-white/70">
+          Simula tu instalación solar y descubre cuánto puedes ahorrar con Enercity.
+        </p>
+        <a
+          href="/#simulador-section"
+          class="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F07E04] px-8 py-3 font-bold text-white shadow-[0_4px_20px_rgba(240,126,4,0.33)] transition-colors hover:bg-[#F09C0A]"
+        >
+          Simular mi proyecto
+        </a>
+      </section>
+    </div>
+  </main>
+
+  <Footer client:visible links={footerLinks} content={footerContent} />
+</Layout>

@@ -1,0 +1,85 @@
+---
+import Layout from '../../layouts/layout.astro';
+import { Navbar } from '../../components/organisms/navbar';
+import { Footer } from '../../components/organisms/footer';
+import { ProyectosListado } from '../../components/organisms/proyectos-listado';
+import { supabase } from '../../lib/supabase';
+import { getNavLinks, getFooterContent } from '../../lib/content';
+import type { NavLink } from '../../types/content';
+import type { ProyectoDetalle } from '../../types/proyecto-detalle';
+
+export const prerender = false;
+
+const [navbarLinks, footerLinks, footerContent] = await Promise.all([
+  getNavLinks('navbar'),
+  getNavLinks('footer'),
+  getFooterContent(),
+]);
+
+const { data, error } = await supabase
+  .from('proyectos')
+  .select('*')
+  .eq('activo', true)
+  .order('orden', { ascending: true });
+
+if (error) {
+  console.error('[proyectos/index.astro] Supabase query error:', error);
+}
+
+const proyectos = (data ?? []) as unknown as ProyectoDetalle[];
+
+const seoTitle = 'Proyectos Solares | Enercity';
+const seoDescription =
+  'Conoce nuestros proyectos de energía solar fotovoltaica instalados en todo Chile. Plantas industriales, comerciales y residenciales con paneles de alta eficiencia.';
+---
+
+<Layout title={seoTitle} description={seoDescription}>
+  <Navbar client:load links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
+
+  <main>
+    {/* Hero — estilo home: fondo oscuro + overlay para legibilidad del navbar */}
+    <section class="relative flex min-h-[60vh] w-full items-center overflow-hidden bg-[#0A1929] pt-28">
+      {/* Background image */}
+      <div class="absolute inset-0 z-0">
+        <img
+          src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1920&q=80"
+          alt="Instalación solar Enercity"
+          class="size-full object-cover"
+          loading="eager"
+          fetchpriority="high"
+        />
+        <div class="absolute inset-0 bg-[#0A1929]/75 mix-blend-multiply"></div>
+        <div class="absolute inset-0 bg-gradient-to-tr from-[#0A1929] via-[#0A1929]/60 to-black/40"></div>
+      </div>
+
+      {/* Content */}
+      <div class="container mx-auto px-6 relative z-10 py-16">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full mb-8 bg-white/10 backdrop-blur-md border border-white/20 shadow-xl">
+          <div class="w-2.5 h-2.5 rounded-full bg-[#4AAF4D] animate-pulse"></div>
+          <span class="text-xs md:text-sm font-black tracking-[0.2em] uppercase text-white">
+            Nuestra Experiencia
+          </span>
+        </div>
+
+        <h1 class="text-5xl md:text-6xl lg:text-7xl font-semibold text-white leading-[1.05] mb-6 drop-shadow-2xl">
+          Proyectos <span class="text-[#F07E04]">Solares</span>
+        </h1>
+
+        <p class="text-lg md:text-xl text-white/90 max-w-2xl font-medium drop-shadow-md leading-relaxed">
+          Plantas fotovoltaicas que estamos orgullosos de haber construido en todo Chile.
+        </p>
+      </div>
+    </section>
+
+    {/* Listing */}
+    {proyectos.length > 0 ? (
+      <ProyectosListado client:load proyectos={proyectos} />
+    ) : (
+      <div class="py-20 text-center">
+        <p class="text-lg text-muted-foreground">Pronto mostraremos nuestros proyectos aquí.</p>
+      </div>
+    )}
+  </main>
+
+  <Footer client:visible links={footerLinks} content={footerContent} />
+</Layout>
