@@ -222,6 +222,19 @@ function LeadDetail({ data, adminUserId, adminEmail }: LeadDetailProps) {
               </div>
             </div>
             <div className="flex items-start gap-3">
+              <div className="mt-0.5 h-4 w-4 shrink-0 flex items-center justify-center text-muted-foreground">🔋</div>
+              <div>
+                <p className="text-xs text-muted-foreground">Batería</p>
+                {lead.battery_required ? (
+                  <Badge variant="outline" className="border-[#F07E04]/40 bg-[#F07E04]/10 text-[#F07E04]">
+                    Sí {lead.battery_cost ? `(+${formatCLP(lead.battery_cost)})` : ''}
+                  </Badge>
+                ) : (
+                  <p className="text-sm font-medium text-muted-foreground">No</p>
+                )}
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
               <CalendarIcon className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
               <div>
                 <p className="text-xs text-muted-foreground">Creado</p>

@@ -23,7 +23,7 @@ const [
 ] = await Promise.all([
   supabaseAdmin
     .from('leads')
-    .select('id, nombre, email, telefono, estado, notas, created_at, updated_at, monto_boleta_ingresado, factor_techo_aplicado, costo_fijo_medidor_aplicado, precio_final_iva, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)')
+    .select('id, nombre, email, telefono, estado, notas, created_at, updated_at, monto_boleta_ingresado, factor_techo_aplicado, costo_fijo_medidor_aplicado, precio_final_iva, battery_required, battery_cost, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)')
     .eq('id', id)
     .single(),
   supabaseAdmin
@@ -55,6 +55,8 @@ type LeadRow = {
   factor_techo_aplicado: number;
   costo_fijo_medidor_aplicado: number;
   precio_final_iva: number;
+  battery_required: boolean | null;
+  battery_cost: number | null;
   comunas: { nombre: string } | null;
   precios_kits: { consumo_bruto: number; paneles: number; kwp: number } | null;
 };
@@ -76,6 +78,8 @@ const lead: AdminLead = {
   factor_techo_aplicado: leadRow.factor_techo_aplicado,
   costo_fijo_medidor_aplicado: leadRow.costo_fijo_medidor_aplicado,
   precio_final_iva: leadRow.precio_final_iva,
+  battery_required: leadRow.battery_required ?? false,
+  battery_cost: leadRow.battery_cost ?? 0,
   estado: leadRow.estado as AdminLead['estado'],
   notas: leadRow.notas,
   created_at: leadRow.created_at,

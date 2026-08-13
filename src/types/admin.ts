@@ -36,6 +36,8 @@ export interface AdminLead {
   factor_techo_aplicado: number;
   costo_fijo_medidor_aplicado: number;
   precio_final_iva: number;
+  battery_required?: boolean;
+  battery_cost?: number;
   estado: LeadStatus;
   notas: string | null;
   created_at: string;

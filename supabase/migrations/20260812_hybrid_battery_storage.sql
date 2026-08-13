@@ -38,9 +38,11 @@ BEGIN
 END $$;
 
 -- Seed default battery data (one active 15 kWh battery)
-INSERT INTO public.almacenamiento_baterias (etiqueta, precio_neto, activo) VALUES
-('Batería 15 kWh', 8968806, true)
-ON CONFLICT DO NOTHING;
+INSERT INTO public.almacenamiento_baterias (etiqueta, precio_neto, activo)
+SELECT 'Batería 15 kWh', 8968806, true
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.almacenamiento_baterias WHERE etiqueta = 'Batería 15 kWh'
+);
 
 -- Permission grants (RLS policies above gate row access; these allow the roles to touch the table)
 GRANT SELECT ON public.almacenamiento_baterias TO anon, authenticated;
