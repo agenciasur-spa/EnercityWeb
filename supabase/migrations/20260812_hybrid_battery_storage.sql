@@ -20,12 +20,22 @@ WHERE activo = true;
 ALTER TABLE public.almacenamiento_baterias ENABLE ROW LEVEL SECURITY;
 
 -- Public read access for active batteries (anon and authenticated)
-CREATE POLICY "Public read active almacenamiento_baterias" ON public.almacenamiento_baterias 
-FOR SELECT TO anon, authenticated USING (activo = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read active almacenamiento_baterias' AND tablename = 'almacenamiento_baterias') THEN
+    CREATE POLICY "Public read active almacenamiento_baterias" ON public.almacenamiento_baterias 
+    FOR SELECT TO anon, authenticated USING (activo = true);
+  END IF;
+END $$;
 
 -- Full access for service_role (admin operations)
-CREATE POLICY "Service role full access almacenamiento_baterias" ON public.almacenamiento_baterias 
-FOR ALL TO service_role USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Service role full access almacenamiento_baterias' AND tablename = 'almacenamiento_baterias') THEN
+    CREATE POLICY "Service role full access almacenamiento_baterias" ON public.almacenamiento_baterias 
+    FOR ALL TO service_role USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Seed default battery data (one active 15 kWh battery)
 INSERT INTO public.almacenamiento_baterias (etiqueta, precio_neto, activo) VALUES
