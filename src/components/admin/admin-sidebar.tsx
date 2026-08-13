@@ -17,6 +17,10 @@ import {
   Calculator,
   SlidersHorizontal,
   Share2,
+  Package,
+  Truck,
+  MapPin,
+  Battery,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -66,6 +70,10 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/admin/content/precios', label: 'Precios Kits', icon: Calculator },
       { href: '/admin/content/variables', label: 'Variables', icon: SlidersHorizontal },
+      { href: '/admin/content/equipment', label: 'Catálogo Equipos', icon: Package },
+      { href: '/admin/content/dispatch-costs', label: 'Costo Despacho', icon: Truck },
+      { href: '/admin/content/bateria', label: 'Batería Híbrida', icon: Battery },
+      { href: '/admin/content/comunas', label: 'Comunas', icon: MapPin },
     ],
   },
   {

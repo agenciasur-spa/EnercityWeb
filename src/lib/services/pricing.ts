@@ -38,12 +38,14 @@ export function calculateFinalPrice(
  * @param generacionAnual - Pre-calculated annual generation in kWh (0 = fallback to estimate)
  * @param precioFinal - Final price after all factors
  * @param montoBoleta - Monthly electricity bill in CLP
+ * @param dispatchCost - Regional fixed dispatch cost (optional, defaults to 0)
  */
 export function calculateROI(
   potenciaTotalSistema: number,
   generacionAnual: number,
   precioFinal: number,
-  montoBoleta: number
+  montoBoleta: number,
+  dispatchCost: number = 0
 ) {
   const { radiacionGhi, tarifaEst, performanceRatio } = ROI_CONSTANTS;
 
@@ -56,7 +58,10 @@ export function calculateROI(
   const ahorroMensual = ahorroAnual / 12;
   const coberturaPorcentaje =
     consumoKwhAnual > 0 ? Math.min((generacionEstimada / consumoKwhAnual) * 100, 95) : 0;
-  const paybackAnos = ahorroAnual > 0 ? precioFinal / ahorroAnual : 999;
+
+  // Include dispatch cost in payback calculation
+  const totalInversion = precioFinal + dispatchCost;
+  const paybackAnos = ahorroAnual > 0 ? totalInversion / ahorroAnual : 999;
 
   return {
     consumoKwhAnual: Math.round(consumoKwhAnual),

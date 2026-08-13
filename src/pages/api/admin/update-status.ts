@@ -42,7 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  if (table !== 'leads' && table !== 'contacts') {
+  if (table !== 'leads' && table !== 'contacts' && table !== 'empresas_contacts') {
     return new Response(JSON.stringify({ error: 'Tabla inválida' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -56,9 +56,28 @@ export const POST: APIRoute = async ({ request }) => {
     });
   }
 
-  if (table === 'contacts' && !CONTACT_STATUSES.includes(status as ContactStatus)) {
+  if ((table === 'contacts' || table === 'empresas_contacts') && !CONTACT_STATUSES.includes(status as ContactStatus)) {
     return new Response(JSON.stringify({ error: 'Estado inválido' }), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (table === 'empresas_contacts') {
+    const { error: updateError } = await supabaseAdmin
+      .from('enterprise_contacts')
+      .update({ estado: status })
+      .eq('id', id);
+
+    if (updateError) {
+      return new Response(JSON.stringify({ error: updateError.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
   }

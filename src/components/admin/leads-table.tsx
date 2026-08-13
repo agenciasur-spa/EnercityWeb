@@ -53,6 +53,8 @@ type LeadRow = {
   updated_at: string | null;
   monto_boleta_ingresado: number;
   precio_final_iva: number;
+  battery_required?: boolean;
+  battery_cost?: number;
   comunas: { nombre: string } | null;
   precios_kits: { consumo_bruto: number; paneles: number; kwp: number } | null;
 };
@@ -250,6 +252,7 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
               <TableHead className="hidden lg:table-cell">Comuna</TableHead>
               <TableHead className="hidden lg:table-cell">Kit</TableHead>
               <TableHead>Precio</TableHead>
+              <TableHead className="hidden md:table-cell">Batería</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="hidden sm:table-cell">Fecha</TableHead>
             </TableRow>
@@ -285,6 +288,15 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {formatCLP(lead.precio_final_iva)}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {lead.battery_required ? (
+                      <Badge variant="outline" className="border-[#F07E04]/40 bg-[#F07E04]/10 text-[#F07E04]">
+                        Sí {lead.battery_cost ? `(+${formatCLP(lead.battery_cost)})` : ''}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>

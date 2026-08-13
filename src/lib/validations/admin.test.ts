@@ -4,6 +4,8 @@ import {
   validateKitData,
   validateFactor,
   validatePrecio,
+  validateComunaData,
+  checkComunaDuplicate,
 } from './admin';
 
 describe('rangesOverlap', () => {
@@ -229,5 +231,331 @@ describe('validatePrecio', () => {
     const result = validatePrecio(NaN);
     expect(result.valid).toBe(false);
     expect(result.error).toContain('precio');
+  });
+});
+
+describe('validateComunaData', () => {
+  it('returns valid for complete create data', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+      dispatch_cost: 5000,
+    });
+    expect(result.valid).toBe(true);
+    expect(result.error).toBeUndefined();
+  });
+
+  it('returns invalid when nombre is missing for create', () => {
+    const result = validateComunaData({
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('nombre es requerido');
+  });
+
+  it('returns invalid when region is missing for create', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('region es requerida');
+  });
+
+  it('returns invalid when nombre is empty string', () => {
+    const result = validateComunaData({
+      nombre: '   ',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('nombre no puede estar vacío');
+  });
+
+  it('returns invalid when region is empty string', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: '   ',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('region no puede estar vacía');
+  });
+
+  it('returns invalid when radiacion_ghi is out of range (> 10)', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 15,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('radiacion_ghi debe ser un número entre 0 y 10');
+  });
+
+  it('returns invalid when radiacion_ghi is negative', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: -1,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('radiacion_ghi debe ser un número entre 0 y 10');
+  });
+
+  it('returns invalid when tarifa_est is zero', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 0,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('tarifa_est debe ser un número positivo');
+  });
+
+  it('returns invalid when tarifa_est is negative', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: -100,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('tarifa_est debe ser un número positivo');
+  });
+
+  it('returns invalid when dispatch_cost is negative', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+      dispatch_cost: -1000,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('dispatch_cost debe ser un número no negativo');
+  });
+
+  it('allows zero dispatch_cost', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+      dispatch_cost: 0,
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it('allows partial updates (update mode)', () => {
+    const result = validateComunaData({
+      dispatch_cost: 6000,
+    }, true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('allows valid updates with partial data', () => {
+    const result = validateComunaData({
+      id: 1,
+      dispatch_cost: 6000,
+    }, true);
+    expect(result.valid).toBe(true);
+  });
+
+  it('handles special characters in nombre', () => {
+    const result = validateComunaData({
+      nombre: 'Ñuñoa',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(true);
+  });
+
+  it('handles extreme valid radiacion_ghi values', () => {
+    const result1 = validateComunaData({
+      nombre: 'Arica',
+      region: 'Arica y Parinacota',
+      radiacion_ghi: 0,
+      tarifa_est: 185,
+    });
+    expect(result1.valid).toBe(true);
+
+    const result2 = validateComunaData({
+      nombre: 'Arica',
+      region: 'Arica y Parinacota',
+      radiacion_ghi: 10,
+      tarifa_est: 185,
+    });
+    expect(result2.valid).toBe(true);
+  });
+
+  it('returns invalid for NaN radiacion_ghi', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: NaN,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('radiacion_ghi debe ser un número entre 0 y 10');
+  });
+
+  it('returns invalid for NaN tarifa_est', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Metropolitana',
+      radiacion_ghi: 5.5,
+      tarifa_est: NaN,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe('tarifa_est debe ser un número positivo');
+  });
+
+  it('returns invalid for invalid region', () => {
+    const result = validateComunaData({
+      nombre: 'Santiago',
+      region: 'Invalid Region',
+      radiacion_ghi: 5.5,
+      tarifa_est: 175,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('region no válida');
+  });
+
+  it('returns invalid for duplicate comuna in same region', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        nombre: 'Santiago',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      false,
+      existingComunas
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('Ya existe una comuna activa');
+    expect(result.error).toContain('Santiago');
+  });
+
+  it('returns invalid for duplicate with different case in same region', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        nombre: 'SANTIAGO',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      false,
+      existingComunas
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('Ya existe una comuna activa');
+  });
+
+  it('returns invalid for duplicate with accents in same region', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Nunoa', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        nombre: 'Ñuñoa',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      false,
+      existingComunas
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('Ya existe una comuna activa');
+  });
+
+  it('allows same comuna name in different regions', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        nombre: 'Santiago',
+        region: 'Valparaíso',
+        radiacion_ghi: 5.0,
+        tarifa_est: 175,
+      },
+      false,
+      existingComunas
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('ignores inactive comunas when checking for duplicates', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: false },
+    ];
+    const result = validateComunaData(
+      {
+        nombre: 'Santiago',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      false,
+      existingComunas
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('allows updating a comuna with its own name and region', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        id: 1,
+        nombre: 'Santiago',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      true,
+      existingComunas
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('returns invalid when updating comuna to duplicate another comuna', () => {
+    const existingComunas = [
+      { id: 1, nombre: 'Santiago', region: 'Metropolitana', activa: true },
+      { id: 2, nombre: 'Providencia', region: 'Metropolitana', activa: true },
+    ];
+    const result = validateComunaData(
+      {
+        id: 2,
+        nombre: 'Santiago',
+        region: 'Metropolitana',
+        radiacion_ghi: 5.5,
+        tarifa_est: 175,
+      },
+      true,
+      existingComunas
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain('Ya existe una comuna activa');
   });
 });

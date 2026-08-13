@@ -1,0 +1,21 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import ComunasTable from '@/components/admin/content/comunas-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data: comunas, error } = await supabaseAdmin
+  .from('comunas')
+  .select('*')
+  .order('region', { ascending: true })
+  .order('nombre', { ascending: true });
+
+if (error) {
+  console.error('[comunas.astro] Query error:', error);
+}
+---
+
+<AdminLayout title="Comunas — Enercity Admin">
+  <ComunasTable client:load initialComunas={comunas ?? []} />
+</AdminLayout>

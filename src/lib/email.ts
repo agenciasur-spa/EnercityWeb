@@ -326,7 +326,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['mojeda@agenciasur.cl'],
+        to: ['contacto@enercity.cl'],
         subject: `🚨 NUEVO LEAD SIMULADOR: ${cliente.nombre} - ${comuna.nombre}`,
         html: managerHtml,
       }),
@@ -336,7 +336,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
     else console.log(`[Email] Enviado a cliente: ${cliente.email}`);
 
     if (managerRes.error) console.error('[Email] Error manager:', managerRes.error);
-    else console.log('[Email] Enviado a encargado: mojeda@agenciasur.cl');
+    else console.log('[Email] Enviado a encargado: contacto@enercity.cl');
 
     return { cliente: clienteRes, manager: managerRes };
   } catch (err) {
@@ -625,7 +625,7 @@ export async function sendContactEmails(data: ContactEmailData) {
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['mojeda@agenciasur.cl'],
+        to: ['contacto@enercity.cl'],
         subject: `Nuevo contacto: ${proyectoLabel} - ${nombre}`,
         html: managerHtml,
       }),
@@ -635,7 +635,7 @@ export async function sendContactEmails(data: ContactEmailData) {
     else console.log(`[Email] Enviado a usuario: ${email}`);
 
     if (managerRes.error) console.error('[Email] Error manager (contacto):', managerRes.error);
-    else console.log('[Email] Enviado a encargado: mojeda@agenciasur.cl');
+    else console.log('[Email] Enviado a encargado: contacto@enercity.cl');
 
     return { usuario: usuarioRes, manager: managerRes };
   } catch (err) {
@@ -973,7 +973,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['mojeda@agenciasur.cl'],
+        to: ['contacto@enercity.cl'],
         subject: `Nueva consulta empresarial: ${empresa} - ${nombre}`,
         html: managerHtml,
       }),
@@ -984,7 +984,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
 
     if (managerRes.error)
       console.error('[Email] Error manager (empresas):', managerRes.error);
-    else console.log('[Email] Enviado a encargado empresarial: mojeda@agenciasur.cl');
+    else console.log('[Email] Enviado a encargado empresarial: contacto@enercity.cl');
 
     return { usuario: usuarioRes, manager: managerRes };
   } catch (err) {

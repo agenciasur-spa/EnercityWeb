@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildPricingDisplay, buildPdfDataFromResult } from './simulator-display';
+import { findActiveEquipmentByType, buildEquipmentCard } from './equipment-catalog';
 import type { PDFData } from '../pdf-types';
+import type { EquipmentDetail } from '../../types/simulation';
 
 // New API response shape
 function makeQuoteResult(overrides: any = {}) {
@@ -172,13 +174,159 @@ describe('buildPdfDataFromResult', () => {
     delete (result as any).precio_lista;
     delete (result as any).precio_transferencia;
     delete (result as any).factors;
+    delete (result as any).dispatch_cost;
 
     const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas);
 
-    // Falls back to calculo.precioBase for lista/transferencia
-    expect(pdf.precioLista).toBe(4650243);
-    expect(pdf.precioTransferencia).toBe(4650243);
+    // Falls back to calculo.precioBase for lista/transferencia (undefined since new fields missing)
+    expect(pdf.precioLista).toBeUndefined();
+    expect(pdf.precioTransferencia).toBeUndefined();
     expect(pdf.systemPrice).toBe(5300243);
     expect(pdf.factorTechoDisplay).toBe('');
+  });
+
+  it('includes equipment cards with catalog URLs when available', () => {
+    const result = makeQuoteResult();
+    const equipmentCatalog: EquipmentDetail[] = [
+      {
+        id: 1,
+        tipo: 'inversor',
+        nombre: 'Inversor GoodWe Premium',
+        marca: 'GoodWe',
+        modelo: 'GW3000-NS',
+        potenciaWatts: 3000,
+        imagenUrl: 'https://example.com/inverter.jpg',
+        fichaTecnicaUrl: 'https://example.com/inverter-specs.pdf',
+        activo: true,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+      },
+      {
+        id: 2,
+        tipo: 'panel',
+        nombre: 'Panel Trina Solar Vertex',
+        marca: 'Trina Solar',
+        modelo: 'Vertex S+ 410W',
+        potenciaWatts: 410,
+        imagenUrl: 'https://example.com/panel.jpg',
+        fichaTecnicaUrl: 'https://example.com/panel-specs.pdf',
+        activo: true,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+      },
+    ];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
+
+    expect(pdf.equipment).toHaveLength(2);
+    expect(pdf.equipment![0]).toMatchObject({
+      tipo: 'inversor',
+      nombre: 'Inversor GoodWe Premium',
+      marca: 'GoodWe',
+      imagenUrl: 'https://example.com/inverter.jpg',
+      fichaTecnicaUrl: 'https://example.com/inverter-specs.pdf',
+    });
+    expect(pdf.equipment![1]).toMatchObject({
+      tipo: 'panel',
+      nombre: 'Panel Trina Solar Vertex',
+      marca: 'Trina Solar',
+      imagenUrl: 'https://example.com/panel.jpg',
+      fichaTecnicaUrl: 'https://example.com/panel-specs.pdf',
+    });
+  });
+
+  it('falls back to fixed labels when catalog data is missing', () => {
+    const result = makeQuoteResult();
+    const emptyCatalog: EquipmentDetail[] = [];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, emptyCatalog);
+
+    expect(pdf.equipment).toHaveLength(2);
+    expect(pdf.equipment![0]).toMatchObject({
+      tipo: 'inversor',
+      nombre: 'Inversor',
+      marca: 'GOODWE',
+      modelo: '4kW',
+      potenciaWatts: 4000,
+      imagenUrl: undefined,
+      fichaTecnicaUrl: undefined,
+    });
+    expect(pdf.equipment![1]).toMatchObject({
+      tipo: 'panel',
+      nombre: 'Panel Solar',
+      marca: 'TRINA SOLAR',
+      modelo: '10x410W',
+      potenciaWatts: undefined,
+      imagenUrl: undefined,
+      fichaTecnicaUrl: undefined,
+    });
+  });
+
+  it('only uses active equipment from catalog', () => {
+    const result = makeQuoteResult();
+    const mixedCatalog: EquipmentDetail[] = [
+      {
+        id: 1,
+        tipo: 'inversor',
+        nombre: 'Active Inverter',
+        marca: 'GoodWe',
+        modelo: 'GW3000-NS',
+        potenciaWatts: 3000,
+        imagenUrl: 'https://example.com/active.jpg',
+        fichaTecnicaUrl: 'https://example.com/active.pdf',
+        activo: true,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+      },
+      {
+        id: 2,
+        tipo: 'inversor',
+        nombre: 'Inactive Inverter',
+        marca: 'GoodWe',
+        modelo: 'GW5000-NS',
+        potenciaWatts: 5000,
+        imagenUrl: 'https://example.com/inactive.jpg',
+        fichaTecnicaUrl: 'https://example.com/inactive.pdf',
+        activo: false,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01'),
+      },
+    ];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, mixedCatalog);
+
+    expect(pdf.equipment![0].imagenUrl).toBe('https://example.com/active.jpg');
+    expect(pdf.equipment![0].nombre).toBe('Active Inverter');
+  });
+
+  it('preserves On-Grid-only output (inverter + panels, no battery/hybrid)', () => {
+    const result = makeQuoteResult();
+    const equipmentCatalog: EquipmentDetail[] = [
+      {
+        id: 1,
+        tipo: 'inversor',
+        nombre: 'Inverter',
+        marca: 'GoodWe',
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 2,
+        tipo: 'panel',
+        nombre: 'Panel',
+        marca: 'Trina',
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
+
+    expect(pdf.equipment).toHaveLength(2);
+    expect(pdf.equipment![0].tipo).toBe('inversor');
+    expect(pdf.equipment![1].tipo).toBe('panel');
+    expect(pdf.equipment.every(eq => eq.tipo === 'inversor' || eq.tipo === 'panel')).toBe(true);
   });
 });

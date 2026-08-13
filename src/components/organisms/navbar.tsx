@@ -6,7 +6,7 @@ import type { NavLink } from '../../types/content';
 
 interface NavbarProps {
   links?: NavLink[];
-  variant?: 'home' | 'empresas' | 'minimal';
+  variant?: 'home' | 'empresas' | 'minimal' | 'proyectos';
 }
 
 const EMPRESAS_NAV_LINKS: NavLink[] = [
@@ -14,6 +14,11 @@ const EMPRESAS_NAV_LINKS: NavLink[] = [
   { id: 'e2', location: 'navbar', label: 'Costos', href: '/empresas#costos', sort_order: 2, active: true },
   { id: 'e3', location: 'navbar', label: 'Beneficios', href: '/empresas#beneficios', sort_order: 3, active: true },
   { id: 'e4', location: 'navbar', label: 'Proceso', href: '/empresas#proceso', sort_order: 4, active: true },
+];
+
+const PROYECTOS_NAV_LINKS: NavLink[] = [
+  { id: 'p1', location: 'navbar', label: 'Inicio', href: '/', sort_order: 1, active: true },
+  { id: 'p2', location: 'navbar', label: 'Proyectos', href: '/proyectos', sort_order: 2, active: true },
 ];
 
 export function Navbar({ links = [], variant = 'home' }: NavbarProps) {
@@ -28,7 +33,17 @@ export function Navbar({ links = [], variant = 'home' }: NavbarProps) {
 
   const isMinimal = variant === 'minimal';
   const isEmpresas = variant === 'empresas';
-  const activeLinks = isEmpresas ? EMPRESAS_NAV_LINKS : links;
+  const isProyectos = variant === 'proyectos';
+
+  let activeLinks: NavLink[];
+  if (isEmpresas) {
+    activeLinks = EMPRESAS_NAV_LINKS;
+  } else if (isProyectos) {
+    activeLinks = PROYECTOS_NAV_LINKS;
+  } else {
+    activeLinks = links;
+  }
+
   const showFaq = variant === 'home';
   const showCta = variant !== 'minimal';
 

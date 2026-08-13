@@ -7,7 +7,7 @@ export const prerender = false;
 
 const leadsResult = await supabaseAdmin
   .from('leads')
-  .select('id, nombre, email, telefono, estado, created_at, updated_at, monto_boleta_ingresado, precio_final_iva, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)', { count: 'exact' })
+  .select('id, nombre, email, telefono, estado, created_at, updated_at, monto_boleta_ingresado, precio_final_iva, battery_required, battery_cost, comunas(nombre), precios_kits(consumo_bruto, paneles, kwp)', { count: 'exact' })
   .order('created_at', { ascending: false });
 
 if (leadsResult.error) {
@@ -26,6 +26,8 @@ type LeadRow = {
   updated_at: string | null;
   monto_boleta_ingresado: number;
   precio_final_iva: number;
+  battery_required?: boolean;
+  battery_cost?: number;
   comunas: { nombre: string } | null;
   precios_kits: { consumo_bruto: number; paneles: number; kwp: number } | null;
 };

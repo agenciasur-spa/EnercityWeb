@@ -1,0 +1,23 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import EquipmentTable from '@/components/admin/equipment-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('equipment_details')
+  .select('*')
+  .order('tipo', { ascending: true })
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error('[equipment.astro] Supabase query error:', error);
+}
+
+const equipment = data ?? [];
+---
+
+<AdminLayout title="Catálogo de Equipos — Enercity Admin">
+  <EquipmentTable client:load initialEquipment={equipment} />
+</AdminLayout>

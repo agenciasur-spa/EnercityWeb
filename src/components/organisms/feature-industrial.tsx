@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { 
   Building2,Zap, Leaf, ChevronLeft, ChevronRight, 
-  CheckCircle2, ShieldCheck, BarChart3 
+  CheckCircle2, ShieldCheck, BarChart3, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Project } from '../../types/content';
@@ -238,6 +238,22 @@ export function FeatureIndustrial({
                 );
               })}
             </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.5 }}
+              className="mt-10"
+            >
+              <a
+                href="/proyectos"
+                className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-[#F07E04] hover:bg-[#d96d00] transition-colors shadow-xl shadow-[#F07E04]/30"
+              >
+                {ctaText}
+                <ArrowRight className="w-6 h-6" />
+              </a>
+            </motion.div>
           </motion.div>
 
         </div>

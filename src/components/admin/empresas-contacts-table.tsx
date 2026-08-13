@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import {
   ChevronRightIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CONTACT_STATUSES } from '@/types/admin';
 
 type EnterpriseContactRow = {
   id: string;
@@ -95,18 +96,37 @@ export function EmpresasContactsTable({ contacts, total }: EmpresasContactsTable
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState<PageSizeOption>(25);
+  const [rows, setRows] = useState<EnterpriseContactRow[]>(contacts);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleStatusChange = useCallback(async (id: string, newStatus: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch('/api/admin/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus, table: 'empresas_contacts' }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar estado');
+      setRows((prev) => prev.map((c) => (c.id === id ? { ...c, estado: newStatus } : c)));
+    } catch (err) {
+      console.error('Error updating enterprise contact status:', err);
+    } finally {
+      setUpdatingId(null);
+    }
+  }, []);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return contacts;
+    if (!search.trim()) return rows;
     const q = search.trim().toLowerCase();
-    return contacts.filter(
+    return rows.filter(
       (c) =>
         c.nombre.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q) ||
         c.empresa.toLowerCase().includes(q) ||
         c.rut.toLowerCase().includes(q)
     );
-  }, [contacts, search]);
+  }, [rows, search]);
 
   const effectivePageSize = pageSize === 'all' ? filtered.length : pageSize;
   const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(filtered.length / effectivePageSize));
@@ -209,12 +229,20 @@ export function EmpresasContactsTable({ contacts, total }: EmpresasContactsTable
                   <TableCell className="text-sm">{truncate(c.region, 20)}</TableCell>
                   <TableCell className="text-sm">{c.metodo_contacto}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn(ESTADO_STYLES[c.estado] ?? 'bg-gray-100 text-gray-600 border-gray-200')}
+                    <Select
+                      value={c.estado}
+                      onValueChange={(v) => handleStatusChange(c.id, v)}
+                      disabled={updatingId === c.id}
                     >
-                      {c.estado}
-                    </Badge>
+                      <SelectTrigger className="w-[140px] h-8 text-xs" aria-label={`Cambiar estado de ${c.nombre}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CONTACT_STATUSES.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatDate(c.created_at)}

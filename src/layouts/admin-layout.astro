@@ -11,7 +11,7 @@ const adminUser = Astro.locals.adminUser;
 const currentPath = Astro.url.pathname;
 ---
 
-<Layout title={title}>
+<Layout title={title} showWhatsApp={false}>
   <div class="min-h-screen bg-gray-50">
     <AdminShell client:load adminUser={adminUser} currentPath={currentPath} />
     <div class="pt-16 lg:pl-64">

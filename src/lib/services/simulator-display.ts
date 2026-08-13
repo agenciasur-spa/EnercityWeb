@@ -1,4 +1,6 @@
-import type { PDFData } from '../pdf-types';
+import type { PDFData, EquipmentCard } from '../pdf-types';
+import type { EquipmentDetail } from '../../types/simulation';
+import { findActiveEquipmentByType, buildEquipmentCard } from './equipment-catalog';
 
 interface PricingDisplay {
   precioLista: number;
@@ -7,6 +9,7 @@ interface PricingDisplay {
   hasDualPricing: boolean;
   techoDisplay: string;
   medidorDisplay: string;
+  batteryCost?: number;
 }
 
 export function buildPricingDisplay(result: any): PricingDisplay {
@@ -14,10 +17,16 @@ export function buildPricingDisplay(result: any): PricingDisplay {
   // precio_lista = precioListaBase × factorTecho × factorMedidor
   // precio_transferencia (= precio_final) = precioTransferenciaBase × factorTecho × factorMedidor
   const precioLista = result?.precio_lista ?? 0;
-  const precioFinal = result?.precio_final ?? result?.precio_transferencia ?? 0;
-  const precioTransferencia = precioFinal; // transferencia WITH factors = the highlighted price
+  const precioTransferencia = result?.precio_transferencia ?? 0;
+  const precioFinal = result?.precio_final ?? precioTransferencia;
 
-  const hasDualPricing = precioLista > 0 && precioLista !== precioTransferencia;
+  // Remove dispatch cost from display prices (it's shown separately)
+  const dispatchCost = result?.dispatch_cost || result?.datosComuna?.dispatchCost || 0;
+  const batteryCost = result?.battery_cost || 0;
+  const precioTransferenciaDisplay = Math.max(0, precioTransferencia - dispatchCost - batteryCost);
+  const precioFinalDisplay = Math.max(0, precioFinal - dispatchCost - batteryCost);
+
+  const hasDualPricing = precioLista > 0 && precioLista !== precioTransferenciaDisplay;
 
   const techoDisplay = result?.factors?.techo_nombre
     ? `${result.factors.techo_nombre}`
@@ -28,24 +37,80 @@ export function buildPricingDisplay(result: any): PricingDisplay {
 
   return {
     precioLista,
-    precioTransferencia,
-    precioFinal,
+    precioTransferencia: precioTransferenciaDisplay,
+    precioFinal: precioFinalDisplay,
     hasDualPricing,
     techoDisplay,
     medidorDisplay,
+    batteryCost,
   };
 }
 
 export function buildPdfDataFromResult(
   result: any,
   formData: any,
-  comunas: Array<{ id: number; nombre: string; activa: boolean; radiacion_ghi?: string; tarifa_est?: string }>
+  comunas: Array<{ id: number; nombre: string; activa: boolean; radiacion_ghi?: string; tarifa_est?: string }>,
+  equipmentCatalog: EquipmentDetail[] = []
 ): PDFData {
   const kit = result?.kit;
   const calculo = result?.calculo;
   const resumen = result?.resumenInversion;
   const datosComuna = result?.datosComuna;
   const pricing = buildPricingDisplay(result);
+  const dispatchCost = datosComuna?.dispatchCost || result?.dispatch_cost || 0;
+  const garantiaText = result?.garantia_text || '';
+  const formasPago = Array.isArray(result?.formas_pago) ? result.formas_pago : [];
+  const numeroCotizacion = result?.numero_cotizacion || '';
+  const batteryCost = pricing.batteryCost || 0;
+
+  const activeInverter = findActiveEquipmentByType(equipmentCatalog, 'inversor');
+  const activePanel = findActiveEquipmentByType(equipmentCatalog, 'panel');
+
+  // Build equipment cards (inverter + panels) with catalog data
+  const equipment: EquipmentCard[] = [];
+  if (kit) {
+    const inverterCard = buildEquipmentCard(
+      activeInverter,
+      'inversor',
+      {
+        nombre: 'Inversor',
+        marca: 'GOODWE',
+        modelo: kit.inversorKw ? `${kit.inversorKw}kW` : undefined,
+        potenciaWatts: kit.inversorKw ? kit.inversorKw * 1000 : undefined,
+      }
+    );
+
+    equipment.push({
+      tipo: inverterCard.tipo,
+      nombre: inverterCard.nombre,
+      marca: inverterCard.marca,
+      modelo: inverterCard.modelo,
+      potenciaWatts: inverterCard.potenciaWatts,
+      imagenUrl: inverterCard.imagenUrl,
+      fichaTecnicaUrl: inverterCard.fichaTecnicaUrl,
+    });
+
+    const panelCard = buildEquipmentCard(
+      activePanel,
+      'panel',
+      {
+        nombre: 'Panel Solar',
+        marca: 'TRINA SOLAR',
+        modelo: kit.paneles ? `${kit.paneles}x${kit.potenciaPanel || 410}W` : undefined,
+        potenciaWatts: kit.potenciaPanel,
+      }
+    );
+
+    equipment.push({
+      tipo: panelCard.tipo,
+      nombre: panelCard.nombre,
+      marca: panelCard.marca,
+      modelo: panelCard.modelo,
+      potenciaWatts: panelCard.potenciaWatts,
+      imagenUrl: panelCard.imagenUrl,
+      fichaTecnicaUrl: panelCard.fichaTecnicaUrl,
+    });
+  }
 
   if (!kit || !calculo || !resumen) {
     // Return minimal data so callers can handle gracefully
@@ -72,11 +137,17 @@ export function buildPdfDataFromResult(
       investmentClassification: '',
       roi25Years: 0,
       quoteDate: new Date().toISOString(),
-      precioLista: pricing.precioLista || undefined,
-      precioTransferencia: pricing.precioTransferencia || undefined,
-      precioFinal: pricing.precioFinal || undefined,
+      precioLista: pricing.precioLista > 0 ? pricing.precioLista : undefined,
+      precioTransferencia: pricing.precioTransferencia > 0 ? pricing.precioTransferencia : undefined,
+      precioFinal: pricing.precioFinal > 0 ? pricing.precioFinal : undefined,
       factorTechoDisplay: pricing.techoDisplay || '',
       factorMedidorDisplay: pricing.medidorDisplay || '',
+      equipment,
+      dispatchCost,
+      batteryCost,
+      garantiaText,
+      formasPago,
+      numeroCotizacion,
     };
   }
 
@@ -104,11 +175,17 @@ export function buildPdfDataFromResult(
     co2Reduction: Math.round((calculo.generacionAnualKwh ?? 0) * 0.5),
     investmentClassification: resumen.clasificacion ?? '',
     roi25Years: (resumen.ahorroAnual ?? 0) * 25,
-    quoteDate: new Date().toISOString(),
-      precioLista: pricing.precioLista || undefined,
-      precioTransferencia: pricing.precioTransferencia || undefined,
-      precioFinal: pricing.precioFinal || undefined,
-      factorTechoDisplay: pricing.techoDisplay || '',
+      quoteDate: new Date().toISOString(),
+        precioLista: pricing.precioLista > 0 ? pricing.precioLista : undefined,
+        precioTransferencia: pricing.precioTransferencia > 0 ? pricing.precioTransferencia : undefined,
+        precioFinal: pricing.precioFinal > 0 ? pricing.precioFinal : undefined,
+        factorTechoDisplay: pricing.techoDisplay || '',
       factorMedidorDisplay: pricing.medidorDisplay || '',
+      equipment,
+      dispatchCost,
+      batteryCost,
+      garantiaText,
+      formasPago,
+      numeroCotizacion,
   };
 }

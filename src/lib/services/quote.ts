@@ -18,6 +18,7 @@ export interface ComunaData {
   region: string;
   radiacionGhi: number;
   tarifaEst: number;
+  dispatchCost?: number;
 }
 
 export interface KitData {
@@ -196,7 +197,8 @@ export function calculateROI(
   precioFinal: number,
   radiacionGhi: number,
   tarifaEst: number,
-  performanceRatio: number
+  performanceRatio: number,
+  dispatchCost: number = 0
 ): ROICalculation {
   const consumoKwhAnual = (montoBoleta / tarifaEst) * 12;
   const generacionAnualKwh = kwp * radiacionGhi * 365 * performanceRatio;
@@ -204,7 +206,8 @@ export function calculateROI(
   const ahorroMensual = ahorroAnual / 12;
   const coberturaPorcentaje = Math.min((generacionAnualKwh / consumoKwhAnual) * 100, 95);
 
-  const paybackAnos = ahorroAnual > 0 ? precioFinal / ahorroAnual : 999;
+  const totalInversion = precioFinal + dispatchCost;
+  const paybackAnos = ahorroAnual > 0 ? totalInversion / ahorroAnual : 999;
 
   return {
     consumoKwhAnual: Math.round(consumoKwhAnual),
@@ -294,7 +297,7 @@ export function calculateQuoteWithROI(
   comuna: ComunaData
 ): QuoteResult {
   const { montoBoleta, tipoTecho, tipoMedidor } = input;
-  const { radiacionGhi, tarifaEst } = comuna;
+  const { radiacionGhi, tarifaEst, dispatchCost = 0 } = comuna;
 
   if (montoBoleta < settings.limiteInferior) {
     return {
@@ -342,7 +345,8 @@ export function calculateQuoteWithROI(
     priceBreakdown.precioFinal,
     radiacionGhi,
     tarifaEst,
-    settings.performanceRatio
+    settings.performanceRatio,
+    dispatchCost
   );
 
   const clasificacion = classifyInvestment(roi.paybackAnos);
@@ -367,7 +371,7 @@ export function calculateQuoteWithROI(
     resumenInversion: {
       ahorroMensual: roi.ahorroMensual,
       ahorroAnual: roi.ahorroAnual,
-      inversionTotal: priceBreakdown.precioFinal,
+      inversionTotal: priceBreakdown.precioFinal + dispatchCost,
       anosRecuperacion: roi.paybackAnos,
       cobertura: roi.coberturaPorcentaje,
       clasificacion,

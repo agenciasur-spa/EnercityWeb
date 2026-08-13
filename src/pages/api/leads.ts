@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
+import { supabaseAdmin } from '../../lib/supabase-admin';
 import { sendLeadEmails } from '../../lib/email';
 import { generatePDF } from '../../lib/pdfGenerator_new';
 import type { PDFData } from '../../lib/pdf-types';
@@ -71,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion } = body;
+    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion, batteryRequired, batteryCost, region } = body;
 
     if (!nombre || !email || !telefono || !kitId || precioFinalIva === undefined) {
       return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {
@@ -128,22 +129,35 @@ export const POST: APIRoute = async ({ request }) => {
       if (comunaData?.nombre) comunaNombre = comunaData.nombre;
     }
 
-    const { data, error } = await supabase
+    // Generate sequential quote number: YYYY-NNNN
+    const currentYear = new Date().getFullYear();
+    const { count: leadsThisYear } = await supabaseAdmin
+      .from('leads')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', `${currentYear}-01-01T00:00:00Z`);
+    const sequential = (leadsThisYear ?? 0) + 1;
+    const numeroCotizacion = `${currentYear}-${String(sequential).padStart(4, '0')}`;
+
+    // Insert lead. anon has INSERT-only access (leads are private data, no public SELECT),
+    // so we must not request the inserted row back with `.select()`.
+    const { error } = await supabase
       .from('leads')
       .insert({
         nombre,
         email,
         telefono,
         comuna_id: comunaId || null,
+        region: region || comunaRegion || null,
+        numero_cotizacion: numeroCotizacion,
         monto_boleta_ingresado: montoBoletaIngresado,
         kit_id: kitId,
         factor_techo_aplicado: factorTechoAplicado,
         costo_fijo_medidor_aplicado: costoFijoMedidorAplicado,
         precio_final_iva: precioFinalIva,
+        battery_required: batteryRequired === true,
+        battery_cost: batteryCost ? Number(batteryCost) || 0 : 0,
         estado: 'nuevo'
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.error('Error inserting lead:', error);
@@ -222,7 +236,8 @@ export const POST: APIRoute = async ({ request }) => {
 
     return new Response(JSON.stringify({ 
       success: true, 
-      lead: data,
+      lead: null,
+      numeroCotizacion: numeroCotizacion,
       email: emailErrorDetails ? { 
         failed: true, 
         details: emailErrorDetails 

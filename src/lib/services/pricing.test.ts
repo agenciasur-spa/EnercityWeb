@@ -109,7 +109,7 @@ describe('calculateFinalPrice', () => {
 
 describe('calculateROI', () => {
   it('produces deterministic output for known inputs', () => {
-    const result = calculateROI(3.05, 4270, 5000000, 60000);
+    const result = calculateROI(3.05, 4270, 5000000, 60000, 0);
 
     // consumoKwhAnual = (60000 / 180) * 12 = 4000
     expect(result.consumoKwhAnual).toBe(4000);
@@ -125,15 +125,23 @@ describe('calculateROI', () => {
     expect(result.paybackAnos).toBe(6.9);
   });
 
+  it('includes dispatch cost in payback calculation', () => {
+    const result = calculateROI(3.05, 4270, 5000000, 60000, 200000);
+
+    // With 200,000 dispatch cost, total investment = 5,200,000
+    // payback = 5200000 / 720000 = 7.22 → 7.2
+    expect(result.paybackAnos).toBe(7.2);
+  });
+
   it('falls back to estimated generation when generacionAnual is 0', () => {
     // potenciaTotalSistema = 2.44 kW
     // generacionEstimada = 2.44 * 1600 * 365 * 0.75 / 1000 = 1068.72 → 1069
-    const result = calculateROI(2.44, 0, 4000000, 50000);
+    const result = calculateROI(2.44, 0, 4000000, 50000, 0);
     expect(result.generacionAnualKwh).toBe(1069);
   });
 
   it('returns payback of 999 when ahorroAnual is 0 (montoBoleta = 0)', () => {
-    const result = calculateROI(3.05, 4270, 5000000, 0);
+    const result = calculateROI(3.05, 4270, 5000000, 0, 100000);
     expect(result.paybackAnos).toBe(999);
     expect(result.ahorroAnual).toBe(0);
     expect(result.coberturaPorcentaje).toBe(0);
@@ -162,7 +170,7 @@ describe('calculateROI', () => {
     // gen = potencia * radiacionGhi * 365 * pr / 1000
     const potencia = 5.0;
     const expected = Math.round(potencia * ROI_CONSTANTS.radiacionGhi * 365 * ROI_CONSTANTS.performanceRatio / 1000);
-    const result = calculateROI(potencia, 0, 8000000, 70000);
+    const result = calculateROI(potencia, 0, 8000000, 70000, 0);
     expect(result.generacionAnualKwh).toBe(expected);
   });
 });

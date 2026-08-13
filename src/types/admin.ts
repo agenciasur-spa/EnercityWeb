@@ -5,16 +5,16 @@ export const CONTACT_STATUSES = ['nuevo', 'contactado', 'cerrado'] as const;
 export type ContactStatus = (typeof CONTACT_STATUSES)[number];
 
 export const LEAD_TRANSITIONS: Record<LeadStatus, LeadStatus[]> = {
-  nuevo: ['contactado'],
-  contactado: ['calificado', 'cerrado'],
-  calificado: ['cerrado'],
-  cerrado: [],
+  nuevo: ['contactado', 'calificado', 'cerrado'],
+  contactado: ['nuevo', 'calificado', 'cerrado'],
+  calificado: ['nuevo', 'contactado', 'cerrado'],
+  cerrado: ['nuevo', 'contactado', 'calificado'],
 };
 
 export const CONTACT_TRANSITIONS: Record<ContactStatus, ContactStatus[]> = {
-  nuevo: ['contactado'],
-  contactado: ['cerrado'],
-  cerrado: [],
+  nuevo: ['contactado', 'cerrado'],
+  contactado: ['nuevo', 'cerrado'],
+  cerrado: ['nuevo', 'contactado'],
 };
 
 export interface AdminUser {
@@ -133,6 +133,17 @@ export interface AdminSetting {
   key: string;
   value: string;
   label: string;
+}
+
+export interface AdminComuna {
+  id: number;
+  nombre: string;
+  region: string;
+  radiacion_ghi: number;
+  tarifa_est: number;
+  dispatch_cost: number;
+  activa: boolean;
+  created_at: string;
 }
 
 export interface PaginationState {

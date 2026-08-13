@@ -133,7 +133,7 @@ export function Hero({ content, scrollTarget = 'simulador-section' }: HeroProps)
               )}
               {content.ctaSecondary && (
                 <motion.a 
-                  href="#proyectos"
+                  href="/proyectos"
                   whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
                   whileTap={{ scale: 0.97 }}
                   className="flex items-center justify-center px-10 py-5 rounded-2xl font-black font-sans text-lg text-white bg-white/5 border border-white/20 backdrop-blur-md hover:bg-white/20 transition-colors shadow-xl"

@@ -90,18 +90,30 @@ export default function SettingsForm({ settings }: SettingsFormProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-3">
-                <code className="hidden text-xs text-muted-foreground sm:inline-block select-none bg-muted px-1.5 py-0.5 rounded">
+              <div className="flex items-start gap-3">
+                <code className="hidden text-xs text-muted-foreground sm:inline-block select-none bg-muted px-1.5 py-0.5 rounded mt-2">
                   {setting.key}
                 </code>
-                <Input
-                  value={values[setting.key] ?? ''}
-                  onChange={(e) => handleChange(setting.key, e.target.value)}
-                  className={cn(
-                    'max-w-md',
-                    values[setting.key] !== setting.value && 'border-orange-400 focus-visible:border-orange-400'
-                  )}
-                />
+                {setting.key === 'garantia_instalacion' || setting.key === 'formas_pago' ? (
+                  <textarea
+                    value={values[setting.key] ?? ''}
+                    onChange={(e) => handleChange(setting.key, e.target.value)}
+                    rows={setting.key === 'formas_pago' ? 3 : 4}
+                    className={cn(
+                      'w-full max-w-2xl rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      values[setting.key] !== setting.value && 'border-orange-400 focus-visible:border-orange-400'
+                    )}
+                  />
+                ) : (
+                  <Input
+                    value={values[setting.key] ?? ''}
+                    onChange={(e) => handleChange(setting.key, e.target.value)}
+                    className={cn(
+                      'max-w-md',
+                      values[setting.key] !== setting.value && 'border-orange-400 focus-visible:border-orange-400'
+                    )}
+                  />
+                )}
               </div>
             </CardContent>
           </Card>

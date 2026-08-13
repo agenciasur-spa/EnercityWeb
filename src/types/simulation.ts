@@ -38,6 +38,7 @@ export interface Comuna {
   nombre: string;
   activa: boolean;
   region: string;
+  dispatchCost?: number;
 }
 
 export type TipoTecho = 'Teja Chilena' | 'Losa' | 'Otro';
@@ -69,15 +70,34 @@ export interface LeadInput {
   email: string;
   telefono: string;
   comunaId?: number;
+  region?: string;
   montoBoletaIngresado: number;
   kitId: number;
   factorTechoAplicado: number;
   costoFijoMedidorAplicado: number;
   precioFinalIva: number;
+  batteryRequired?: boolean;
+  batteryCost?: number;
 }
 
 export interface Lead extends LeadInput {
   id: string;
   estado: EstadoLead;
   createdAt: Date;
+}
+
+export interface EquipmentDetail {
+  id: number;
+  tipo: 'inversor' | 'panel';
+  nombre: string;
+  marca: string;
+  modelo?: string;
+  potenciaWatts?: number;
+  descripcion?: string;
+  garantia?: string;
+  imagenUrl?: string;
+  fichaTecnicaUrl?: string;
+  activo: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

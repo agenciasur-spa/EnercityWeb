@@ -5,8 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { PDFData } from "@/lib/pdf-types";
 import { buildPricingDisplay, buildPdfDataFromResult } from "@/lib/services/simulator-display";
+import { fetchEquipmentCatalog, clearEquipmentCache } from "@/lib/services/equipment-catalog";
+import { CHILEAN_REGIONS } from "@/lib/constants/regions";
+import type { EquipmentDetail } from "@/types/simulation";
 
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -19,7 +23,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert, Download, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Loader2, Info, Zap, Shield, Sun, ShieldAlert, Download, ChevronsUpDown, Battery } from 'lucide-react';
 
 interface Comuna {
   id: number;
@@ -131,6 +135,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedPdfData, setSavedPdfData] = useState<PDFData | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [equipmentCatalog, setEquipmentCatalog] = useState<EquipmentDetail[]>([]);
+  const [equipmentLoading, setEquipmentLoading] = useState(true);
   // TEMPORARY: Simulate valid token since Turnstile widget not rendering
   const [captchaToken, setCaptchaToken] = useState<string | null>('__TURNSTILE_BYPASS__');
   const [captchaError, setCaptchaError] = useState(false);
@@ -166,13 +172,26 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
         }
       })
       .catch(() => {});
+
+    // Fetch equipment catalog
+    fetchEquipmentCatalog({ activo: true })
+      .then((data) => {
+        setEquipmentCatalog(data);
+        setEquipmentLoading(false);
+      })
+      .catch((error) => {
+        console.error('Failed to fetch equipment catalog:', error);
+        setEquipmentLoading(false);
+      });
   }, []);
 
   const [formData, setFormData] = useState({
     comunaId: 0,
+    region: "",
     montoBoleta: 100000,
     techoId: 0,
     medidorId: 0,
+    batteryRequired: false,
     nombre: "",
     email: "",
     telefono: "",
@@ -188,7 +207,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
   const canProceed = () => {
     switch (step) {
       case 1:
-        return formData.comunaId > 0;
+        return formData.region !== "";
       case 2:
         return formData.montoBoleta >= sliderLimits.min + 20000; // Minimum valid amount
       case 3:
@@ -212,9 +231,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             montoBoleta: formData.montoBoleta,
-            comunaId: formData.comunaId,
+            region: formData.region,
             techoId: formData.techoId,
             medidorId: formData.medidorId,
+            batteryRequired: formData.batteryRequired,
           }),
         });
 
@@ -242,7 +262,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
 
   const buildPdfData = (): PDFData | null => {
     if (!result || result.estado !== "OK") return null;
-    return buildPdfDataFromResult(result, formData, comunas);
+    return buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
   };
 
   const handleDownloadPdf = async () => {
@@ -326,7 +346,7 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           nombre: formData.nombre,
           email: formData.email,
           telefono: formData.telefono,
-          comunaId: formData.comunaId || null,
+          region: formData.region || null,
           montoBoletaIngresado: formData.montoBoleta,
           techoId: formData.techoId || null,
           medidorId: formData.medidorId || null,
@@ -351,6 +371,8 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           anosRecuperacion: result.resumenInversion?.anosRecuperacion ?? result.roi?.payback_years ?? 0,
           cobertura: result.resumenInversion?.cobertura ?? result.roi?.cobertura_porcentaje ?? 0,
           clasificacion: result.resumenInversion?.clasificacion || '',
+          batteryCost: result.battery_cost || 0,
+          batteryRequired: formData.batteryRequired,
           website: formData.website,
           captchaToken,
           timeTaken,
@@ -368,6 +390,11 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       }
 
       const responseData = await apiResponse.json();
+
+      // Pass quote number from lead API into the result for PDF
+      if (responseData.numeroCotizacion && result) {
+        result.numero_cotizacion = responseData.numeroCotizacion;
+      }
 
       // --- PDF generation (silent failure, must NOT break lead flow) ---
       // Save PDF data for the manual download button on Step 5
@@ -422,79 +449,38 @@ const renderStepContent = () => {
           >
             <div>
               <h3 className="text-xl font-bold text-white">¿Dónde se encuentra tu techo?</h3>
-              <p className="text-white/60 text-sm">Selecciona tu comuna para obtener datos precisos</p>
+              <p className="text-white/60 text-sm">Selecciona tu región para obtener datos de radiación</p>
             </div>
 
             <div className="relative">
-              <Popover open={comunaOpen} onOpenChange={setComunaOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    aria-expanded={comunaOpen}
-                    className="w-full px-4 py-3 md:px-5 md:py-4 h-auto bg-white/5 border border-white/10 rounded-xl md:rounded-2xl focus:ring-0 focus:border-[#F07E04] text-white flex justify-between items-center transition-all text-sm md:text-base cursor-pointer"
-                  >
-                    {formData.comunaId
-                      ? comunas.find((c: Comuna) => c.id === formData.comunaId)?.nombre
-                      : <span className="text-white/50">Selecciona una comuna</span>}
-                    <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className="p-0 bg-[#154660] border-white/10 rounded-xl"
-                  align="start"
-                  style={{ width: 'var(--radix-popover-trigger-width)' }}
-                >
-                  <Command className="bg-[#154660] text-white [&_[data-slot=command-input-wrapper]]:border-white/10 [&_[data-slot=command-input-wrapper]_svg]:text-white/50 [&_[data-slot=command-item]]:text-white/80 [&_[data-slot=command-item][data-selected=true]]:bg-[#F07E04] [&_[data-slot=command-item][data-selected=true]]:text-white [&_[data-slot=command-empty]]:text-white/50">
-                    <CommandInput
-                      placeholder="Buscar comuna..."
-                      className="text-white placeholder:text-white/40"
-                    />
-                    <CommandList className="max-h-[200px]">
-                      <CommandEmpty className="text-white/50 py-4 text-sm">Sin resultados.</CommandEmpty>
-                      <CommandGroup>
-                        {comunas.filter((c: Comuna) => c.activa).map((comuna: Comuna) => (
-                          <CommandItem
-                            key={comuna.id}
-                            value={comuna.nombre}
-                            onSelect={() => {
-                              setFormData({ ...formData, comunaId: comuna.id });
-                              setComunaOpen(false);
-                            }}
-                            className="cursor-pointer data-[selected=true]:bg-[#F07E04] data-[selected=true]:text-white"
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                formData.comunaId === comuna.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {comuna.nombre}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <select
+                value={formData.region}
+                onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                className="w-full px-4 py-3 md:px-5 md:py-4 bg-white/5 border border-white/10 rounded-xl md:rounded-2xl focus:ring-0 focus:border-[#F07E04] text-white transition-all text-sm md:text-base cursor-pointer appearance-none"
+              >
+                <option value="" disabled className="bg-[#154660]">Selecciona una región</option>
+                {CHILEAN_REGIONS.map((region) => (
+                  <option key={region} value={region} className="bg-[#154660]">
+                    {region}
+                  </option>
+                ))}
+              </select>
+              <ChevronsUpDown className="w-4 h-4 opacity-50 shrink-0 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white" />
             </div>
 
-            {(() => {
-              const comunaSeleccionada = comunas.find(c => c.id === formData.comunaId);
-              if (!comunaSeleccionada) return null;
-              return (
-                 <div className="bg-[#4AAF4D]/10 border border-[#4AAF4D]/20 p-3 md:p-4 rounded-xl md:rounded-2xl flex items-center gap-3 md:gap-4 text-[#4AAF4D] animate-in fade-in zoom-in duration-300">
-                   <Sun className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
-                   <div className="flex flex-col text-xs md:text-sm">
-                     <span className="text-[9px] md:text-[10px] uppercase font-black opacity-70 tracking-widest">Radiación Detectada</span>
-                     <b>{comunaSeleccionada.nombre}: {comunaSeleccionada.radiacion_ghi} kWh/m²/día</b>
-                   </div>
-                 </div>
-              );
-            })()}
+            {formData.region && (
+              <div className="bg-[#4AAF4D]/10 border border-[#4AAF4D]/20 p-3 md:p-4 rounded-xl md:rounded-2xl flex items-center gap-3 md:gap-4 text-[#4AAF4D] animate-in fade-in zoom-in duration-300">
+                <Sun className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+                <div className="flex flex-col text-xs md:text-sm">
+                  <span className="text-[9px] md:text-[10px] uppercase font-black opacity-70 tracking-widest">Región Seleccionada</span>
+                  <b>{formData.region}</b>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleNext}
-              disabled={!formData.comunaId}
+              disabled={!formData.region}
               className="w-full bg-[#F07E04] text-white py-3 md:py-4 rounded-xl md:rounded-2xl font-black text-base md:text-lg hover:bg-[#F09C0A] transition-colors disabled:opacity-50 min-h-[44px]"
             >
               Continuar →
@@ -657,6 +643,31 @@ case 3:
         </AnimatePresence>
       </div>
 
+      {/* BATTERY STORAGE OPTION */}
+      <div className="space-y-4">
+        <div className="bg-[#4AAF4D]/10 border border-[#4AAF4D]/20 p-5 rounded-3xl relative overflow-hidden group">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="battery-required"
+              checked={formData.batteryRequired}
+              onCheckedChange={(checked) => setFormData({ ...formData, batteryRequired: checked as boolean })}
+              className="mt-1 flex-shrink-0 border-white/30 bg-white/5 data-[state=checked]:bg-[#4AAF4D]"
+            />
+            <div className="flex flex-col">
+              <label
+                htmlFor="battery-required"
+                className="text-sm font-bold text-white cursor-pointer hover:text-[#4AAF4D] transition-colors"
+              >
+                Requiero baterías para almacenamiento de energía
+              </label>
+              <p className="text-xs text-white/60 mt-1 italic">
+                Almacena el excedente de generación para usarla cuando el sol no está disponible.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* NAVEGACIÓN */}
       <div className="flex gap-4 pt-4">
         <button
@@ -722,9 +733,11 @@ case 3:
                 setStep(1);
                 setFormData({
                   comunaId: 0,
+                  region: "",
                   montoBoleta: 100000,
                   techoId: 0,
                   medidorId: 0,
+                  batteryRequired: false,
                   nombre: "",
                   email: "",
                   telefono: "",
@@ -773,7 +786,7 @@ const renderResults = () => {
         >
           <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Analizando Potencial</h3>
           <p className="text-white/40 text-sm max-w-[280px] mx-auto leading-relaxed">
-            Cruzando datos de radiación para la comuna de <span className="text-white font-bold">{comunas.find(c => c.id === formData.comunaId)?.nombre}</span>...
+            Cruzando datos de radiación para la región de <span className="text-white font-bold">{formData.region}</span>...
           </p>
         </motion.div>
       </div>
@@ -915,6 +928,23 @@ const renderResults = () => {
              <div className="text-xs md:text-sm font-bold text-white italic break-all">{formatCLP(resumen.ahorroAnual)}/año</div>
           </div>
         </div>
+
+        {/* Formas de Pago (administrables) */}
+        {Array.isArray(result.formas_pago) && result.formas_pago.length > 0 && (
+          <div className="bg-white/5 rounded-2xl border border-white/5 p-4 md:p-5 space-y-2">
+            <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">
+              Formas de Pago
+            </span>
+            <ul className="space-y-1.5">
+              {result.formas_pago.map((metodo: string, i: number) => (
+                <li key={i} className="flex items-center gap-2 text-xs md:text-sm text-white/80">
+                  <span className="text-[#4AAF4D] font-black">✓</span>
+                  {metodo}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* ROI Footnote */}
         <p className="text-[9px] text-white/30 text-center italic leading-tight">

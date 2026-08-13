@@ -7,6 +7,7 @@ import {
   classifyInvestment,
 } from '../../lib/services/pricing';
 import { getActiveTechos, getActiveMedidores } from '../../lib/services/variables';
+import { getSettings } from '../../lib/settings';
 import { ROI_CONSTANTS } from '../../lib/constants/roi';
 import type { Kit } from '../../types/simulation';
 import type { VariablesTecho, VariablesMedidor } from '../../types/simulation';
@@ -17,10 +18,13 @@ type EstadoResultado = 'OK' | 'LIMITE' | 'EJECUTIVO' | 'ERROR';
 
 interface RequestBody {
   montoBoleta: number;
-  comunaId: number;
+  comunaId?: number;
+  region?: string;
   // New: numeric IDs from DB
   techoId?: number;
   medidorId?: number;
+  // Battery option
+  batteryRequired?: boolean;
   // Backward compat: string labels
   tipoTecho?: string;
   tipoMedidor?: string;
@@ -63,9 +67,9 @@ function resolveMedidor(
 export const POST: APIRoute = async ({ request }) => {
   try {
     const body: RequestBody = await request.json();
-    const { montoBoleta, comunaId, techoId, medidorId, tipoTecho, tipoMedidor } = body;
+    const { montoBoleta, comunaId, region, techoId, medidorId, batteryRequired, tipoTecho, tipoMedidor } = body;
 
-    if (!montoBoleta || !comunaId) {
+    if (!montoBoleta || (!comunaId && !region)) {
       return new Response(
         JSON.stringify({ error: 'Faltan campos requeridos' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -120,12 +124,53 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // --- Fetch comuna (backward compat: savings-calculator reads datosComuna) ---
-    const { data: comuna, error: errorComuna } = await supabase
-      .from('comunas')
-      .select('id, nombre, region, radiacion_ghi, tarifa_est')
-      .eq('id', comunaId)
-      .single();
+    // --- Fetch region data: average radiacion/tarifa from all active comunas in that region ---
+    let comuna: any = null;
+    let dispatchCost = 0;
+
+    if (region) {
+      const { data: regionComunas } = await supabase
+        .from('comunas')
+        .select('id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost')
+        .eq('region', region)
+        .eq('activa', true);
+
+      if (regionComunas && regionComunas.length > 0) {
+        const avgRadiacion = regionComunas.reduce((s, c) => s + Number(c.radiacion_ghi), 0) / regionComunas.length;
+        const avgTarifa = regionComunas.reduce((s, c) => s + Number(c.tarifa_est), 0) / regionComunas.length;
+        dispatchCost = regionComunas.reduce((s, c) => s + (Number(c.dispatch_cost) || 0), 0) / regionComunas.length;
+        comuna = {
+          id: regionComunas[0].id,
+          nombre: region,
+          region,
+          radiacion_ghi: avgRadiacion,
+          tarifa_est: avgTarifa,
+          dispatch_cost: dispatchCost,
+        };
+      }
+    } else if (comunaId) {
+      const { data: comunaData } = await supabase
+        .from('comunas')
+        .select('id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost')
+        .eq('id', comunaId)
+        .maybeSingle();
+      comuna = comunaData;
+      dispatchCost = comuna?.dispatch_cost ? Number(comuna.dispatch_cost) : 0;
+    }
+
+    // Fetch battery cost if required
+    let batteryCost = 0;
+    if (batteryRequired) {
+      const { data: battery, error: batteryError } = await supabase
+        .from('almacenamiento_baterias')
+        .select('precio_neto')
+        .eq('activo', true)
+        .single();
+
+      if (!batteryError && battery) {
+        batteryCost = Number(battery.precio_neto) || 0;
+      }
+    }
 
     const kits: Kit[] = dbKits.map((k: any) => ({
       id: k.id,
@@ -176,16 +221,29 @@ export const POST: APIRoute = async ({ request }) => {
     const precioTransferenciaBase = kit.precioTransferencia ?? kit.precioNetoBase;
     const precioListaBase = kit.precioLista ?? Math.round(precioTransferenciaBase * 1.11); // fallback 11% markup
     const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor);
-    const precioFinal = calculateFinalPrice(precioTransferenciaBase, factorTecho, factorMedidor);
+    const precioFinal = calculateFinalPrice(precioTransferenciaBase, factorTecho, factorMedidor) + dispatchCost + batteryCost;
 
     // --- Calculate ROI ---
     const roi = calculateROI(
       kit.potenciaTotalSistema ?? kit.kwp,
       kit.generacionAnual ?? 0,
       precioFinal,
-      montoBoleta
+      montoBoleta,
+      dispatchCost + batteryCost
     );
     const clasificacion = classifyInvestment(roi.paybackAnos);
+
+    // Admin-editable PDF/web texts from settings
+    const settings = await getSettings();
+    const garantiaText = String(settings.garantia_instalacion ?? '');
+    let formasPago: string[] = [];
+    try {
+      const raw = String(settings.formas_pago ?? '');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) formasPago = parsed.map((s) => String(s));
+    } catch {
+      formasPago = [];
+    }
 
     // --- Build response (new + backward compat) ---
     const response = {
@@ -207,8 +265,9 @@ export const POST: APIRoute = async ({ request }) => {
         precioNetoBase: kit.precioNetoBase,
       },
       precio_lista: precioLista,
-      precio_transferencia: precioFinal,
-      precio_final: precioFinal,
+      precio_transferencia: precioFinal - dispatchCost - batteryCost,
+      battery_cost: batteryCost,
+      battery_required: batteryRequired,
       factors: {
         techo_nombre: techoNombre,
         techo_factor: factorTecho,
@@ -262,6 +321,8 @@ export const POST: APIRoute = async ({ request }) => {
         cobertura: roi.coberturaPorcentaje,
         clasificacion,
       },
+      garantia_text: garantiaText,
+      formas_pago: formasPago,
     };
 
     return new Response(JSON.stringify(response), {

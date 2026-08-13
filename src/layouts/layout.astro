@@ -12,6 +12,7 @@ interface Props {
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
+  showWhatsApp?: boolean;
 }
 
 const siteName = "Enercity";
@@ -28,6 +29,7 @@ const {
   ogTitle,
   ogDescription,
   ogImage,
+  showWhatsApp = true,
 } = Astro.props;
 
 const canonicalURL = `${siteUrl}${Astro.url.pathname}`;
@@ -194,6 +196,6 @@ const jsonLd = {
     <!-- Google Tag Manager (noscript) -->
     <GTMNoscript />
     <slot />
-    <WhatsAppFloat />
+    {showWhatsApp && <WhatsAppFloat />}
   </body>
 </html>

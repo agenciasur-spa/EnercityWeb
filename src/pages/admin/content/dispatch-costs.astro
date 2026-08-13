@@ -1,0 +1,23 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import DispatchCostsTable from '@/components/admin/dispatch-costs-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const { data, error } = await supabaseAdmin
+  .from('comunas')
+  .select('id, nombre, region, dispatch_cost')
+  .order('region', { ascending: true })
+  .order('nombre', { ascending: true });
+
+if (error) {
+  console.error('[dispatch-costs.astro] Supabase query error:', error);
+}
+
+const comunas = data ?? [];
+---
+
+<AdminLayout title="Costo de Despacho — Enercity Admin">
+  <DispatchCostsTable client:load initialComunas={comunas} />
+</AdminLayout>
