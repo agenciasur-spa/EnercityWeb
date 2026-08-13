@@ -40,16 +40,26 @@ CREATE INDEX IF NOT EXISTS idx_proyectos_segmento
 ALTER TABLE public.proyectos ENABLE ROW LEVEL SECURITY;
 
 -- Public can read active projects
-CREATE POLICY "Public read active proyectos"
-    ON public.proyectos FOR SELECT
-    TO anon, authenticated
-    USING (activo = true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public read active proyectos' AND tablename = 'proyectos') THEN
+    CREATE POLICY "Public read active proyectos"
+        ON public.proyectos FOR SELECT
+        TO anon, authenticated
+        USING (activo = true);
+  END IF;
+END $$;
 
 -- Authenticated can do everything
-CREATE POLICY "Authenticated CRUD proyectos"
-    ON public.proyectos FOR ALL
-    TO authenticated
-    USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated CRUD proyectos' AND tablename = 'proyectos') THEN
+    CREATE POLICY "Authenticated CRUD proyectos"
+        ON public.proyectos FOR ALL
+        TO authenticated
+        USING (true) WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Auto-update updated_at
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
