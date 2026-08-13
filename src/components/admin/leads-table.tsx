@@ -53,6 +53,7 @@ type LeadRow = {
   updated_at: string | null;
   monto_boleta_ingresado: number;
   precio_final_iva: number;
+  numero_cotizacion: string | null;
   battery_required?: boolean;
   battery_cost?: number;
   comunas: { nombre: string } | null;
@@ -247,6 +248,7 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
+              <TableHead className="hidden sm:table-cell">N° Cotización</TableHead>
               <TableHead>Email</TableHead>
               <TableHead className="hidden md:table-cell">Teléfono</TableHead>
               <TableHead className="hidden lg:table-cell">Comuna</TableHead>
@@ -260,7 +262,7 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
           <TableBody>
             {paginated.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">
                   No se encontraron leads
                 </TableCell>
               </TableRow>
@@ -269,6 +271,9 @@ function LeadsTable({ leads, total }: LeadsTableProps) {
                 <TableRow key={lead.id}>
                   <TableCell className="font-medium">
                     <a href={`/admin/leads/${lead.id}`} className="text-[#154660] hover:underline">{lead.nombre}</a>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell font-mono text-xs text-muted-foreground">
+                    {lead.numero_cotizacion ?? '—'}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{lead.email}</TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">

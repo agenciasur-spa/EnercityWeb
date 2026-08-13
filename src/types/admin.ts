@@ -36,6 +36,7 @@ export interface AdminLead {
   factor_techo_aplicado: number;
   costo_fijo_medidor_aplicado: number;
   precio_final_iva: number;
+  numero_cotizacion: string | null;
   battery_required?: boolean;
   battery_cost?: number;
   estado: LeadStatus;

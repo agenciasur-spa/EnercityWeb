@@ -25,6 +25,7 @@ import {
   PhoneIcon,
   MapPinIcon,
   CalendarIcon,
+  HashIcon,
 } from 'lucide-react';
 import { Timeline } from '@/components/admin/timeline';
 import { AddNoteForm } from '@/components/admin/add-note-form';
@@ -180,6 +181,15 @@ function LeadDetail({ data, adminUserId, adminEmail }: LeadDetailProps) {
 
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {lead.numero_cotizacion && (
+              <div className="flex items-start gap-3">
+                <HashIcon className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">N° Cotización</p>
+                  <p className="text-sm font-medium">{lead.numero_cotizacion}</p>
+                </div>
+              </div>
+            )}
             <div className="flex items-start gap-3">
               <MailIcon className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
               <div>
