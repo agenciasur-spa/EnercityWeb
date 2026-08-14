@@ -5,12 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, RefreshCw, Link as LinkIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCw, Link as LinkIcon, Upload } from 'lucide-react';
 import type { EquipmentDetail } from '@/types/simulation';
 
 interface EquipmentTableProps {
   initialEquipment?: EquipmentDetail[];
 }
+
+const TIPO_LABELS: Record<'inversor' | 'panel' | 'bateria', string> = {
+  inversor: 'Inversor',
+  panel: 'Panel',
+  bateria: 'Batería',
+};
 
 export default function EquipmentTable({ initialEquipment }: EquipmentTableProps) {
   const [equipment, setEquipment] = useState<EquipmentDetail[]>(initialEquipment || []);
@@ -18,9 +24,10 @@ export default function EquipmentTable({ initialEquipment }: EquipmentTableProps
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<EquipmentDetail | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [formData, setFormData] = useState({
-    tipo: 'inversor' as 'inversor' | 'panel',
+    tipo: 'inversor' as 'inversor' | 'panel' | 'bateria',
     nombre: '',
     marca: '',
     modelo: '',
@@ -114,6 +121,33 @@ export default function EquipmentTable({ initialEquipment }: EquipmentTableProps
     setEditingItem(null);
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      const res = await fetch('/api/admin/content/upload-image', {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      if (!res.ok) throw new Error('Error al subir la imagen');
+
+      const { url } = await res.json();
+      setFormData((prev) => ({ ...prev, imagenUrl: url }));
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert(err instanceof Error ? err.message : 'Error al subir la imagen');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
   const handleEdit = (item: EquipmentDetail) => {
     setEditingItem(item);
     setFormData({
@@ -162,12 +196,13 @@ export default function EquipmentTable({ initialEquipment }: EquipmentTableProps
                     <label className="text-sm font-medium">Tipo *</label>
                     <select
                       value={formData.tipo}
-                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'inversor' | 'panel' })}
+                      onChange={(e) => setFormData({ ...formData, tipo: e.target.value as 'inversor' | 'panel' | 'bateria' })}
                       className="w-full mt-1 px-3 py-2 border rounded-md"
                       required
                     >
                       <option value="inversor">Inversor</option>
                       <option value="panel">Panel Solar</option>
+                      <option value="bateria">Batería</option>
                     </select>
                   </div>
                   <div>
@@ -208,13 +243,33 @@ export default function EquipmentTable({ initialEquipment }: EquipmentTableProps
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">URL de Imagen</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Imagen del equipo</label>
+                  <div className="flex items-center gap-3">
+                    {formData.imagenUrl && (
+                      <img
+                        src={formData.imagenUrl}
+                        alt="Vista previa"
+                        className="h-12 w-12 rounded-md border object-cover"
+                      />
+                    )}
+                    <label className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm hover:bg-muted">
+                      <Upload className="w-4 h-4" />
+                      {uploadingImage ? 'Subiendo...' : 'Subir imagen'}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
                   <Input
                     type="url"
                     value={formData.imagenUrl}
                     onChange={(e) => setFormData({ ...formData, imagenUrl: e.target.value })}
-                    placeholder="https://..."
+                    placeholder="O pega una URL de imagen: https://..."
                   />
                 </div>
 
@@ -309,7 +364,7 @@ export default function EquipmentTable({ initialEquipment }: EquipmentTableProps
                   <TableRow key={item.id}>
                     <TableCell>
                       <Badge variant={item.tipo === 'inversor' ? 'default' : 'secondary'}>
-                        {item.tipo === 'inversor' ? 'Inversor' : 'Panel'}
+                        {TIPO_LABELS[item.tipo]}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">{item.nombre}</TableCell>

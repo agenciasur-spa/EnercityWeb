@@ -125,37 +125,58 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // --- Fetch region data: average radiacion/tarifa from all active comunas in that region ---
+    // dispatch_cost lives on `region_dispatch_costs` now (one row per region), not per comuna.
     let comuna: any = null;
-    let dispatchCost = 0;
+    let resolvedRegion: string | null = null;
 
     if (region) {
+      resolvedRegion = region;
       const { data: regionComunas } = await supabase
         .from('comunas')
-        .select('id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost')
+        .select('id, nombre, region, radiacion_ghi, tarifa_est')
         .eq('region', region)
         .eq('activa', true);
 
       if (regionComunas && regionComunas.length > 0) {
         const avgRadiacion = regionComunas.reduce((s, c) => s + Number(c.radiacion_ghi), 0) / regionComunas.length;
         const avgTarifa = regionComunas.reduce((s, c) => s + Number(c.tarifa_est), 0) / regionComunas.length;
-        dispatchCost = regionComunas.reduce((s, c) => s + (Number(c.dispatch_cost) || 0), 0) / regionComunas.length;
         comuna = {
           id: regionComunas[0].id,
           nombre: region,
           region,
           radiacion_ghi: avgRadiacion,
           tarifa_est: avgTarifa,
-          dispatch_cost: dispatchCost,
+        };
+      } else {
+        // No hay comunas activas cargadas para esta región (ej. Ñuble): usar
+        // promedios nacionales en vez de dejar `comuna` en null, que hacía
+        // caer el simulador entero en el frontend.
+        comuna = {
+          id: 0,
+          nombre: region,
+          region,
+          radiacion_ghi: ROI_CONSTANTS.radiacionGhi,
+          tarifa_est: ROI_CONSTANTS.tarifaEst,
         };
       }
     } else if (comunaId) {
       const { data: comunaData } = await supabase
         .from('comunas')
-        .select('id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost')
+        .select('id, nombre, region, radiacion_ghi, tarifa_est')
         .eq('id', comunaId)
         .maybeSingle();
       comuna = comunaData;
-      dispatchCost = comuna?.dispatch_cost ? Number(comuna.dispatch_cost) : 0;
+      resolvedRegion = comuna?.region ?? null;
+    }
+
+    let dispatchCost = 0;
+    if (resolvedRegion) {
+      const { data: regionDispatch } = await supabase
+        .from('region_dispatch_costs')
+        .select('dispatch_cost')
+        .eq('region', resolvedRegion)
+        .maybeSingle();
+      dispatchCost = regionDispatch?.dispatch_cost ? Number(regionDispatch.dispatch_cost) : 0;
     }
 
     // Fetch battery cost if required
@@ -217,19 +238,20 @@ export const POST: APIRoute = async ({ request }) => {
     const techoNombre = techo?.nombre ?? 'Standard';
     const medidorNombre = medidor?.nombre ?? 'Standard';
 
-    // --- Calculate prices (factors apply to BOTH lista and transferencia) ---
+    // --- Calculate prices (factors apply to BOTH lista and transferencia; ---
+    // --- dispatch cost is added on top of both, per producto) ---
     const precioTransferenciaBase = kit.precioTransferencia ?? kit.precioNetoBase;
     const precioListaBase = kit.precioLista ?? Math.round(precioTransferenciaBase * 1.11); // fallback 11% markup
-    const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor);
+    const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor) + dispatchCost;
     const precioFinal = calculateFinalPrice(precioTransferenciaBase, factorTecho, factorMedidor) + dispatchCost + batteryCost;
 
     // --- Calculate ROI ---
+    // precioFinal ya incluye dispatchCost + batteryCost, no volver a sumarlos.
     const roi = calculateROI(
       kit.potenciaTotalSistema ?? kit.kwp,
       kit.generacionAnual ?? 0,
       precioFinal,
-      montoBoleta,
-      dispatchCost + batteryCost
+      montoBoleta
     );
     const clasificacion = classifyInvestment(roi.paybackAnos);
 
@@ -266,6 +288,7 @@ export const POST: APIRoute = async ({ request }) => {
       },
       precio_lista: precioLista,
       precio_transferencia: precioFinal - dispatchCost - batteryCost,
+      dispatch_cost: dispatchCost,
       battery_cost: batteryCost,
       battery_required: batteryRequired,
       factors: {
@@ -295,6 +318,7 @@ export const POST: APIRoute = async ({ request }) => {
             region: comuna.region,
             radiacionGhi: Number(comuna.radiacion_ghi) || ROI_CONSTANTS.radiacionGhi,
             tarifaEst: Number(comuna.tarifa_est) || ROI_CONSTANTS.tarifaEst,
+            dispatchCost,
           }
         : undefined,
       calculo: {

@@ -74,8 +74,12 @@ describe('buildPricingDisplay', () => {
     const result = makeQuoteResult();
     const display = buildPricingDisplay(result);
 
+    // precioTransferencia/precioFinal reflect the full amount the customer
+    // pays (calculo.precioFinalIva already includes despacho + batería) —
+    // result.precio_transferencia alone is the "clean" kit price and is no
+    // longer re-derived/subtracted on the client.
     expect(display.precioLista).toBe(5166937);
-    expect(display.precioTransferencia).toBe(4650243);
+    expect(display.precioTransferencia).toBe(5300243);
     expect(display.precioFinal).toBe(5300243);
     expect(display.hasDualPricing).toBe(true);
   });
@@ -85,6 +89,7 @@ describe('buildPricingDisplay', () => {
       precio_lista: 4650243,
       precio_transferencia: 4650243,
       precio_final: 4650243,
+      calculo: { ...makeQuoteResult().calculo, precioFinalIva: 4650243 },
     });
     const display = buildPricingDisplay(result);
 
@@ -119,6 +124,22 @@ describe('buildPricingDisplay', () => {
     expect(display.techoDisplay).toBe('');
     expect(display.medidorDisplay).toBe('');
   });
+
+  it('does not double-subtract battery cost from the displayed price', () => {
+    // Regression test: precio_transferencia arrives from the backend already
+    // net of battery/dispatch cost; calculo.precioFinalIva is the full amount.
+    // The display used to subtract battery_cost a second time here, producing
+    // a corrupted constant total unrelated to any kit/region value.
+    const result = makeQuoteResult({
+      precio_transferencia: 4650243,
+      battery_cost: 8968806,
+      calculo: { ...makeQuoteResult().calculo, precioFinalIva: 4650243 + 8968806 },
+    });
+    const display = buildPricingDisplay(result);
+
+    expect(display.precioTransferencia).toBe(4650243 + 8968806);
+    expect(display.batteryCost).toBe(8968806);
+  });
 });
 
 describe('buildPdfDataFromResult', () => {
@@ -140,7 +161,7 @@ describe('buildPdfDataFromResult', () => {
     const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas);
 
     expect(pdf.precioLista).toBe(5166937);
-    expect(pdf.precioTransferencia).toBe(4650243);
+    expect(pdf.precioTransferencia).toBe(5300243);
     expect(pdf.precioFinal).toBe(5300243);
     expect(pdf.factorTechoDisplay).toBe('Teja Chilena');
     expect(pdf.factorMedidorDisplay).toBe('Reja');
@@ -178,9 +199,10 @@ describe('buildPdfDataFromResult', () => {
 
     const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas);
 
-    // Falls back to calculo.precioBase for lista/transferencia (undefined since new fields missing)
+    // precioLista has no fallback source (undefined). precioTransferencia
+    // falls back to calculo.precioFinalIva, same source as precioFinal/systemPrice.
     expect(pdf.precioLista).toBeUndefined();
-    expect(pdf.precioTransferencia).toBeUndefined();
+    expect(pdf.precioTransferencia).toBe(5300243);
     expect(pdf.systemPrice).toBe(5300243);
     expect(pdf.factorTechoDisplay).toBe('');
   });
@@ -328,5 +350,44 @@ describe('buildPdfDataFromResult', () => {
     expect(pdf.equipment![0].tipo).toBe('inversor');
     expect(pdf.equipment![1].tipo).toBe('panel');
     expect(pdf.equipment.every(eq => eq.tipo === 'inversor' || eq.tipo === 'panel')).toBe(true);
+  });
+
+  it('adds a third "bateria" equipment card for hybrid quotes', () => {
+    const result = makeQuoteResult({ battery_cost: 8968806, battery_required: true });
+    const equipmentCatalog: EquipmentDetail[] = [
+      {
+        id: 3,
+        tipo: 'bateria',
+        nombre: 'Batería Powerwall',
+        marca: 'Tesla',
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
+
+    expect(pdf.equipment).toHaveLength(3);
+    expect(pdf.equipment![2]).toMatchObject({ tipo: 'bateria', nombre: 'Batería Powerwall', marca: 'Tesla' });
+  });
+
+  it('omits the battery card when no battery was quoted', () => {
+    const result = makeQuoteResult();
+    const equipmentCatalog: EquipmentDetail[] = [
+      {
+        id: 3,
+        tipo: 'bateria',
+        nombre: 'Batería Powerwall',
+        marca: 'Tesla',
+        activo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const pdf: PDFData = buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
+
+    expect(pdf.equipment).toHaveLength(2);
   });
 });

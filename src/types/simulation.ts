@@ -1,3 +1,5 @@
+import type { EquipmentCard } from '../lib/pdf-types';
+
 export interface Kit {
   id: number;
   consumoBruto: number;
@@ -74,10 +76,20 @@ export interface LeadInput {
   montoBoletaIngresado: number;
   kitId: number;
   factorTechoAplicado: number;
+  techoNombreAplicado?: string;
+  medidorFactorAplicado?: number;
+  medidorNombreAplicado?: string;
   costoFijoMedidorAplicado: number;
   precioFinalIva: number;
+  precioLista?: number;
+  precioTransferencia?: number;
+  precioFinal?: number;
   batteryRequired?: boolean;
   batteryCost?: number;
+  dispatchCost?: number;
+  equipment?: EquipmentCard[];
+  garantiaText?: string;
+  formasPago?: string[];
 }
 
 export interface Lead extends LeadInput {
@@ -88,7 +100,7 @@ export interface Lead extends LeadInput {
 
 export interface EquipmentDetail {
   id: number;
-  tipo: 'inversor' | 'panel';
+  tipo: 'inversor' | 'panel' | 'bateria';
   nombre: string;
   marca: string;
   modelo?: string;

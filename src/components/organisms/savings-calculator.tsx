@@ -94,7 +94,9 @@ interface QuoteResult {
     region: string;
     radiacionGhi: number;
     tarifaEst: number;
+    dispatchCost?: number;
   };
+  dispatch_cost?: number;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -338,6 +340,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
 
     try {
       const pricing = buildPricingDisplay(result);
+      // Built early (numeroCotizacion isn't known yet) just to carry the
+      // equipment/garantía/formas de pago the server-side email PDF needs —
+      // it used to reconstruct these from scratch and drift out of sync.
+      const pdfDataForLead = buildPdfData();
 
       const apiResponse = await fetch("/api/leads", {
         method: "POST",
@@ -373,6 +379,10 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
           clasificacion: result.resumenInversion?.clasificacion || '',
           batteryCost: result.battery_cost || 0,
           batteryRequired: formData.batteryRequired,
+          dispatchCost: pdfDataForLead?.dispatchCost ?? result.dispatch_cost ?? 0,
+          equipment: pdfDataForLead?.equipment ?? [],
+          garantiaText: pdfDataForLead?.garantiaText ?? result.garantia_text ?? '',
+          formasPago: pdfDataForLead?.formasPago ?? result.formas_pago ?? [],
           website: formData.website,
           captchaToken,
           timeTaken,
@@ -796,7 +806,7 @@ const renderResults = () => {
   // 2. LÓGICA DE DATOS
   const calculo = result.calculo!;
   const kit = result.kit!;
-  const comuna = result.datosComuna!;
+  const comuna = result.datosComuna ?? { id: 0, nombre: formData.region, region: formData.region, radiacionGhi: 0, tarifaEst: 0 };
   const resumen = result.resumenInversion!;
   const clasificacionStyles = getClasificacionStyles(resumen.clasificacion);
   
@@ -862,7 +872,7 @@ const renderResults = () => {
         <h4 className="text-[10px] font-black text-[#F07E04] uppercase tracking-[0.3em] mb-4 text-center">Ficha Técnica del Sistema</h4>
         <div className="space-y-3">
           {[
-            { label: "Comuna", val: comuna.nombre },
+            { label: "Región", val: comuna.nombre },
             { label: "Sistema", val: `${kit.potenciaTotalSistema ?? kit.kwp} kWP / ${kit.paneles} paneles` },
             { label: "Inversor", val: `${kit.inversorKw} kW` },
             { label: "Generación anual", val: `${(calculo.generacionAnualKwh ?? kit.generacionAnual ?? 0).toLocaleString("es-CL")} kWh` }
@@ -917,17 +927,6 @@ const renderResults = () => {
             </div>
           );
         })()}
-
-        <div className="flex flex-col md:flex-row justify-between items-center bg-white/5 p-3 md:p-4 rounded-2xl border border-white/5 gap-4 md:gap-0">
-          <div className="space-y-1 text-center md:text-left flex-1">
-            <span className="text-[9px] md:text-[10px] font-black text-white/40 uppercase tracking-widest">Inversión Total (IVA inc.)</span>
-            <div className="text-xl md:text-2xl font-black text-white break-all">{formatCLP(calculo.precioFinalIva)}</div>
-          </div>
-          <div className="text-center md:text-right flex-1">
-             <span className="text-[9px] font-black text-[#F07E04] uppercase">Ahorro Anual</span>
-             <div className="text-xs md:text-sm font-bold text-white italic break-all">{formatCLP(resumen.ahorroAnual)}/año</div>
-          </div>
-        </div>
 
         {/* Formas de Pago (administrables) */}
         {Array.isArray(result.formas_pago) && result.formas_pago.length > 0 && (

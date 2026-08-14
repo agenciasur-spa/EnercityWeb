@@ -23,6 +23,9 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# CodeGraph local index
+.codegraph/
 .vercel
 .env*.local
 

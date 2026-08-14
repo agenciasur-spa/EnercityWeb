@@ -13,20 +13,19 @@ interface PricingDisplay {
 }
 
 export function buildPricingDisplay(result: any): PricingDisplay {
-  // After API fix: precio_lista and precio_transferencia BOTH have factors applied.
-  // precio_lista = precioListaBase × factorTecho × factorMedidor
-  // precio_transferencia (= precio_final) = precioTransferenciaBase × factorTecho × factorMedidor
+  // precio_lista ya incluye factores + despacho (ver calculate-quote.ts).
+  // calculo.precioFinalIva es el monto total a pagar: kit × factores + despacho + batería.
+  // OJO: result.precio_transferencia viene "limpio" de despacho/batería desde el
+  // backend — no restarlo de nuevo acá (bug histórico que corrompía el monto
+  // cuando se agregaba batería).
   const precioLista = result?.precio_lista ?? 0;
-  const precioTransferencia = result?.precio_transferencia ?? 0;
-  const precioFinal = result?.precio_final ?? precioTransferencia;
+  const precioFinal = result?.calculo?.precioFinalIva ?? result?.precio_transferencia ?? 0;
+  const precioTransferencia = precioFinal;
 
-  // Remove dispatch cost from display prices (it's shown separately)
   const dispatchCost = result?.dispatch_cost || result?.datosComuna?.dispatchCost || 0;
   const batteryCost = result?.battery_cost || 0;
-  const precioTransferenciaDisplay = Math.max(0, precioTransferencia - dispatchCost - batteryCost);
-  const precioFinalDisplay = Math.max(0, precioFinal - dispatchCost - batteryCost);
 
-  const hasDualPricing = precioLista > 0 && precioLista !== precioTransferenciaDisplay;
+  const hasDualPricing = precioLista > 0 && precioLista !== precioTransferencia;
 
   const techoDisplay = result?.factors?.techo_nombre
     ? `${result.factors.techo_nombre}`
@@ -37,8 +36,8 @@ export function buildPricingDisplay(result: any): PricingDisplay {
 
   return {
     precioLista,
-    precioTransferencia: precioTransferenciaDisplay,
-    precioFinal: precioFinalDisplay,
+    precioTransferencia,
+    precioFinal,
     hasDualPricing,
     techoDisplay,
     medidorDisplay,
@@ -65,6 +64,7 @@ export function buildPdfDataFromResult(
 
   const activeInverter = findActiveEquipmentByType(equipmentCatalog, 'inversor');
   const activePanel = findActiveEquipmentByType(equipmentCatalog, 'panel');
+  const activeBattery = findActiveEquipmentByType(equipmentCatalog, 'bateria');
 
   // Build equipment cards (inverter + panels) with catalog data
   const equipment: EquipmentCard[] = [];
@@ -110,6 +110,25 @@ export function buildPdfDataFromResult(
       imagenUrl: panelCard.imagenUrl,
       fichaTecnicaUrl: panelCard.fichaTecnicaUrl,
     });
+
+    // Sistema híbrido: si se agregó batería, sumar una tercera card al PDF.
+    if (batteryCost > 0) {
+      const batteryCard = buildEquipmentCard(
+        activeBattery,
+        'bateria',
+        { nombre: 'Batería de Respaldo', marca: 'ENERCITY' }
+      );
+
+      equipment.push({
+        tipo: batteryCard.tipo,
+        nombre: batteryCard.nombre,
+        marca: batteryCard.marca,
+        modelo: batteryCard.modelo,
+        potenciaWatts: batteryCard.potenciaWatts,
+        imagenUrl: batteryCard.imagenUrl,
+        fichaTecnicaUrl: batteryCard.fichaTecnicaUrl,
+      });
+    }
   }
 
   if (!kit || !calculo || !resumen) {

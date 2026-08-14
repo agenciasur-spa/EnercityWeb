@@ -11,7 +11,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, Sun, DollarSign, RefreshCw, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Sun, RefreshCw, Search } from 'lucide-react';
 import { CHILEAN_REGIONS } from '@/lib/constants/regions';
 
 interface Comuna {
@@ -20,7 +20,6 @@ interface Comuna {
   region: string;
   radiacion_ghi: number;
   tarifa_est: number;
-  dispatch_cost: number;
   activa: boolean;
   created_at: string;
 }
@@ -34,7 +33,6 @@ type FormData = {
   region: string;
   radiacion_ghi: string;
   tarifa_est: string;
-  dispatch_cost: string;
   activa: boolean;
 };
 
@@ -43,7 +41,6 @@ const emptyForm: FormData = {
   region: '',
   radiacion_ghi: '5.0',
   tarifa_est: '175.00',
-  dispatch_cost: '0',
   activa: true,
 };
 
@@ -82,7 +79,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
       region: comuna.region,
       radiacion_ghi: String(comuna.radiacion_ghi),
       tarifa_est: String(comuna.tarifa_est),
-      dispatch_cost: String(comuna.dispatch_cost),
       activa: comuna.activa,
     });
     setError('');
@@ -132,12 +128,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
       return;
     }
 
-    const dispatchCost = Number(form.dispatch_cost);
-    if (isNaN(dispatchCost) || dispatchCost < 0) {
-      setError('Costo de despacho debe ser un número no negativo');
-      return;
-    }
-
     setSaving(true);
     setError('');
 
@@ -148,7 +138,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
         region: form.region,
         radiacion_ghi: radiacionGhi,
         tarifa_est: tarifaEst,
-        dispatch_cost: dispatchCost,
         activa: form.activa,
       };
 
@@ -250,7 +239,7 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[#154660]">Comunas</h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona comunas, regiones y costos de despacho
+            Gestiona comunas y sus regiones asociadas
           </p>
         </div>
         <div className="flex gap-2">
@@ -302,12 +291,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
                       </div>
                     </TableHead>
                     <TableHead className="w-28">Tarifa Est</TableHead>
-                    <TableHead className="w-32">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
-                        Despacho
-                      </div>
-                    </TableHead>
                     <TableHead className="w-28">Estado</TableHead>
                     <TableHead className="w-32 text-right">Acciones</TableHead>
                   </TableRow>
@@ -320,7 +303,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
                         <span className="font-semibold text-[#F07E04]">{comuna.radiacion_ghi}</span>
                       </TableCell>
                       <TableCell>{formatCLP(comuna.tarifa_est)}</TableCell>
-                      <TableCell>{formatCLP(comuna.dispatch_cost)}</TableCell>
                       <TableCell>
                         <button onClick={() => handleToggleActive(comuna.id, comuna.activa)}>
                           <Badge
@@ -443,27 +425,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
               />
               <p className="text-xs text-muted-foreground">
                 Tarifa eléctrica estimada (CLP/kWh)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="comuna-dispatch" className="text-sm font-medium">
-                <div className="flex items-center gap-1">
-                  <DollarSign className="w-4 h-4" />
-                  Costo Despacho
-                </div>
-              </label>
-              <Input
-                id="comuna-dispatch"
-                type="number"
-                step="1"
-                min="0"
-                value={form.dispatch_cost}
-                onChange={(e) => setForm((f) => ({ ...f, dispatch_cost: e.target.value }))}
-                placeholder="0"
-              />
-              <p className="text-xs text-muted-foreground">
-                Costo de despacho regional (CLP)
               </p>
             </div>
 

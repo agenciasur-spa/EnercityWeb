@@ -44,7 +44,7 @@ export interface PDFData {
 }
 
 export interface EquipmentCard {
-  tipo: 'inversor' | 'panel';
+  tipo: 'inversor' | 'panel' | 'bateria';
   nombre: string;
   marca: string;
   modelo?: string;

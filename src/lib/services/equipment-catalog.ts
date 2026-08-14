@@ -1,5 +1,28 @@
 import type { EquipmentDetail } from '../../types/simulation';
 
+/**
+ * Supabase returns `equipment_details` rows in snake_case; every consumer
+ * (admin table, PDF builder) expects camelCase. Centralized here so both
+ * API routes (admin + public) stay in sync.
+ */
+export function mapEquipmentRow(row: any): EquipmentDetail {
+  return {
+    id: row.id,
+    tipo: row.tipo,
+    nombre: row.nombre,
+    marca: row.marca,
+    modelo: row.modelo ?? undefined,
+    potenciaWatts: row.potencia_watts ?? undefined,
+    descripcion: row.descripcion ?? undefined,
+    garantia: row.garantia ?? undefined,
+    imagenUrl: row.imagen_url ?? undefined,
+    fichaTecnicaUrl: row.ficha_tecnica_url ?? undefined,
+    activo: row.activo,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
 const equipmentCache = new Map<string, EquipmentDetail[]>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -8,7 +31,7 @@ interface CachedData {
   timestamp: number;
 }
 
-export async function fetchEquipmentCatalog(filters?: { tipo?: 'inversor' | 'panel'; activo?: boolean }): Promise<EquipmentDetail[]> {
+export async function fetchEquipmentCatalog(filters?: { tipo?: 'inversor' | 'panel' | 'bateria'; activo?: boolean }): Promise<EquipmentDetail[]> {
   const cacheKey = JSON.stringify(filters);
   const cached = equipmentCache.get(cacheKey);
 
@@ -44,14 +67,14 @@ export function clearEquipmentCache(): void {
 
 export function findActiveEquipmentByType(
   equipment: EquipmentDetail[],
-  tipo: 'inversor' | 'panel'
+  tipo: 'inversor' | 'panel' | 'bateria'
 ): EquipmentDetail | null {
   return equipment.find(eq => eq.tipo === tipo && eq.activo) || null;
 }
 
 export function buildEquipmentCard(
   equipmentDetail: EquipmentDetail | null,
-  tipo: 'inversor' | 'panel',
+  tipo: 'inversor' | 'panel' | 'bateria',
   fallbackData: { nombre: string; marca: string; modelo?: string; potenciaWatts?: number }
 ): EquipmentDetail {
   if (!equipmentDetail) {

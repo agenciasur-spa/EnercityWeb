@@ -1,96 +1,96 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Save, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 
-interface Comuna {
+interface RegionDispatchCost {
   id: number;
-  nombre: string;
   region: string;
   dispatch_cost: number;
 }
 
 interface DispatchCostsTableProps {
-  initialComunas?: Comuna[];
+  initialRegions?: RegionDispatchCost[];
 }
 
-export default function DispatchCostsTable({ initialComunas }: DispatchCostsTableProps) {
-  const [comunas, setComunas] = useState<Comuna[]>(initialComunas || []);
-  const [loading, setLoading] = useState(!initialComunas);
+export default function DispatchCostsTable({ initialRegions }: DispatchCostsTableProps) {
+  const [regions, setRegions] = useState<RegionDispatchCost[]>(initialRegions || []);
+  const [loading, setLoading] = useState(!initialRegions);
   const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [changes, setChanges] = useState<Record<number, number>>({});
 
-  const fetchComunas = useCallback(async () => {
+  const fetchRegions = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/dispatch-costs');
-      if (!res.ok) throw new Error('Error al cargar comunas');
+      if (!res.ok) throw new Error('Error al cargar costos de despacho');
       const data = await res.json();
-      setComunas(data.comunas || []);
+      setRegions(data.regions || []);
+      setChanges({});
     } catch (err) {
-      console.error('Error fetching comunas:', err);
+      console.error('Error fetching dispatch costs:', err);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchComunas();
-  }, [fetchComunas]);
+    fetchRegions();
+  }, [fetchRegions]);
 
-  const filteredComunas = comunas.filter(c =>
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.region.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRegions = regions.filter((r) =>
+    r.region.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCostChange = (comunaId: number, value: string) => {
+  const handleCostChange = (regionId: number, value: string) => {
     const numValue = parseInt(value) || 0;
-    setChanges(prev => ({ ...prev, [comunaId]: numValue }));
+    setChanges((prev) => ({ ...prev, [regionId]: numValue }));
   };
 
-  const handleSave = async (comunaId: number) => {
-    setSaving(prev => ({ ...prev, [comunaId]: true }));
+  const handleSave = async (region: RegionDispatchCost) => {
+    setSaving((prev) => ({ ...prev, [region.id]: true }));
     try {
       const res = await fetch('/api/admin/dispatch-costs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          comunaId,
-          dispatchCost: changes[comunaId],
+          region: region.region,
+          dispatchCost: changes[region.id],
         }),
       });
 
       if (!res.ok) throw new Error('Error al guardar');
 
-      setChanges(prev => {
+      setRegions((prev) =>
+        prev.map((r) => (r.id === region.id ? { ...r, dispatch_cost: changes[region.id] } : r))
+      );
+      setChanges((prev) => {
         const newChanges = { ...prev };
-        delete newChanges[comunaId];
+        delete newChanges[region.id];
         return newChanges;
       });
-
-      await fetchComunas();
     } catch (err) {
       console.error('Error saving dispatch cost:', err);
+      alert('Error al guardar el costo de despacho');
     } finally {
-      setSaving(prev => ({ ...prev, [comunaId]: false }));
+      setSaving((prev) => ({ ...prev, [region.id]: false }));
     }
   };
-
-  const groupedComunas = filteredComunas.reduce((acc, comuna) => {
-    if (!acc[comuna.region]) acc[comuna.region] = [];
-    acc[comuna.region].push(comuna);
-    return acc;
-  }, {} as Record<string, Comuna[]>);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold tracking-tight">Costo de Despacho por Región</h2>
-        <Button onClick={fetchComunas} variant="outline" size="sm">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Costo de Despacho por Región</h2>
+          <p className="text-sm text-muted-foreground">
+            Un único costo de despacho por región (no por comuna).
+          </p>
+        </div>
+        <Button onClick={fetchRegions} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Actualizar
         </Button>
@@ -100,7 +100,7 @@ export default function DispatchCostsTable({ initialComunas }: DispatchCostsTabl
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar comuna o región..."
+            placeholder="Buscar región..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -118,54 +118,50 @@ export default function DispatchCostsTable({ initialComunas }: DispatchCostsTabl
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#F07E04]"></div>
         </div>
       ) : (
-        <div className="space-y-8">
-          {Object.entries(groupedComunas).map(([region, regionComunas]) => (
-            <Card key={region}>
-              <CardHeader>
-                <CardTitle className="text-lg">{region}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Comuna</TableHead>
-                      <TableHead className="w-40">Costo Despacho (CLP)</TableHead>
-                      <TableHead className="w-32">Acciones</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {regionComunas.map((comuna) => (
-                      <TableRow key={comuna.id}>
-                        <TableCell className="font-medium">{comuna.nombre}</TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            defaultValue={changes[comuna.id] ?? comuna.dispatch_cost}
-                            onChange={(e) => handleCostChange(comuna.id, e.target.value)}
-                            className="w-full"
-                            min={0}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {changes[comuna.id] !== undefined && (
-                            <Button
-                              onClick={() => handleSave(comuna.id)}
-                              disabled={saving[comuna.id]}
-                              size="sm"
-                              className="bg-[#F07E04] hover:bg-[#F09C0A]"
-                            >
-                              {saving[comuna.id] ? 'Guardando...' : 'Guardar'}
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Regiones</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Región</TableHead>
+                  <TableHead className="w-40">Costo Despacho (CLP)</TableHead>
+                  <TableHead className="w-32">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRegions.map((region) => (
+                  <TableRow key={region.id}>
+                    <TableCell className="font-medium">{region.region}</TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        defaultValue={changes[region.id] ?? region.dispatch_cost}
+                        onChange={(e) => handleCostChange(region.id, e.target.value)}
+                        className="w-full"
+                        min={0}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {changes[region.id] !== undefined && (
+                        <Button
+                          onClick={() => handleSave(region)}
+                          disabled={saving[region.id]}
+                          size="sm"
+                          className="bg-[#F07E04] hover:bg-[#F09C0A]"
+                        >
+                          {saving[region.id] ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

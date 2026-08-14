@@ -454,9 +454,12 @@ async function drawEquipmentCard(
   let cy = y - padding - 7;
 
   // Eyebrow: brand + equipment type
-  const eyebrow = equipment.tipo === 'inversor'
-    ? `Inversor ${equipment.marca}`
-    : `Paneles ${equipment.marca}`;
+  const eyebrowLabel = equipment.tipo === 'inversor'
+    ? 'Inversor'
+    : equipment.tipo === 'bateria'
+      ? 'Batería'
+      : 'Paneles';
+  const eyebrow = `${eyebrowLabel} ${equipment.marca}`;
   page.drawText(sanitizeText(eyebrow.toUpperCase()), {
     x: x + padding, y: cy, size: 7.5, font: fontBold, color: COLOR_ACCENT_ORANGE,
   });

@@ -2,16 +2,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockQuery = {
   order: vi.fn(function() { return this; }),
-  eq: vi.fn(function() { return this; }),
   then: vi.fn(function(resolve) { resolve({ data: [], error: null }); })
 };
 
+const mockUpdateChain = {
+  eq: vi.fn(function() { return this; }),
+  select: vi.fn(function() { return this; }),
+  single: vi.fn(function() { return this; }),
+  then: vi.fn(function(resolve) { resolve({ data: null, error: null }); })
+};
+
 const mockFrom = vi.fn(() => ({
-  select: vi.fn(() => mockQuery)
+  select: vi.fn(() => mockQuery),
+  update: vi.fn(() => mockUpdateChain),
 }));
 
-vi.mock('../../../lib/supabase', () => ({
-  supabase: {
+vi.mock('../../../lib/supabase-admin', () => ({
+  supabaseAdmin: {
     from: (...args: any[]) => mockFrom(...args),
   },
 }));
@@ -42,7 +49,7 @@ describe('/api/admin/dispatch-costs', () => {
       expect(getAdminUser).toHaveBeenCalledWith(request);
     });
 
-    it('returns comunas when user is authenticated', async () => {
+    it('returns one row per region when user is authenticated', async () => {
       vi.mocked(getAdminUser).mockResolvedValue({
         id: '123',
         email: 'admin@test.com',
@@ -50,11 +57,10 @@ describe('/api/admin/dispatch-costs', () => {
       });
 
       const mockData = [
-        { id: 1, nombre: 'Santiago', region: 'Región Metropolitana', dispatch_cost: 5000 },
-        { id: 2, nombre: 'Providencia', region: 'Región Metropolitana', dispatch_cost: 5000 },
+        { id: 1, region: 'Antofagasta', dispatch_cost: 15000 },
+        { id: 2, region: 'Metropolitana', dispatch_cost: 5000 },
       ];
-      
-      // Override the then method to return our mock data
+
       mockQuery.then.mockImplementation(function(resolve) {
         resolve({ data: mockData, error: null });
       });
@@ -65,9 +71,9 @@ describe('/api/admin/dispatch-costs', () => {
       const result = await response.json();
 
       expect(getAdminUser).toHaveBeenCalledWith(request);
-      expect(mockFrom).toHaveBeenCalledWith('comunas');
+      expect(mockFrom).toHaveBeenCalledWith('region_dispatch_costs');
       expect(response.status).toBe(200);
-      expect(result).toEqual({ comunas: mockData });
+      expect(result).toEqual({ regions: mockData });
     });
 
     it('returns 500 on database error', async () => {
@@ -77,8 +83,8 @@ describe('/api/admin/dispatch-costs', () => {
         role: 'admin',
       });
 
-      mockQuery.then.mockImplementation(function(resolve, reject) {
-        reject(new Error('DB fail'));
+      mockQuery.then.mockImplementation(function(resolve) {
+        resolve({ data: null, error: { message: 'DB fail' } });
       });
 
       const url = new URL('http://localhost/api/admin/dispatch-costs');
@@ -87,7 +93,7 @@ describe('/api/admin/dispatch-costs', () => {
       const result = await response.json();
 
       expect(response.status).toBe(500);
-      expect(result.error).toBe('Error interno del servidor');
+      expect(result.error).toBe('DB fail');
     });
 
     it('returns empty array when no data found', async () => {
@@ -107,7 +113,7 @@ describe('/api/admin/dispatch-costs', () => {
       const result = await response.json();
 
       expect(response.status).toBe(200);
-      expect(result).toEqual({ comunas: [] });
+      expect(result).toEqual({ regions: [] });
     });
   });
 
@@ -118,7 +124,7 @@ describe('/api/admin/dispatch-costs', () => {
       const url = new URL('http://localhost/api/admin/dispatch-costs');
       const request = new Request(url, {
         method: 'PUT',
-        body: JSON.stringify({ comunaId: 1, dispatchCost: 6000 }),
+        body: JSON.stringify({ region: 'Antofagasta', dispatchCost: 6000 }),
       });
       const response = await PUT({ request } as any);
       const result = await response.json();
@@ -137,7 +143,7 @@ describe('/api/admin/dispatch-costs', () => {
       const url = new URL('http://localhost/api/admin/dispatch-costs');
       const request = new Request(url, {
         method: 'PUT',
-        body: JSON.stringify({ comunaId: 1 }),
+        body: JSON.stringify({ region: 'Antofagasta' }),
       });
       const response = await PUT({ request } as any);
       const result = await response.json();
@@ -146,27 +152,28 @@ describe('/api/admin/dispatch-costs', () => {
       expect(result.error).toContain('Faltan campos requeridos');
     });
 
-    it('updates dispatch cost successfully when authenticated', async () => {
+    it('updates dispatch cost per region successfully when authenticated', async () => {
       vi.mocked(getAdminUser).mockResolvedValue({
         id: '123',
         email: 'admin@test.com',
         role: 'admin',
       });
 
-      const mockUpdate = vi.fn(() => ({ eq: vi.fn(() => Promise.resolve({ data: null, error: null })) }));
-      mockFrom.mockReturnValue({ update: mockUpdate });
+      mockUpdateChain.then.mockImplementation(function(resolve) {
+        resolve({ data: { id: 1, region: 'Antofagasta', dispatch_cost: 6000 }, error: null });
+      });
 
       const url = new URL('http://localhost/api/admin/dispatch-costs');
       const request = new Request(url, {
         method: 'PUT',
-        body: JSON.stringify({ comunaId: 1, dispatchCost: 6000 }),
+        body: JSON.stringify({ region: 'Antofagasta', dispatchCost: 6000 }),
       });
       const response = await PUT({ request } as any);
       const result = await response.json();
 
-      expect(mockFrom).toHaveBeenCalledWith('comunas');
+      expect(mockFrom).toHaveBeenCalledWith('region_dispatch_costs');
       expect(response.status).toBe(200);
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ success: true, region: { id: 1, region: 'Antofagasta', dispatch_cost: 6000 } });
     });
   });
 });

@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 import { supabaseAdmin } from '../../../lib/supabase-admin';
 import { getAdminUser } from '../../../lib/auth';
+import { mapEquipmentRow } from '../../../lib/services/equipment-catalog';
+
+const VALID_TIPOS = ['inversor', 'panel', 'bateria'];
 
 export const prerender = false;
 
@@ -32,7 +35,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       .order('tipo', { ascending: true })
       .order('created_at', { ascending: false });
 
-    if (tipo && (tipo === 'inversor' || tipo === 'panel')) {
+    if (tipo && VALID_TIPOS.includes(tipo)) {
       query = query.eq('tipo', tipo);
     }
 
@@ -46,7 +49,7 @@ export const GET: APIRoute = async ({ url, request }) => {
       return jsonResponse({ error: error.message }, 500);
     }
 
-    return jsonResponse({ equipment: data || [] });
+    return jsonResponse({ equipment: (data || []).map(mapEquipmentRow) });
   } catch (err) {
     return jsonResponse({ error: 'Error interno del servidor' }, 500);
   }
@@ -64,8 +67,8 @@ export const POST: APIRoute = async ({ request }) => {
       return jsonResponse({ error: 'Faltan campos requeridos: tipo, nombre, marca' }, 400);
     }
 
-    if (tipo !== 'inversor' && tipo !== 'panel') {
-      return jsonResponse({ error: 'Tipo debe ser "inversor" o "panel"' }, 400);
+    if (!VALID_TIPOS.includes(tipo)) {
+      return jsonResponse({ error: 'Tipo debe ser "inversor", "panel" o "bateria"' }, 400);
     }
 
     if (id) {
@@ -91,7 +94,7 @@ export const POST: APIRoute = async ({ request }) => {
         return jsonResponse({ error: error.message }, 500);
       }
 
-      return jsonResponse({ equipment: data }, 200);
+      return jsonResponse({ equipment: mapEquipmentRow(data) }, 200);
     }
 
     const { data, error } = await supabaseAdmin
@@ -115,7 +118,7 @@ export const POST: APIRoute = async ({ request }) => {
       return jsonResponse({ error: error.message }, 500);
     }
 
-    return jsonResponse({ equipment: data }, 201);
+    return jsonResponse({ equipment: mapEquipmentRow(data) }, 201);
   } catch (err) {
     return jsonResponse({ error: 'Error interno del servidor' }, 500);
   }
@@ -137,8 +140,8 @@ export const PUT: APIRoute = async ({ request }) => {
       return jsonResponse({ error: 'Faltan campos requeridos: tipo, nombre, marca' }, 400);
     }
 
-    if (tipo !== 'inversor' && tipo !== 'panel') {
-      return jsonResponse({ error: 'Tipo debe ser "inversor" o "panel"' }, 400);
+    if (!VALID_TIPOS.includes(tipo)) {
+      return jsonResponse({ error: 'Tipo debe ser "inversor", "panel" o "bateria"' }, 400);
     }
 
     const { data, error } = await supabaseAdmin

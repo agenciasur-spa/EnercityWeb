@@ -72,7 +72,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion, batteryRequired, batteryCost, region } = body;
+    let { nombre, email, telefono, comunaId, montoBoletaIngresado, kitId, factorTechoAplicado, techoNombreAplicado, medidorNombreAplicado, costoFijoMedidorAplicado, precioFinalIva, website, precioSinIva, generacionAnualKwh, kitKwp, kitPaneles, comunaNombre, comunaRegion, ahorroAnual, ahorroMensual, anosRecuperacion, cobertura, clasificacion, batteryRequired, batteryCost, region, precioLista, precioTransferencia, precioFinal, dispatchCost, equipment, garantiaText, formasPago } = body;
 
     if (!nombre || !email || !telefono || !kitId || precioFinalIva === undefined) {
       return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), {
@@ -167,8 +167,11 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const tipoTechoLabel = TIPO_TECHO_MAP[factorTechoAplicado] ?? 'Otro';
-    const tipoMedidorLabel = TIPO_MEDIDOR_MAP[costoFijoMedidorAplicado] ?? 'No especificado';
+    // Prefer the label the customer actually saw in the simulator; the
+    // factor→label maps below are a legacy fallback and can point at the
+    // wrong option (e.g. multiple techos now share the same factor).
+    const tipoTechoLabel = techoNombreAplicado || TIPO_TECHO_MAP[factorTechoAplicado] || 'Otro';
+    const tipoMedidorLabel = medidorNombreAplicado || TIPO_MEDIDOR_MAP[costoFijoMedidorAplicado] || 'No especificado';
 
     let pdfBytes: Uint8Array | undefined = undefined;
     try {
@@ -195,6 +198,15 @@ export const POST: APIRoute = async ({ request }) => {
         investmentClassification: clasificacion || 'No disponible',
         roi25Years: (ahorroAnual || 0) * 25,
         quoteDate: new Date().toISOString(),
+        numeroCotizacion,
+        precioLista: precioLista || undefined,
+        precioTransferencia: precioTransferencia || undefined,
+        precioFinal: precioFinal || undefined,
+        dispatchCost: dispatchCost || 0,
+        batteryCost: batteryCost ? Number(batteryCost) || 0 : 0,
+        equipment: Array.isArray(equipment) && equipment.length > 0 ? equipment : undefined,
+        garantiaText: garantiaText || undefined,
+        formasPago: Array.isArray(formasPago) && formasPago.length > 0 ? formasPago : undefined,
       };
 
       pdfBytes = await generatePDF(pdfData);

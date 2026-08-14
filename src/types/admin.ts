@@ -144,7 +144,6 @@ export interface AdminComuna {
   region: string;
   radiacion_ghi: number;
   tarifa_est: number;
-  dispatch_cost: number;
   activa: boolean;
   created_at: string;
 }

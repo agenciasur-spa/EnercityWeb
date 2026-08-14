@@ -167,7 +167,7 @@ export function validateComunaData(
   isUpdate = false,
   existingComunas: Array<{ id: number; nombre: string; region: string; activa: boolean }> = []
 ): ValidationResult {
-  const { id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost } = data;
+  const { id, nombre, region, radiacion_ghi, tarifa_est } = data;
 
   if (nombre !== undefined) {
     if (typeof nombre !== 'string') {
@@ -233,13 +233,6 @@ export function validateComunaData(
     const tarifa = Number(tarifa_est);
     if (isNaN(tarifa) || tarifa <= 0) {
       return { valid: false, error: 'tarifa_est debe ser un número positivo' };
-    }
-  }
-
-  if (dispatch_cost !== undefined) {
-    const cost = Number(dispatch_cost);
-    if (isNaN(cost) || cost < 0) {
-      return { valid: false, error: 'dispatch_cost debe ser un número no negativo' };
     }
   }
 

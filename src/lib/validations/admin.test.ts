@@ -333,18 +333,6 @@ describe('validateComunaData', () => {
     expect(result.error).toBe('tarifa_est debe ser un número positivo');
   });
 
-  it('returns invalid when dispatch_cost is negative', () => {
-    const result = validateComunaData({
-      nombre: 'Santiago',
-      region: 'Metropolitana',
-      radiacion_ghi: 5.5,
-      tarifa_est: 175,
-      dispatch_cost: -1000,
-    });
-    expect(result.valid).toBe(false);
-    expect(result.error).toBe('dispatch_cost debe ser un número no negativo');
-  });
-
   it('allows zero dispatch_cost', () => {
     const result = validateComunaData({
       nombre: 'Santiago',

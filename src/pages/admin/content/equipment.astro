@@ -2,6 +2,7 @@
 import AdminLayout from '@/layouts/admin-layout.astro';
 import EquipmentTable from '@/components/admin/equipment-table';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { mapEquipmentRow } from '@/lib/services/equipment-catalog';
 
 export const prerender = false;
 
@@ -15,7 +16,7 @@ if (error) {
   console.error('[equipment.astro] Supabase query error:', error);
 }
 
-const equipment = data ?? [];
+const equipment = (data ?? []).map(mapEquipmentRow);
 ---
 
 <AdminLayout title="Catálogo de Equipos — Enercity Admin">

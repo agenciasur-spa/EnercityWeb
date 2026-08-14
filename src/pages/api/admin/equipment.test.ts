@@ -82,7 +82,28 @@ describe('/api/admin/equipment', () => {
       expect(getAdminUser).toHaveBeenCalledWith(request);
       expect(mockFrom).toHaveBeenCalledWith('equipment_details');
       expect(response.status).toBe(200);
-      expect(result).toEqual({ equipment: mockData });
+      // GET maps snake_case DB columns to the camelCase shape the admin UI
+      // and PDF builder expect (this used to be a pass-through, which made
+      // fichaTecnicaUrl/imagenUrl/potenciaWatts always look empty).
+      expect(result).toEqual({
+        equipment: [
+          {
+            id: 1,
+            tipo: 'inversor',
+            nombre: 'Inversor Test',
+            marca: 'Test Brand',
+            modelo: 'Model X',
+            potenciaWatts: 5000,
+            descripcion: undefined,
+            garantia: undefined,
+            imagenUrl: 'https://example.com/image.jpg',
+            fichaTecnicaUrl: 'https://example.com/specs.pdf',
+            activo: true,
+            createdAt: undefined,
+            updatedAt: undefined,
+          },
+        ],
+      });
     });
 
     it('returns 500 on database error', async () => {
@@ -185,7 +206,7 @@ describe('/api/admin/equipment', () => {
       const result = await response.json();
 
       expect(response.status).toBe(400);
-      expect(result.error).toContain('Tipo debe ser "inversor" o "panel"');
+      expect(result.error).toContain('Tipo debe ser');
     });
 
     it('creates equipment successfully when authenticated', async () => {

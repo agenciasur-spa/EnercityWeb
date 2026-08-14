@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { supabase } from '../../../lib/supabase';
+import { supabaseAdmin } from '../../../lib/supabase-admin';
 import { getAdminUser } from '../../../lib/auth';
 
 export const prerender = false;
@@ -18,30 +18,20 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
-export const GET: APIRoute = async ({ url, request }) => {
+export const GET: APIRoute = async ({ request }) => {
   const user = await getAdminUser(request);
   if (!user) return unauthorized();
   try {
-    const searchParams = new URL(url).searchParams;
-    const region = searchParams.get('region');
-
-    let query = supabase
-      .from('comunas')
-      .select('id, nombre, region, dispatch_cost')
-      .order('region', { ascending: true })
-      .order('nombre', { ascending: true });
-
-    if (region) {
-      query = query.eq('region', region);
-    }
-
-    const { data, error } = await query;
+    const { data, error } = await supabaseAdmin
+      .from('region_dispatch_costs')
+      .select('id, region, dispatch_cost')
+      .order('region', { ascending: true });
 
     if (error) {
       return jsonResponse({ error: error.message }, 500);
     }
 
-    return jsonResponse({ comunas: data || [] });
+    return jsonResponse({ regions: data || [] });
   } catch (err) {
     return jsonResponse({ error: 'Error interno del servidor' }, 500);
   }
@@ -53,22 +43,24 @@ export const PUT: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json();
-    const { comunaId, dispatchCost } = body;
+    const { region, dispatchCost } = body;
 
-    if (!comunaId || dispatchCost === undefined || dispatchCost === null) {
-      return jsonResponse({ error: 'Faltan campos requeridos: comunaId, dispatchCost' }, 400);
+    if (!region || dispatchCost === undefined || dispatchCost === null) {
+      return jsonResponse({ error: 'Faltan campos requeridos: region, dispatchCost' }, 400);
     }
 
-    const { error } = await supabase
-      .from('comunas')
+    const { data, error } = await supabaseAdmin
+      .from('region_dispatch_costs')
       .update({ dispatch_cost: dispatchCost })
-      .eq('id', comunaId);
+      .eq('region', region)
+      .select()
+      .single();
 
     if (error) {
       return jsonResponse({ error: error.message }, 500);
     }
 
-    return jsonResponse({ success: true });
+    return jsonResponse({ success: true, region: data });
   } catch (err) {
     return jsonResponse({ error: 'Error interno del servidor' }, 500);
   }

@@ -1,5 +1,8 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../../lib/supabase';
+import { mapEquipmentRow } from '../../../lib/services/equipment-catalog';
+
+const VALID_TIPOS = ['inversor', 'panel', 'bateria'];
 
 export const prerender = false;
 
@@ -22,7 +25,7 @@ export const GET: APIRoute = async ({ url }) => {
       .order('tipo', { ascending: true })
       .order('created_at', { ascending: false });
 
-    if (tipo && (tipo === 'inversor' || tipo === 'panel')) {
+    if (tipo && VALID_TIPOS.includes(tipo)) {
       query = query.eq('tipo', tipo);
     }
 
@@ -36,7 +39,7 @@ export const GET: APIRoute = async ({ url }) => {
       return jsonResponse({ error: error.message }, 500);
     }
 
-    return jsonResponse({ equipment: data || [] });
+    return jsonResponse({ equipment: (data || []).map(mapEquipmentRow) });
   } catch (err) {
     return jsonResponse({ error: 'Error interno del servidor' }, 500);
   }

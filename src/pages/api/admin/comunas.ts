@@ -61,7 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json();
-    const { nombre, region, radiacion_ghi, tarifa_est, dispatch_cost, activa } = body;
+    const { nombre, region, radiacion_ghi, tarifa_est, activa } = body;
 
     const { data: existingComunas, error: fetchError } = await supabaseAdmin
       .from('comunas')
@@ -85,7 +85,6 @@ export const POST: APIRoute = async ({ request }) => {
         region: normalizeRegion(region.trim()) || region.trim(),
         radiacion_ghi: Number(radiacion_ghi),
         tarifa_est: Number(tarifa_est),
-        dispatch_cost: dispatch_cost !== undefined ? Number(dispatch_cost) : 0,
         activa: activa !== undefined ? Boolean(activa) : true,
       })
       .select()
@@ -107,7 +106,7 @@ export const PUT: APIRoute = async ({ request }) => {
 
   try {
     const body = await request.json();
-    const { id, nombre, region, radiacion_ghi, tarifa_est, dispatch_cost, activa } = body;
+    const { id, nombre, region, radiacion_ghi, tarifa_est, activa } = body;
 
     if (!id || typeof id !== 'number') {
       return jsonResponse({ error: 'Se requiere id numérico' }, 400);
@@ -136,7 +135,6 @@ export const PUT: APIRoute = async ({ request }) => {
     }
     if (radiacion_ghi !== undefined) updateData.radiacion_ghi = Number(radiacion_ghi);
     if (tarifa_est !== undefined) updateData.tarifa_est = Number(tarifa_est);
-    if (dispatch_cost !== undefined) updateData.dispatch_cost = Number(dispatch_cost);
     if (activa !== undefined) updateData.activa = Boolean(activa);
 
     const { data, error } = await supabaseAdmin
