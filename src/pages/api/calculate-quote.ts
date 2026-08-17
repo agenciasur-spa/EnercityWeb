@@ -239,10 +239,11 @@ export const POST: APIRoute = async ({ request }) => {
     const medidorNombre = medidor?.nombre ?? 'Standard';
 
     // --- Calculate prices (factors apply to BOTH lista and transferencia; ---
-    // --- dispatch cost is added on top of both, per producto) ---
+    // --- dispatch cost and battery cost are added on top of both, so both ---
+    // --- prices describe the same complete system) ---
     const precioTransferenciaBase = kit.precioTransferencia ?? kit.precioNetoBase;
     const precioListaBase = kit.precioLista ?? Math.round(precioTransferenciaBase * 1.11); // fallback 11% markup
-    const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor) + dispatchCost;
+    const precioLista = calculateFinalPrice(precioListaBase, factorTecho, factorMedidor) + dispatchCost + batteryCost;
     const precioFinal = calculateFinalPrice(precioTransferenciaBase, factorTecho, factorMedidor) + dispatchCost + batteryCost;
 
     // --- Calculate ROI ---
