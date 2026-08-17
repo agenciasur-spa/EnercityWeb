@@ -912,6 +912,12 @@ const renderResults = () => {
               {/* Desglose de factores */}
               {(pricing.techoDisplay || pricing.medidorDisplay) && (
                 <div className="text-center space-y-1 pt-2">
+                  <p className="text-[10px] text-white/50">
+                    Sistema:{' '}
+                    <span className="text-white/70 font-bold">
+                      {pricing.batteryCost && pricing.batteryCost > 0 ? 'Híbrido (con batería)' : 'On-Grid (sin batería)'}
+                    </span>
+                  </p>
                   {pricing.techoDisplay && (
                     <p className="text-[10px] text-white/50">
                       Techumbre: <span className="text-white/70 font-bold">{pricing.techoDisplay}</span>

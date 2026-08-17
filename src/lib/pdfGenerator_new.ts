@@ -443,7 +443,7 @@ async function drawEquipmentCard(
   titlePrefix?: string
 ): Promise<number> {
   const padding = 10;
-  const imageHeight = 26;
+  const imageHeight = 65;
   const footerH = 15;
 
   page.drawRectangle({
@@ -654,7 +654,7 @@ export async function generatePDF(data: PDFData): Promise<Uint8Array> {
     const cardCount = Math.min(data.equipment.length, 3);
     const cardGap = 15;
     const cardW = (CONTENT_WIDTH - cardGap * (cardCount - 1)) / cardCount;
-    const cardH = 112;
+    const cardH = 162;
     checkPageBreak(25 + cardH + 15);
     y = drawSectionHeader(page, fontBold, 'Equipo y Garantías', y);
     const rowStartY = y;
