@@ -2,7 +2,7 @@
  * pdfGenerator.ts — Self-contained PDF generator for Enercity diagnostic reports.
  *
  * Uses pdf-lib (v1.17.1) via dynamic import. All text in Spanish.
- * A4 page, Helvetica/HelveticaBold, color-coded sections matching email branding.
+ * US Letter, 2 pages, Helvetica/HelveticaBold, matching the approved brand redesign.
  */
 
 import type {
@@ -20,31 +20,40 @@ export type { PDFData } from './pdf-types.js';
 
 // Import logo as raw buffer — Vite inlines this at build time
 import { getLogoBuffer } from './logo-buffer';
-import { getWebpayLogoBuffer, getSantanderLogoBuffer, getChecklistIconBuffer } from './payment-logo-buffers';
+import { getWebpayLogoBuffer } from './payment-logo-buffers';
 
 // ---------------------------------------------------------------------------
 // Color palette matching the client's reference (COT_HIBRIDO_14_3_kWh.html)
 // ---------------------------------------------------------------------------
 
-const COLOR_DARK_BLUE: RGB = { red: 0.102, green: 0.153, blue: 0.251, type: 'RGB' } as RGB; // #1a2740 (--navy)
-const COLOR_ACCENT_ORANGE: RGB = { red: 0.969, green: 0.580, blue: 0.114, type: 'RGB' } as RGB; // #f7941d (--orange)
-const COLOR_GREEN: RGB = { red: 0.114, green: 0.722, blue: 0.455, type: 'RGB' } as RGB; // #1db874 (--green)
-const COLOR_TEXT_DARK: RGB = { red: 0.420, green: 0.447, blue: 0.502, type: 'RGB' } as RGB; // #6b7280 (--text-gray)
-const COLOR_BG_CARD: RGB = { red: 0.957, green: 0.961, blue: 0.969, type: 'RGB' } as RGB; // #f4f5f7 (--gray-bg)
-const COLOR_LIGHT_GRAY: RGB = { red: 0.902, green: 0.910, blue: 0.922, type: 'RGB' } as RGB; // #e6e8eb (--card-border)
+// Palette matches the approved redesign 1:1 (Cotizacion Enercity v2.dc.html),
+// which uses the site's real brand tokens — not the invented navy/amber from
+// the previous template.
+const COLOR_DARK_BLUE: RGB = { red: 0.0824, green: 0.2745, blue: 0.3765, type: 'RGB' } as RGB; // #154660 (navy)
+const COLOR_ACCENT_ORANGE: RGB = { red: 0.9412, green: 0.4941, blue: 0.0157, type: 'RGB' } as RGB; // #F07E04
+const COLOR_GREEN: RGB = { red: 0.2902, green: 0.6863, blue: 0.3020, type: 'RGB' } as RGB; // #4AAF4D
+const COLOR_LABEL_MUTED: RGB = { red: 0.4431, green: 0.5020, blue: 0.5882, type: 'RGB' } as RGB; // #718096 (eyebrow labels)
+const COLOR_TEXT_DARK: RGB = { red: 0.2902, green: 0.3333, blue: 0.4078, type: 'RGB' } as RGB; // #4a5568 (body copy)
+const COLOR_LIGHT_GRAY: RGB = { red: 0.8863, green: 0.9098, blue: 0.9412, type: 'RGB' } as RGB; // #e2e8f0 (borders/dividers)
+const COLOR_BG_CARD: RGB = { red: 0.9725, green: 0.9804, blue: 0.9882, type: 'RGB' } as RGB; // #f8fafc (light card bg)
+const COLOR_FOOTER_MUTED: RGB = { red: 0.6275, green: 0.6824, blue: 0.7529, type: 'RGB' } as RGB; // #a0aec0
 const COLOR_WHITE: RGB = { red: 1, green: 1, blue: 1, type: 'RGB' } as RGB;
-const COLOR_PILL_BG: RGB = { red: 0.933, green: 0.945, blue: 0.961, type: 'RGB' } as RGB; // #eef1f5 (.warranty bg)
-const COLOR_BRAND_GOODWE: RGB = { red: 0.757, green: 0.071, blue: 0.122, type: 'RGB' } as RGB; // #c1121f
-const COLOR_BRAND_TRINA: RGB = { red: 0, green: 0.447, blue: 0.737, type: 'RGB' } as RGB; // #0072bc
+const COLOR_TRANSFER_BG: RGB = { red: 1, green: 0.9843, blue: 0.9216, type: 'RGB' } as RGB; // #fffbeb
+const COLOR_TRANSFER_BORDER: RGB = { red: 0.9961, green: 0.8431, blue: 0.6667, type: 'RGB' } as RGB; // #fed7aa
+const COLOR_TRANSFER_TEXT: RGB = { red: 0.5725, green: 0.2510, blue: 0.0549, type: 'RGB' } as RGB; // #92400e
+const COLOR_SANTANDER_RED: RGB = { red: 0.9255, green: 0, blue: 0, type: 'RGB' } as RGB; // #EC0000
 
 // ---------------------------------------------------------------------------
 // Layout constants
 // ---------------------------------------------------------------------------
 
-const PAGE_WIDTH = 595.28;
-const PAGE_HEIGHT = 841.89;
-const MARGIN_LEFT = 40;
-const MARGIN_RIGHT = 40;
+// US Letter — the approved design canvas is authored at "size=letter" (612×792);
+// switching from the previous A4 canvas keeps every measurement below a 1:1
+// match with the design instead of rescaling everything.
+const PAGE_WIDTH = 612;
+const PAGE_HEIGHT = 792;
+const MARGIN_LEFT = 44;
+const MARGIN_RIGHT = 44;
 const CONTENT_WIDTH = PAGE_WIDTH - MARGIN_LEFT - MARGIN_RIGHT;
 
 // ---------------------------------------------------------------------------
@@ -60,13 +69,32 @@ function formatCLP(n: number): string {
   );
 }
 
+const MONTHS: readonly string[] = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+];
+
 function formatDate(iso: string): string {
-  const MONTHS: readonly string[] = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-  ];
   const d: Date = new Date(iso);
   return `${d.getDate()} de ${MONTHS[d.getMonth()] ?? 'enero'} de ${d.getFullYear()}`;
+}
+
+// "1 de septiembre" — no year, used for the "válida hasta" companion date.
+function formatShortDate(d: Date): string {
+  return `${d.getDate()} de ${MONTHS[d.getMonth()] ?? 'enero'}`;
+}
+
+function formatValidUntil(quoteDateIso: string, validUntilIso?: string): string {
+  const until = validUntilIso ? new Date(validUntilIso) : new Date(quoteDateIso);
+  if (!validUntilIso) until.setDate(until.getDate() + 15);
+  return formatShortDate(until);
+}
+
+// Chilean decimal comma, trailing zero dropped for whole factors: 1 -> "1,0".
+function formatFactor(n: number): string {
+  const fixed = n.toFixed(2);
+  const trimmed = fixed.endsWith('0') ? fixed.slice(0, -1) : fixed;
+  return trimmed.replace('.', ',');
 }
 
 function formatPercent(n: number): string {
@@ -98,14 +126,14 @@ function getClassificationLabel(raw: string): string {
 /**
  * Word-wraps text to fit a max width, splitting on spaces.
  */
-function wrapText(page: PDFPage, font: PDFFont, text: string, maxWidth: number): string[] {
+function wrapText(page: PDFPage, font: PDFFont, text: string, maxWidth: number, fontSize: number = 9): string[] {
   const words = String(text ?? '').split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   const lines: string[] = [];
   let current = '';
   for (const word of words) {
     const candidate = current ? `${current} ${word}` : word;
-    if (font.widthOfTextAtSize(sanitizeText(candidate), 9) > maxWidth && current) {
+    if (font.widthOfTextAtSize(sanitizeText(candidate), fontSize) > maxWidth && current) {
       lines.push(current);
       current = word;
     } else {
@@ -121,124 +149,33 @@ function wrapText(page: PDFPage, font: PDFFont, text: string, maxWidth: number):
 // ---------------------------------------------------------------------------
 
 /**
- * Draws a section header styled like the subheadings of the email
+ * Section header: bold title, a thin bottom rule, and an optional muted
+ * right-aligned note — e.g. "Fichas técnicas disponibles a solicitud".
  */
 function drawSectionHeader(
   page: PDFPage,
-  font: PDFFont,
-  text: string,
-  y: number,
-): number {
-  // Small orange accent bar before the title, matching the reference design
-  page.drawRectangle({
-    x: MARGIN_LEFT, y: y - 9, width: 3, height: 11, color: COLOR_ACCENT_ORANGE,
-  });
-  page.drawText(sanitizeText(text.toUpperCase()), {
-    x: MARGIN_LEFT + 9,
-    y: y - 5,
-    size: 11,
-    font,
-    color: COLOR_DARK_BLUE,
-  });
-
-  return y - 25;
-}
-
-/**
- * Draws a full container block (Card) with a colored top header band.
- * x/width let callers position multiple cards side by side instead of always
- * spanning the full content width (they used to be hardcoded here, which made
- * grids of cards draw on top of each other).
- */
-function drawCardBackground(
-  page: PDFPage,
-  x: number,
-  yTop: number,
-  width: number,
-  height: number,
-  headerColor: RGB = COLOR_DARK_BLUE
-): void {
-  // Cuerpo de la tarjeta
-  page.drawRectangle({
-    x,
-    y: yTop - height,
-    width,
-    height: height,
-    color: COLOR_BG_CARD,
-    borderColor: COLOR_LIGHT_GRAY,
-    borderWidth: 1,
-  });
-
-  // Banda superior de la tarjeta (Estilo Email)
-  page.drawRectangle({
-    x,
-    y: yTop - 20,
-    width,
-    height: 20,
-    color: headerColor,
-  });
-}
-
-function drawCardHeaderLabel(
-  page: PDFPage,
-  font: PDFFont,
-  text: string,
-  yTop: number
-): void {
-  page.drawText(sanitizeText(text.toUpperCase()), {
-    x: MARGIN_LEFT + 15,
-    y: yTop - 14,
-    size: 9,
-    font,
-    color: COLOR_WHITE,
-  });
-}
-
-/**
- * Draws row items inside the cards with clean alignments
- */
-function drawCardRow(
-  page: PDFPage,
   fontBold: PDFFont,
   fontRegular: PDFFont,
-  label: string,
-  value: string,
+  text: string,
   y: number,
-  options: { isBoldValue?: boolean; valueColor?: RGB } = {}
+  rightNote?: string,
+  rightNoteColor: RGB = COLOR_LABEL_MUTED,
 ): number {
-  const vColor = options.valueColor || COLOR_DARK_BLUE;
-  
-  // Etiqueta (Izquierda)
-  page.drawText(sanitizeText(label), {
-    x: MARGIN_LEFT + 15,
-    y,
-    size: 10,
-    font: fontRegular,
-    color: COLOR_TEXT_DARK,
+  page.drawText(sanitizeText(text), {
+    x: MARGIN_LEFT, y, size: 12.5, font: fontBold, color: COLOR_DARK_BLUE,
   });
-
-  // Valor (Derecha)
-  const safeValue = sanitizeText(value);
-  const vFont = options.isBoldValue ? fontBold : fontRegular;
-  const valueWidth = vFont.widthOfTextAtSize(safeValue, 10);
-
-  page.drawText(safeValue, {
-    x: PAGE_WIDTH - MARGIN_RIGHT - 15 - valueWidth,
-    y,
-    size: 10,
-    font: vFont,
-    color: vColor,
-  });
-
-  // Línea divisoria interna gris muy tenue
+  if (rightNote) {
+    const safeNote = sanitizeText(rightNote);
+    const noteWidth = fontRegular.widthOfTextAtSize(safeNote, 8.5);
+    page.drawText(safeNote, {
+      x: PAGE_WIDTH - MARGIN_RIGHT - noteWidth, y: y + 1, size: 8.5, font: fontRegular, color: rightNoteColor,
+    });
+  }
   page.drawLine({
-    start: { x: MARGIN_LEFT + 15, y: y - 6 },
-    end: { x: PAGE_WIDTH - MARGIN_RIGHT - 15, y: y - 6 },
-    thickness: 0.5,
-    color: COLOR_LIGHT_GRAY,
+    start: { x: MARGIN_LEFT, y: y - 8 }, end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: y - 8 },
+    thickness: 1, color: COLOR_LIGHT_GRAY,
   });
-
-  return y - 20;
+  return y - 26;
 }
 
 // ---------------------------------------------------------------------------
@@ -365,547 +302,528 @@ function drawClickableLink(
 // Equipment Card Drawing for On-Grid PDF
 // ---------------------------------------------------------------------------
 
-const PILL_HEIGHT = 14;
-
 /**
- * Draws a small rounded-look badge (e.g. "Garantía: 10 años").
+ * Draws a rectangle with rounded corners via an SVG path — pdf-lib's
+ * drawRectangle has no borderRadius option, and passing one (as an earlier
+ * script did) is silently ignored. `y` is the TOP edge, same convention as
+ * every yTop used in this file: verified empirically that drawSvgPath
+ * anchors the path at the given (x, y) and extends it downward from there,
+ * unlike drawRectangle (which takes the bottom-left corner).
  */
-function drawPill(
+function drawRoundedRect(
   page: PDFPage,
-  font: PDFFont,
-  text: string,
-  x: number,
-  yTop: number,
-  textColor: RGB
+  opts: { x: number; y: number; width: number; height: number; radius: number; color?: RGB; borderColor?: RGB; borderWidth?: number }
 ): void {
-  const safeText = sanitizeText(text);
-  const pillWidth = font.widthOfTextAtSize(safeText, 7.5) + 16;
-  page.drawRectangle({
-    x, y: yTop - PILL_HEIGHT, width: pillWidth, height: PILL_HEIGHT,
-    color: COLOR_PILL_BG,
-  });
-  page.drawText(safeText, {
-    x: x + 8, y: yTop - PILL_HEIGHT + 4.5, size: 7.5, font, color: textColor,
-  });
+  const { x, y, width: w, height: h, color, borderColor, borderWidth } = opts;
+  const r = Math.max(0, Math.min(opts.radius, w / 2, h / 2));
+  const d = r === 0
+    ? `M 0 0 H ${w} V ${h} H 0 Z`
+    : `M ${r} 0 H ${w - r} A ${r} ${r} 0 0 1 ${w} ${r}`
+    + ` V ${h - r} A ${r} ${r} 0 0 1 ${w - r} ${h}`
+    + ` H ${r} A ${r} ${r} 0 0 1 0 ${h - r}`
+    + ` V ${r} A ${r} ${r} 0 0 1 ${r} 0 Z`;
+  page.drawSvgPath(d, { x, y, color, borderColor, borderWidth });
 }
 
 /**
- * Brand wordmark color — matches the client's reference, which colors known
- * equipment brands (GoodWe red, Trina blue) and falls back to navy otherwise.
+ * Light placeholder shown where an equipment photo would go, while the
+ * admin hasn't set a real imagenUrl yet (or it failed to load).
  */
-function brandColor(marca: string): RGB {
-  const m = marca.toLowerCase();
-  if (m.includes('goodwe')) return COLOR_BRAND_GOODWE;
-  if (m.includes('trina')) return COLOR_BRAND_TRINA;
-  return COLOR_DARK_BLUE;
-}
-
-/**
- * Draws a light placeholder box where the equipment photo would go, used
- * while the admin hasn't set a real imagenUrl yet (or it failed to load).
- */
-function drawImagePlaceholder(
-  page: PDFPage,
-  x: number,
-  yTop: number,
-  width: number,
-  height: number,
-  font: PDFFont
-): void {
-  page.drawRectangle({
-    x, y: yTop - height, width, height,
-    color: { red: 0.95, green: 0.95, blue: 0.95, type: 'RGB' } as RGB,
-    borderColor: COLOR_LIGHT_GRAY, borderWidth: 1,
-  });
+function drawImagePlaceholder(page: PDFPage, x: number, yTop: number, width: number, height: number, font: PDFFont): void {
   const label = 'IMAGEN';
-  const labelWidth = font.widthOfTextAtSize(label, 7);
+  const labelWidth = font.widthOfTextAtSize(label, 7.5);
   page.drawText(label, {
-    x: x + (width - labelWidth) / 2, y: yTop - height / 2 - 3, size: 7, font, color: COLOR_TEXT_DARK,
+    x: x + (width - labelWidth) / 2, y: yTop - height / 2 - 3, size: 7.5, font, color: COLOR_LABEL_MUTED,
   });
 }
 
+const EQUIPMENT_CARD_HEIGHT = 205;
+const EQUIPMENT_IMAGE_BOX_HEIGHT = 100;
+
 /**
- * Draws an equipment card matching the client's reference layout: eyebrow +
- * title + description + warranty pill inside the card body, a centered
- * product photo, the brand wordmark, and a full-width "Ficha técnica" footer
- * bar at the bottom (clickable when a ficha técnica URL is set).
+ * Equipment card matching the redesign: rounded card, a light image
+ * container on top, then an orange eyebrow + bold name + short description.
+ * The visible "Ficha técnica" footer bar from the previous template is gone
+ * (the redesign says "disponibles a solicitud" once in the section header
+ * instead) — the whole card stays clickable to the ficha técnica URL when
+ * one is set, just without a visible affordance for it.
  */
-async function drawEquipmentCard(
+async function drawEquipmentCardV2(
   page: PDFPage,
   pdfDoc: PDFDocumentType,
   fontBold: PDFFont,
   fontRegular: PDFFont,
   equipment: EquipmentCard,
   x: number,
-  y: number,
+  yTop: number,
   width: number,
-  height: number,
-  titlePrefix?: string
-): Promise<number> {
-  const padding = 10;
-  const imageHeight = 65;
-  const footerH = 15;
+  titlePrefix?: string,
+): Promise<void> {
+  const padX = 16;
+  const padImg = 12;
+  const height = EQUIPMENT_CARD_HEIGHT;
+  const imageBoxH = EQUIPMENT_IMAGE_BOX_HEIGHT;
 
-  page.drawRectangle({
-    x, y: y - height, width, height,
-    color: COLOR_WHITE, borderColor: COLOR_LIGHT_GRAY, borderWidth: 1,
+  drawRoundedRect(page, { x, y: yTop, width, height, radius: 10, color: COLOR_WHITE, borderColor: COLOR_LIGHT_GRAY, borderWidth: 1 });
+
+  page.drawRectangle({ x: x + 1, y: yTop - imageBoxH, width: width - 2, height: imageBoxH - 1, color: COLOR_BG_CARD });
+  page.drawLine({
+    start: { x, y: yTop - imageBoxH }, end: { x: x + width, y: yTop - imageBoxH },
+    thickness: 1, color: COLOR_LIGHT_GRAY,
   });
 
-  let cy = y - padding - 7;
-
-  // Eyebrow: brand + equipment type
-  const eyebrowLabel = equipment.tipo === 'inversor'
-    ? 'Inversor'
-    : equipment.tipo === 'bateria'
-      ? 'Batería'
-      : 'Paneles';
-  const eyebrow = `${eyebrowLabel} ${equipment.marca}`;
-  page.drawText(sanitizeText(eyebrow.toUpperCase()), {
-    x: x + padding, y: cy, size: 7.5, font: fontBold, color: COLOR_ACCENT_ORANGE,
-  });
-  cy -= 11;
-
-  // Title (single line — truncated if it doesn't fit)
-  const titleText = titlePrefix ? `${titlePrefix} ${equipment.nombre}` : equipment.nombre;
-  const [titleLine] = wrapText(page, fontBold, titleText, width - padding * 2);
-  page.drawText(sanitizeText(titleLine ?? titleText), {
-    x: x + padding, y: cy, size: 10.5, font: fontBold, color: COLOR_DARK_BLUE,
-  });
-  cy -= 12;
-
-  // Description (admin-editable, single line — truncated if longer)
-  if (equipment.descripcion) {
-    const [firstLine] = wrapText(page, fontRegular, equipment.descripcion, width - padding * 2);
-    if (firstLine) {
-      page.drawText(sanitizeText(firstLine), {
-        x: x + padding, y: cy, size: 7.5, font: fontRegular, color: COLOR_TEXT_DARK,
-      });
-      cy -= 10;
-    }
-  }
-  cy -= 4;
-
-  // Warranty pill
-  if (equipment.garantia) {
-    drawPill(page, fontBold, `Garantía: ${equipment.garantia}`, x + padding, cy, COLOR_DARK_BLUE);
-    cy -= PILL_HEIGHT + 6;
-  } else {
-    cy -= 2;
-  }
-
-  // Product photo, centered in the card width
   if (equipment.imagenUrl) {
     const embeddedImage = await embedRemoteImage(pdfDoc, equipment.imagenUrl).catch(() => null);
     if (embeddedImage) {
-      const availableWidth = width - padding * 2;
-      const scale = Math.min(availableWidth / embeddedImage.width, imageHeight / embeddedImage.height);
-      const scaledWidth = embeddedImage.width * scale;
-      const scaledHeight = embeddedImage.height * scale;
+      const availW = width - padImg * 2;
+      const availH = imageBoxH - padImg * 2;
+      const scale = Math.min(availW / embeddedImage.width, availH / embeddedImage.height);
+      const scaledW = embeddedImage.width * scale;
+      const scaledH = embeddedImage.height * scale;
       page.drawImage(embeddedImage.image, {
-        x: x + (width - scaledWidth) / 2,
-        y: cy - imageHeight + (imageHeight - scaledHeight) / 2,
-        width: scaledWidth,
-        height: scaledHeight,
+        x: x + (width - scaledW) / 2,
+        y: yTop - imageBoxH + (imageBoxH - scaledH) / 2,
+        width: scaledW,
+        height: scaledH,
       });
     } else {
-      drawImagePlaceholder(page, x + padding, cy, width - padding * 2, imageHeight, fontRegular);
+      drawImagePlaceholder(page, x, yTop, width, imageBoxH, fontRegular);
     }
   } else {
-    drawImagePlaceholder(page, x + padding, cy, width - padding * 2, imageHeight, fontRegular);
+    drawImagePlaceholder(page, x, yTop, width, imageBoxH, fontRegular);
   }
-  cy -= imageHeight + 6;
 
-  // Footer bar: "Ficha técnica" (clickable when a URL is set)
-  page.drawLine({
-    start: { x, y: y - height + footerH }, end: { x: x + width, y: y - height + footerH },
-    thickness: 1, color: COLOR_LIGHT_GRAY,
+  let cy = yTop - imageBoxH - 14;
+
+  const eyebrowLabel = equipment.tipo === 'inversor'
+    ? 'Inversor'
+    : equipment.tipo === 'bateria'
+      ? 'Batería de respaldo'
+      : 'Panel solar';
+  page.drawText(sanitizeText(eyebrowLabel.toUpperCase()), {
+    x: x + padX, y: cy, size: 9, font: fontBold, color: COLOR_ACCENT_ORANGE,
   });
-  page.drawRectangle({
-    x, y: y - height, width, height: footerH, color: COLOR_BG_CARD,
-  });
-  const footerText = 'Ficha técnica';
-  const footerTextWidth = fontBold.widthOfTextAtSize(sanitizeText(footerText), 8);
-  page.drawText(sanitizeText(footerText), {
-    x: x + (width - footerTextWidth) / 2, y: y - height + 5, size: 8, font: fontBold, color: COLOR_DARK_BLUE,
-  });
+  cy -= 16;
+
+  const titleText = titlePrefix ? `${titlePrefix} ${equipment.nombre}` : equipment.nombre;
+  const titleLines = wrapText(page, fontBold, titleText, width - padX * 2, 12.5).slice(0, 2);
+  for (const line of titleLines) {
+    page.drawText(sanitizeText(line), {
+      x: x + padX, y: cy, size: 12.5, font: fontBold, color: COLOR_DARK_BLUE,
+    });
+    cy -= 15;
+  }
+  cy -= 1;
+
+  const descText = equipment.descripcion || (equipment.garantia ? `Garantía de ${equipment.garantia}` : undefined);
+  if (descText) {
+    const descLines = wrapText(page, fontRegular, descText, width - padX * 2).slice(0, 2);
+    for (const line of descLines) {
+      page.drawText(sanitizeText(line), {
+        x: x + padX, y: cy, size: 9, font: fontRegular, color: COLOR_LABEL_MUTED,
+      });
+      cy -= 12;
+    }
+  }
+
   if (equipment.fichaTecnicaUrl) {
-    drawClickableLink(page, equipment.fichaTecnicaUrl, x, y - height + footerH, width, footerH);
+    drawClickableLink(page, equipment.fichaTecnicaUrl, x, yTop, width, height);
   }
-
-  return y - height - 10;
 }
 
 // ---------------------------------------------------------------------------
 // PDF generation
 // ---------------------------------------------------------------------------
 
-export async function generatePDF(data: PDFData): Promise<Uint8Array> {
-  // 1. Haces el import dinámico de las clases de pdf-lib
-  const { PDFDocument, StandardFonts } = await import('pdf-lib');
+function drawPageFooter(
+  page: PDFPage,
+  fontRegular: PDFFont,
+  leftText: string,
+  pageLabel: string,
+  maxLeftWidth: number = CONTENT_WIDTH * 0.64,
+): void {
+  const FOOTER_Y = 40;
+  page.drawLine({
+    start: { x: MARGIN_LEFT, y: FOOTER_Y + 20 }, end: { x: PAGE_WIDTH - MARGIN_RIGHT, y: FOOTER_Y + 20 },
+    thickness: 1, color: COLOR_LIGHT_GRAY,
+  });
+  const leftLines = wrapText(page, fontRegular, leftText, maxLeftWidth).slice(0, 4);
+  let ly = FOOTER_Y + 4;
+  for (const line of leftLines) {
+    page.drawText(sanitizeText(line), { x: MARGIN_LEFT, y: ly, size: 7.5, font: fontRegular, color: COLOR_FOOTER_MUTED });
+    ly -= 10;
+  }
+  const safeLabel = sanitizeText(pageLabel);
+  const labelW = fontRegular.widthOfTextAtSize(safeLabel, 7.5);
+  page.drawText(safeLabel, {
+    x: PAGE_WIDTH - MARGIN_RIGHT - labelW, y: FOOTER_Y + 4, size: 7.5, font: fontRegular, color: COLOR_FOOTER_MUTED,
+  });
+}
 
-  // 2. CREAS la instancia del documento (¡De aquí sale pdfDoc!)
+export async function generatePDF(data: PDFData): Promise<Uint8Array> {
+  const { PDFDocument, StandardFonts } = await import('pdf-lib');
   const pdfDoc: PDFDocumentType = await PDFDocument.create();
 
-  // 3. Ahora sí, usas pdfDoc para embeber todas las fuentes que necesitas
   const fontRegular: PDFFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold: PDFFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontZapf: PDFFont = await pdfDoc.embedFont(StandardFonts.ZapfDingbats); // <- La que agregamos para el check
 
-  // 4. Creas la página usando el documento
-  let page: PDFPage = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-
-  // Reserve room for the footer so content never overlaps it. If a section
-  // wouldn't fit in what's left of the page, spill it onto a fresh page
-  // instead of drawing past the bottom margin.
-  const FOOTER_RESERVE = 70;
-  function checkPageBreak(_neededHeight: number): void {
-    // No-op: force single-page layout
-  }
-
-  // Color shortcuts
   const cBlue = COLOR_DARK_BLUE;
   const cOrange = COLOR_ACCENT_ORANGE;
   const cGreen = COLOR_GREEN;
+  const cLabel = COLOR_LABEL_MUTED;
   const cText = COLOR_TEXT_DARK;
-  const cGray = { red: 0.788, green: 0.812, blue: 0.859, type: 'RGB' } as RGB; // #c9cfdb — muted text on navy
+  const cBorder = COLOR_LIGHT_GRAY;
+  const cBgCard = COLOR_BG_CARD;
   const cWhite = COLOR_WHITE;
-  const cBgGray = COLOR_BG_CARD;
-  const cDarkGreen = COLOR_GREEN;
 
-  // ========================================================================
-  // 1. HEADER — Logo + Cotización Nº + Fecha
-  // ========================================================================
-  page.drawRectangle({
-    x: 0, y: PAGE_HEIGHT - 85, width: PAGE_WIDTH, height: 85,
-    color: cBlue,
-  });
-  page.drawLine({
-    start: { x: 0, y: PAGE_HEIGHT - 86 }, end: { x: PAGE_WIDTH, y: PAGE_HEIGHT - 86 },
-    thickness: 3, color: cOrange,
-  });
+  const hasBattery = Boolean(data.equipment?.some((e) => e.tipo === 'bateria') || (data.batteryCost && data.batteryCost > 0));
+  const inverterCard = data.equipment?.find((e) => e.tipo === 'inversor');
+  const panelCard = data.equipment?.find((e) => e.tipo === 'panel');
+
+  // =========================================================================
+  // PAGE 1 — Diagnóstico
+  // =========================================================================
+  let page: PDFPage = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+
+  const HEADER_H = 90;
+  const HEADER_PAD_TOP = 19;
+  page.drawRectangle({ x: 0, y: PAGE_HEIGHT - HEADER_H, width: PAGE_WIDTH, height: HEADER_H, color: cBlue });
+  const HEADER_RULE_H = 3;
+  page.drawRectangle({ x: 0, y: PAGE_HEIGHT - HEADER_H - HEADER_RULE_H, width: PAGE_WIDTH, height: HEADER_RULE_H, color: cOrange });
 
   try {
     const logoImage = await pdfDoc.embedPng(new Uint8Array(getLogoBuffer()));
-    const logoDims = logoImage.scale(0.40);
+    const logoH = 28;
+    const logoScale = logoH / logoImage.height;
     page.drawImage(logoImage, {
-      x: MARGIN_LEFT, y: PAGE_HEIGHT - 55,
-      width: logoDims.width, height: logoDims.height,
+      x: MARGIN_LEFT, y: PAGE_HEIGHT - HEADER_PAD_TOP - logoH,
+      width: logoImage.width * logoScale, height: logoH,
     });
   } catch {
-    page.drawText('Enercity', { x: MARGIN_LEFT, y: PAGE_HEIGHT - 45, size: 24, font: fontBold, color: cWhite });
+    page.drawText('Enercity', { x: MARGIN_LEFT, y: PAGE_HEIGHT - HEADER_PAD_TOP - 20, size: 20, font: fontBold, color: cWhite });
+  }
+  page.drawText(sanitizeText('DIAGNÓSTICO SOLAR · PRESUPUESTO CERTIFICADO SEC'), {
+    x: MARGIN_LEFT, y: PAGE_HEIGHT - HEADER_PAD_TOP - 28 - 12, size: 7.5, font: fontBold, color: cOrange,
+  });
+
+  const cotNum = data.numeroCotizacion || '2026-0000';
+  const dateLine = `${formatDate(data.quoteDate)} · válida hasta el ${formatValidUntil(data.quoteDate, data.validUntil)}`;
+  {
+    const label = 'N° COTIZACIÓN';
+    const labelW = fontBold.widthOfTextAtSize(label, 8);
+    page.drawText(label, { x: PAGE_WIDTH - MARGIN_RIGHT - labelW, y: PAGE_HEIGHT - HEADER_PAD_TOP - 8, size: 8, font: fontBold, color: cWhite, opacity: 0.55 });
+    const numW = fontBold.widthOfTextAtSize(sanitizeText(cotNum), 17);
+    page.drawText(sanitizeText(cotNum), { x: PAGE_WIDTH - MARGIN_RIGHT - numW, y: PAGE_HEIGHT - HEADER_PAD_TOP - 28, size: 17, font: fontBold, color: cWhite });
+    const safeDateLine = sanitizeText(dateLine);
+    const dateW = fontRegular.widthOfTextAtSize(safeDateLine, 8);
+    page.drawText(safeDateLine, { x: PAGE_WIDTH - MARGIN_RIGHT - dateW, y: PAGE_HEIGHT - HEADER_PAD_TOP - 42, size: 8, font: fontRegular, color: cWhite, opacity: 0.7 });
   }
 
-  // Cotización Nº + Fecha (right side)
-  const cotNum = data.numeroCotizacion || '2026-0000';
-  page.drawText(`Cotización Nº ${cotNum}`, {
-    x: PAGE_WIDTH - MARGIN_RIGHT - 180, y: PAGE_HEIGHT - 38, size: 11, font: fontBold, color: cWhite,
-  });
-  page.drawText(`Fecha: ${formatDate(data.quoteDate)}`, {
-    x: PAGE_WIDTH - MARGIN_RIGHT - 180, y: PAGE_HEIGHT - 55, size: 9, font: fontRegular, color: cWhite,
-  });
+  let y = PAGE_HEIGHT - HEADER_H - HEADER_RULE_H - 22.5;
 
-  let y = PAGE_HEIGHT - 85 - 20;
+  // --- Preparada para / Boleta mensual -------------------------------------
+  const colGap = 28;
+  const colLeftW = (CONTENT_WIDTH - colGap) * (1.25 / 2.25);
+  const colRightX = MARGIN_LEFT + colLeftW + colGap;
 
-  // ========================================================================
-  // 2. CLIENTE — Nombre + Región
-  // ========================================================================
-  page.drawText(sanitizeText(data.customerName || 'Cliente'), {
-    x: MARGIN_LEFT, y, size: 14, font: fontBold, color: cBlue,
-  });
+  page.drawText(sanitizeText('PREPARADA PARA'), { x: MARGIN_LEFT, y, size: 8, font: fontBold, color: cLabel });
+  page.drawText(sanitizeText('BOLETA MENSUAL ACTUAL'), { x: colRightX, y, size: 8, font: fontBold, color: cLabel });
+  page.drawLine({ start: { x: colRightX - 14, y: y - 46 }, end: { x: colRightX - 14, y: y + 8 }, thickness: 1, color: cBorder });
+  y -= 20;
+
+  page.drawText(sanitizeText(data.customerName || 'Cliente'), { x: MARGIN_LEFT, y, size: 19, font: fontBold, color: cBlue });
+  page.drawText(sanitizeText(formatCLP(data.monthlyBill)), { x: colRightX, y, size: 19, font: fontBold, color: cBlue });
   y -= 16;
+
   const regionText = data.regionName || data.comunaName || 'Región no especificada';
-  const clientSubtitleParts = [
-    data.nuevaAddress,
-    `Región: ${regionText}`,
-    data.roofType ? `Tipo de techo: ${data.roofType}` : undefined,
-  ].filter((part): part is string => Boolean(part));
-  page.drawText(sanitizeText(clientSubtitleParts.join('  ·  ')), {
-    x: MARGIN_LEFT, y, size: 9, font: fontRegular, color: cText,
-  });
-  y -= 12;
+  page.drawText(sanitizeText(regionText), { x: MARGIN_LEFT, y, size: 9.5, font: fontRegular, color: cText });
+  page.drawText(sanitizeText('Base del dimensionamiento del kit'), { x: colRightX, y, size: 9.5, font: fontRegular, color: cText });
+  y -= 14;
 
-  // ========================================================================
-  // 3. PROYECTO SOLAR RECOMENDADO
-  // ========================================================================
-  const recoH = 46;
-  const badgeText = `ON GRID - ${data.kitPower || 'XX kWP'}`;
-  const badgeW = fontBold.widthOfTextAtSize(sanitizeText(badgeText), 12) + 24;
-  page.drawRectangle({
-    x: MARGIN_LEFT, y: y - recoH, width: CONTENT_WIDTH, height: recoH, color: cBgGray,
-  });
-  page.drawText(sanitizeText('PROYECTO SOLAR RECOMENDADO'), {
-    x: MARGIN_LEFT + 16, y: y - 18, size: 9, font: fontBold, color: cBlue,
-  });
-  page.drawText(sanitizeText(`En base a tu boleta actual de ${formatCLP(data.monthlyBill)} / mes`), {
-    x: MARGIN_LEFT + 16, y: y - 32, size: 9, font: fontRegular, color: cText,
-  });
-  page.drawRectangle({
-    x: PAGE_WIDTH - MARGIN_RIGHT - 16 - badgeW, y: y - recoH / 2 - 11, width: badgeW, height: 22, color: cOrange,
-  });
-  page.drawText(sanitizeText(badgeText), {
-    x: PAGE_WIDTH - MARGIN_RIGHT - 16 - badgeW + 12, y: y - recoH / 2 - 4, size: 11, font: fontBold, color: cBlue,
-  });
-  y -= (recoH + 10);
+  const factorLineParts = [
+    data.roofType ? `Techo ${data.roofType}` : undefined,
+    data.meterLocation ? `Medidor ${data.meterLocation}` : undefined,
+  ].filter((p): p is string => Boolean(p));
+  if (factorLineParts.length > 0) {
+    page.drawText(sanitizeText(factorLineParts.join('  ·  ')), { x: MARGIN_LEFT, y, size: 9.5, font: fontRegular, color: cText });
+  }
+  y -= 28;
 
-  // ========================================================================
-  // 4. EQUIPO Y GARANTÍAS — 2 cards side-by-side with descripcion + garantia
-  // ========================================================================
+  // --- Kit recomendado (navy rounded card) ---------------------------------
+  const kitCardH = 96;
+  drawRoundedRect(page, { x: MARGIN_LEFT, y, width: CONTENT_WIDTH, height: kitCardH, radius: 10, color: cBlue });
+
+  const kitDividerX = MARGIN_LEFT + CONTENT_WIDTH * 0.7;
+  page.drawLine({
+    start: { x: kitDividerX, y: y - kitCardH + 20 }, end: { x: kitDividerX, y: y - 20 },
+    thickness: 1, color: cWhite, opacity: 0.18,
+  });
+
+  page.drawText(sanitizeText('KIT RECOMENDADO'), {
+    x: MARGIN_LEFT + 24, y: y - 26, size: 8, font: fontBold, color: cOrange,
+  });
+  page.drawText(sanitizeText(`${data.kitPower || 'XX kWp'} · ${data.panelCount || 0} paneles`), {
+    x: MARGIN_LEFT + 24, y: y - 46, size: 20, font: fontBold, color: cWhite,
+  });
+  const kitDescParts = [
+    `Sistema ${hasBattery ? 'híbrido on grid' : 'on grid'}`,
+    inverterCard ? `inversor ${inverterCard.marca}${inverterCard.modelo ? ' ' + inverterCard.modelo : ''}` : undefined,
+    panelCard ? `paneles ${panelCard.marca}${panelCard.modelo ? ' ' + panelCard.modelo : ''}` : undefined,
+    hasBattery ? 'batería de respaldo' : undefined,
+  ].filter((p): p is string => Boolean(p));
+  const kitDescLine = kitDescParts.join(' · ');
+  const kitDescMaxW = kitDividerX - (MARGIN_LEFT + 24) - 10;
+  const kitDescLines = wrapText(page, fontRegular, kitDescLine, kitDescMaxW).slice(0, 2);
+  let kdy = y - 62;
+  for (const line of kitDescLines) {
+    page.drawText(sanitizeText(line), { x: MARGIN_LEFT + 24, y: kdy, size: 9, font: fontRegular, color: cWhite, opacity: 0.72 });
+    kdy -= 12;
+  }
+
+  const annualGenKwh = data.co2Reduction > 0 ? data.co2Reduction * 2 : data.panelCount * data.panelWattage;
+  const genValueText = sanitizeText(formatNumber(annualGenKwh));
+  const genValueW = fontBold.widthOfTextAtSize(genValueText, 26);
+  const genColX = kitDividerX + (PAGE_WIDTH - MARGIN_RIGHT - kitDividerX) / 2;
+  page.drawText(genValueText, { x: genColX - genValueW / 2, y: y - kitCardH / 2 + 5, size: 26, font: fontBold, color: cOrange });
+  const genLabelText = sanitizeText('kWh generados al año');
+  const genLabelW = fontBold.widthOfTextAtSize(genLabelText, 7.5);
+  page.drawText(genLabelText, { x: genColX - genLabelW / 2, y: y - kitCardH / 2 - 11, size: 7.5, font: fontBold, color: cWhite, opacity: 0.6 });
+
+  y -= (kitCardH + 22);
+
+  // --- Equipos del proyecto — 3 cards ---------------------------------------
   if (data.equipment && data.equipment.length > 0) {
     const cardCount = Math.min(data.equipment.length, 3);
-    const cardGap = 15;
+    const cardGap = 14;
     const cardW = (CONTENT_WIDTH - cardGap * (cardCount - 1)) / cardCount;
-    const cardH = 162;
-    checkPageBreak(25 + cardH + 15);
-    y = drawSectionHeader(page, fontBold, 'Equipo y Garantías', y);
-    const rowStartY = y;
+
+    y = drawSectionHeader(page, fontBold, fontRegular, 'Equipos del proyecto', y, 'Fichas técnicas disponibles a solicitud');
+    const rowTopY = y;
     for (let i = 0; i < cardCount; i++) {
       const cx = MARGIN_LEFT + i * (cardW + cardGap);
       const titlePrefix = data.equipment[i].tipo === 'panel' && data.panelCount ? `${data.panelCount} ×` : undefined;
-      // All cards share the same starting y — they sit side by side, not stacked.
-      await drawEquipmentCard(page, pdfDoc, fontBold, fontRegular, data.equipment[i], cx, rowStartY, cardW, cardH, titlePrefix);
+      await drawEquipmentCardV2(page, pdfDoc, fontBold, fontRegular, data.equipment[i], cx, rowTopY, cardW, titlePrefix);
     }
-    y = rowStartY - cardH - 10;
+    y = rowTopY - EQUIPMENT_CARD_HEIGHT - 22;
   }
 
-  // ========================================================================
-  // 5. ¿QUÉ INCLUYE TU PROYECTO SOLAR? — bullet items, wrapped & centered
-  // ========================================================================
+  // --- Resumen de tu inversión — 4 stats ------------------------------------
+  const retornoLabel = getClassificationLabel(data.investmentClassification || '').toUpperCase();
+  y = drawSectionHeader(page, fontBold, fontRegular, 'Resumen de tu inversión', y, retornoLabel || undefined, cGreen);
+
+  const summaryStats = [
+    { value: formatCLP(data.annualSavings), color: cGreen, label: 'Ahorro estimado por año' },
+    { value: `${data.paybackYears.toFixed(1).replace('.', ',')} años`, color: cBlue, label: 'Recuperación de la inversión' },
+    { value: formatPercent(data.coveragePercent), color: cBlue, label: 'Cobertura de tu consumo' },
+    { value: formatCLP(data.roi25Years), color: cBlue, label: 'Ahorro acumulado a 25 años' },
+  ];
+  const statGap = 22;
+  const statColW = (CONTENT_WIDTH - statGap * 3) / 4;
+  for (let si = 0; si < summaryStats.length; si++) {
+    const sx = MARGIN_LEFT + si * (statColW + statGap);
+    if (si > 0) {
+      page.drawLine({ start: { x: sx - statGap / 2, y: y - 52 }, end: { x: sx - statGap / 2, y: y + 4 }, thickness: 1, color: cBorder });
+    }
+    page.drawText(sanitizeText(summaryStats[si].value), { x: sx, y: y - 18, size: 18, font: fontBold, color: summaryStats[si].color });
+    const labelLines = wrapText(page, fontRegular, summaryStats[si].label, statColW).slice(0, 2);
+    let sly = y - 32;
+    for (const line of labelLines) {
+      page.drawText(sanitizeText(line), { x: sx, y: sly, size: 8, font: fontRegular, color: cLabel });
+      sly -= 10;
+    }
+  }
+  y -= (52 + 14);
+
+  // --- Qué incluye tu proyecto — 5 items ------------------------------------
+  y = drawSectionHeader(page, fontBold, fontRegular, 'Qué incluye tu proyecto', y);
   const incluyeItems = [
     'Asesoría personalizada',
     'Diseño e instalación',
     'Certificación SEC (TE4)',
-    'Monitoreo remoto App',
-    'Servicio Post Venta',
+    'Monitoreo remoto en la app',
+    'Servicio post venta',
   ];
-  const itemGapX = 20;
-  const bulletR = 2.5;
-  const textGap = 8;
-  const rowGapY = 18;
-  const boxPadX = 16;
-  const boxPadY = 12;
-  const maxRowWidth = CONTENT_WIDTH - boxPadX * 2;
-
-  const incluyeRows: { text: string; width: number }[][] = [];
-  let incluyeRow: { text: string; width: number }[] = [];
-  let incluyeRowWidth = 0;
-  for (const item of incluyeItems) {
-    const tw = fontBold.widthOfTextAtSize(sanitizeText(item), 9);
-    const itemWidth = bulletR * 2 + textGap + tw;
-    const wouldBeWidth = incluyeRow.length > 0 ? incluyeRowWidth + itemGapX + itemWidth : itemWidth;
-    if (wouldBeWidth > maxRowWidth && incluyeRow.length > 0) {
-      incluyeRows.push(incluyeRow);
-      incluyeRow = [];
-      incluyeRowWidth = 0;
+  const incluyeGap = 14;
+  const incluyeColW = (CONTENT_WIDTH - incluyeGap * (incluyeItems.length - 1)) / incluyeItems.length;
+  for (let ii = 0; ii < incluyeItems.length; ii++) {
+    const ix = MARGIN_LEFT + ii * (incluyeColW + incluyeGap);
+    page.drawRectangle({ x: ix, y: y - 3, width: 20, height: 3, color: cGreen });
+    const lines = wrapText(page, fontBold, incluyeItems[ii], incluyeColW).slice(0, 2);
+    let ly = y - 17;
+    for (const line of lines) {
+      page.drawText(sanitizeText(line), { x: ix, y: ly, size: 8.5, font: fontBold, color: cText });
+      ly -= 11;
     }
-    incluyeRow.push({ text: item, width: itemWidth });
-    incluyeRowWidth = incluyeRow.length > 1 ? incluyeRowWidth + itemGapX + itemWidth : itemWidth;
   }
-  if (incluyeRow.length > 0) incluyeRows.push(incluyeRow);
 
-  const incluyeBoxHeight = incluyeRows.length * rowGapY + boxPadY * 2 - 4;
-  checkPageBreak(25 + incluyeBoxHeight + 8);
-  y = drawSectionHeader(page, fontBold, '¿Qué incluye tu proyecto solar?', y);
+  drawPageFooter(page, fontRegular, 'Enercity SpA · ventas@enercity.cl · +56 9 2902 8578 · enercity.cl', 'Página 1 de 2');
 
-  page.drawRectangle({
-    x: MARGIN_LEFT, y: y - incluyeBoxHeight, width: CONTENT_WIDTH, height: incluyeBoxHeight,
-    color: cWhite, borderColor: COLOR_LIGHT_GRAY, borderWidth: 1,
-  });
-  let incluyeRowY = y - boxPadY - 7;
-  for (const row of incluyeRows) {
-    const rowWidth = row.reduce((sum, it, i) => sum + it.width + (i > 0 ? itemGapX : 0), 0);
-    let itemX = MARGIN_LEFT + (CONTENT_WIDTH - rowWidth) / 2;
-    for (const it of row) {
-      page.drawEllipse({ x: itemX + bulletR, y: incluyeRowY + 3, xScale: bulletR, yScale: bulletR, color: cOrange });
-      page.drawText(sanitizeText(it.text), {
-        x: itemX + bulletR * 2 + textGap, y: incluyeRowY, size: 9, font: fontBold, color: cBlue,
-      });
-      itemX += it.width + itemGapX;
+  // =========================================================================
+  // PAGE 2 — Inversión y formas de pago
+  // =========================================================================
+  page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
+  y = PAGE_HEIGHT - 48;
+
+  page.drawText(sanitizeText('Inversión y formas de pago'), { x: MARGIN_LEFT, y, size: 13, font: fontBold, color: cBlue });
+  const p2Note = sanitizeText(`Cotización N° ${cotNum} · ${data.customerName || 'Cliente'}`);
+  const p2NoteW = fontRegular.widthOfTextAtSize(p2Note, 8.5);
+  page.drawText(p2Note, { x: PAGE_WIDTH - MARGIN_RIGHT - p2NoteW, y: y + 1, size: 8.5, font: fontRegular, color: COLOR_FOOTER_MUTED });
+  y -= 32;
+
+  // --- Precio de lista / Precio con transferencia ---------------------------
+  const precioLista = data.precioLista ?? data.systemPrice ?? 0;
+  const precioTransferencia = data.precioTransferencia ?? data.precioFinal ?? data.systemPrice ?? 0;
+  const hasDualPricing = Boolean(data.precioLista && data.precioLista > 0 && data.precioLista !== precioTransferencia);
+  const priceCardH = 118;
+  const priceGap = 14;
+  const priceLeftW = hasDualPricing ? (CONTENT_WIDTH - priceGap) * (1 / 2.2) : CONTENT_WIDTH;
+  const priceRightW = CONTENT_WIDTH - priceLeftW - priceGap;
+
+  if (hasDualPricing) {
+    // Left: Precio de lista (muted, strikethrough)
+    drawRoundedRect(page, { x: MARGIN_LEFT, y, width: priceLeftW, height: priceCardH, radius: 10, color: cBgCard, borderColor: cBorder, borderWidth: 1 });
+    page.drawText(sanitizeText('PRECIO DE LISTA'), { x: MARGIN_LEFT + 22, y: y - 34, size: 8, font: fontBold, color: cLabel });
+    const listaText = sanitizeText(formatCLP(precioLista));
+    page.drawText(listaText, { x: MARGIN_LEFT + 22, y: y - 58, size: 24, font: fontBold, color: cLabel });
+    const listaW = fontBold.widthOfTextAtSize(listaText, 24);
+    page.drawLine({ start: { x: MARGIN_LEFT + 22, y: y - 51 }, end: { x: MARGIN_LEFT + 22 + listaW, y: y - 51 }, thickness: 1.5, color: cLabel });
+    const listaSubLines = wrapText(page, fontRegular, 'Llave en mano, IVA incluido · incluye factores de techo y despacho regional', priceLeftW - 44).slice(0, 2);
+    let lsy = y - 76;
+    for (const line of listaSubLines) {
+      page.drawText(sanitizeText(line), { x: MARGIN_LEFT + 22, y: lsy, size: 8.5, font: fontRegular, color: cText });
+      lsy -= 11;
     }
-    incluyeRowY -= rowGapY;
-  }
-  y -= (incluyeBoxHeight + 8);
 
-  // ========================================================================
-  // 6. CARACTERÍSTICAS Y RENDIMIENTO — 4 stat boxes
-  // ========================================================================
-  checkPageBreak(105);
-  y = drawSectionHeader(page, fontBold, 'Características y Rendimiento', y);
+    // Right: Precio con transferencia (highlighted)
+    const rx = MARGIN_LEFT + priceLeftW + priceGap;
+    drawRoundedRect(page, { x: rx, y, width: priceRightW, height: priceCardH, radius: 10, color: COLOR_TRANSFER_BG, borderColor: COLOR_TRANSFER_BORDER, borderWidth: 1 });
+    page.drawText(sanitizeText('PRECIO CON TRANSFERENCIA'), { x: rx + 22, y: y - 24, size: 8, font: fontBold, color: COLOR_TRANSFER_TEXT });
 
-  const statBoxW = (CONTENT_WIDTH - 15 * 3) / 4;
-  const statBoxH = 50;
-  const stats = [
-    { label: 'ENERGÍA GENERADA', value: `${formatNumber(data.co2Reduction * 2 || data.panelCount * data.panelWattage)} kWh`, sub: 'anuales proyectados' },
-    { label: 'AHORRO TOTAL', value: formatCLP(data.annualSavings), sub: '/ año en boleta' },
-    { label: 'RETORNO INVERSIÓN', value: `${data.paybackYears} Años`, sub: 'recuperación inversión' },
-    { label: 'INYECCIÓN NET BILLING', value: 'Ley 20.571', sub: 'excedentes a la red' },
-  ];
-
-  for (let si = 0; si < 4; si++) {
-    const sx = MARGIN_LEFT + si * (statBoxW + 15);
-    const cx = sx + statBoxW / 2;
-    page.drawRectangle({
-      x: sx, y: y - statBoxH, width: statBoxW, height: statBoxH,
-      color: cWhite, borderColor: COLOR_LIGHT_GRAY, borderWidth: 1,
-    });
-
-    const labelLines = wrapText(page, fontBold, stats[si].label, statBoxW - 10);
-    let ly = y - 14;
-    for (const line of labelLines.slice(0, 2)) {
-      const safeLine = sanitizeText(line);
-      const lw = fontBold.widthOfTextAtSize(safeLine, 6.5);
-      page.drawText(safeLine, { x: cx - lw / 2, y: ly, size: 6.5, font: fontBold, color: cText });
-      ly -= 8;
+    const savings = Math.max(0, precioLista - precioTransferencia);
+    if (savings > 0) {
+      const badgeText = sanitizeText(`Ahorras ${formatCLP(savings)}`);
+      const badgeW = fontBold.widthOfTextAtSize(badgeText, 7.5) + 20;
+      const badgeX = rx + priceRightW - 22 - badgeW;
+      drawRoundedRect(page, { x: badgeX, y: y - 16, width: badgeW, height: 18, radius: 6, color: cOrange });
+      const badgePadTop = 6;
+      page.drawText(badgeText, { x: badgeX + 10, y: y - 21.5 - badgePadTop, size: 7.5, font: fontBold, color: cWhite });
     }
-    ly -= 5;
 
-    const safeValue = sanitizeText(stats[si].value);
-    const vw = fontBold.widthOfTextAtSize(safeValue, 12);
-    page.drawText(safeValue, { x: cx - vw / 2, y: ly, size: 12, font: fontBold, color: cBlue });
-    ly -= 14;
-
-    const safeSub = sanitizeText(stats[si].sub);
-    const sw = fontBold.widthOfTextAtSize(safeSub, 7);
-    page.drawText(safeSub, { x: cx - sw / 2, y: ly, size: 7, font: fontBold, color: cGreen });
+    page.drawText(sanitizeText(formatCLP(precioTransferencia)), { x: rx + 22, y: y - 68, size: 36, font: fontBold, color: cOrange });
+    page.drawText(sanitizeText('Pago contado por transferencia bancaria, IVA incluido.'), {
+      x: rx + 22, y: y - 78, size: 9, font: fontBold, color: COLOR_TRANSFER_TEXT,
+    });
+  } else {
+    drawRoundedRect(page, { x: MARGIN_LEFT, y, width: priceLeftW, height: priceCardH, radius: 10, color: cBgCard, borderColor: cBorder, borderWidth: 1 });
+    page.drawText(sanitizeText('PRECIO FINAL (IVA INCLUIDO)'), { x: MARGIN_LEFT + 22, y: y - 34, size: 8, font: fontBold, color: cLabel });
+    page.drawText(sanitizeText(formatCLP(precioTransferencia)), { x: MARGIN_LEFT + 22, y: y - 66, size: 32, font: fontBold, color: cBlue });
+    page.drawText(sanitizeText(`(${formatCLP(data.systemPriceNoIva || 0)} + IVA)`), { x: MARGIN_LEFT + 22, y: y - 84, size: 9, font: fontRegular, color: cText });
   }
-  y -= (statBoxH + 10);
+  y -= (priceCardH + 30);
 
-  // ========================================================================
-  // 7. MÉTODOS DE PAGO — dark card + 3 payment options
-  // ========================================================================
-  checkPageBreak(200);
-  y = drawSectionHeader(page, fontBold, 'Métodos de Pago', y);
+  // --- Formas de pago ---------------------------------------------------
+  const cuotaBase = precioLista || precioTransferencia;
+  const cuota12 = Math.round(cuotaBase / 12);
+  const cuota48 = Math.round(cuotaBase / 48);
+  y = drawSectionHeader(page, fontBold, fontRegular, 'Formas de pago', y, `Cuotas calculadas sobre el precio de lista de ${formatCLP(cuotaBase)}`);
 
-  const payCardH = 55;
-  // Solid dark card — drawCardBackground's light body + thin colored band
-  // doesn't give enough contrast for the white price text.
-  page.drawRectangle({
-    x: MARGIN_LEFT, y: y - payCardH, width: CONTENT_WIDTH, height: payCardH, color: cBlue,
-  });
+  const payGap = 14;
+  const payColW = (CONTENT_WIDTH - payGap) / 2;
+  const payRow1H = 108;
 
-  // Left: Precio Final
-  const precioIva = data.systemPrice || data.precioFinal || 0;
-  const precioSinIva = data.systemPriceNoIva || 0;
-  page.drawText('PRECIO FINAL (IVA INCLUIDO)', {
-    x: MARGIN_LEFT + 15, y: y - 14, size: 7, font: fontBold, color: cGray,
-  });
-  page.drawText(formatCLP(precioIva), {
-    x: MARGIN_LEFT + 15, y: y - 28, size: 16, font: fontBold, color: cWhite,
-  });
-  page.drawText(`(${formatCLP(precioSinIva)} + IVA)`, {
-    x: MARGIN_LEFT + 15, y: y - 42, size: 7, font: fontRegular, color: cGray,
-  });
-
-  // Right: Valor transferencia (green box)
-  const transfPrice = data.precioTransferencia || precioSinIva;
-  const greenBoxW = 200;
-  const greenX = PAGE_WIDTH - MARGIN_RIGHT - greenBoxW - 15;
-  page.drawRectangle({ x: greenX, y: y - payCardH + 8, width: greenBoxW, height: payCardH - 16, color: cDarkGreen });
-  page.drawText('PAGO TRANSFERENCIA', {
-    x: greenX + 12, y: y - 22, size: 7, font: fontBold, color: cWhite,
-  });
-  page.drawText(formatCLP(transfPrice), {
-    x: greenX + 12, y: y - 38, size: 14, font: fontBold, color: cWhite,
-  });
-
-  y -= (payCardH + 8);
-
-  // 3 payment option cards
-  const optW = (CONTENT_WIDTH - 15 * 2) / 3;
-  const optH = 60;
-
-  const cuota12 = Math.round(precioIva / 12);
-  const cuota48 = Math.round(precioIva / 48);
-
-  // 12 cuotas
-  const optCards = [
-    {
-      title: 'TARJETA DE CRÉDITO',
-      big: `12 x ${formatCLP(cuota12)}`,
-      desc: 'Hasta 12 cuotas sin interés',
-      sub: 'con cualquier banco · Webpay',
-    },
-    {
-      title: 'TARJETA DE CRÉDITO',
-      big: `48 x ${formatCLP(cuota48)}`,
-      desc: 'Hasta 48 cuotas sin interés',
-      sub: 'con Banco Santander',
-    },
-    {
-      title: 'FINANCIAMIENTO ENERCITY',
-      big: 'Sin inversión inicial',
-      desc: 'Desde 10 a 25 años',
-      sub: 'Cuotas accesibles · Respuesta inmediata',
-    },
-  ];
-
-  // Logo badges shown in the top-right corner of each payment card
-  const optLogoSpecs = [
-    { buffer: getWebpayLogoBuffer(), w: 176, h: 95, targetH: 16 },
-    { buffer: getSantanderLogoBuffer(), w: 259, h: 127, targetH: 16 },
-    { buffer: getChecklistIconBuffer(), w: 59, h: 54, targetH: 20 },
-  ];
-
-  for (let oi = 0; oi < 3; oi++) {
-    const ox = MARGIN_LEFT + oi * (optW + 15);
-    drawCardBackground(page, ox, y, optW, optH, cBgGray);
-    page.drawText(sanitizeText(optCards[oi].title), {
-      x: ox + 12, y: y - 13, size: 7, font: fontBold, color: cBlue,
-    });
-    const bigSize = oi === 2 ? 10 : 12;
-    page.drawText(sanitizeText(optCards[oi].big), {
-      x: ox + 12, y: y - 28, size: bigSize, font: fontBold, color: oi === 2 ? cGreen : cOrange,
-    });
-    page.drawText(sanitizeText(optCards[oi].desc), {
-      x: ox + 12, y: y - 42, size: 7, font: fontRegular, color: cText,
-    });
-    page.drawText(sanitizeText(optCards[oi].sub), {
-      x: ox + 12, y: y - 54, size: 7, font: fontRegular, color: cGray,
-    });
-
-    const logoSpec = optLogoSpecs[oi];
-    const logoImage = await pdfDoc.embedPng(logoSpec.buffer);
-    const logoW = logoSpec.w * (logoSpec.targetH / logoSpec.h);
-    page.drawImage(logoImage, {
-      x: ox + optW - 12 - logoW,
-      y: y - 12 - logoSpec.targetH,
-      width: logoW,
-      height: logoSpec.targetH,
-    });
-  }
-  y -= (optH + 8);
-
-  // Garantía de instalación (admin-editable, if present)
-  if (data.garantiaText && data.garantiaText.trim().length > 0) {
-    const gLines = wrapText(page, fontRegular, data.garantiaText, CONTENT_WIDTH - 30);
-    checkPageBreak(25 + Math.min(gLines.length, 6) * 14 + 10);
-    y = drawSectionHeader(page, fontBold, 'Garantía de Instalación', y);
-    for (const line of gLines.slice(0, 3)) {
-      page.drawText(sanitizeText(line), {
-        x: MARGIN_LEFT, y, size: 8, font: fontRegular, color: cText,
-      });
-      y -= 12;
-    }
-    y -= 5;
+  // Webpay card
+  drawRoundedRect(page, { x: MARGIN_LEFT, y, width: payColW, height: payRow1H, radius: 10, borderColor: cBorder, borderWidth: 1 });
+  page.drawText(sanitizeText('TARJETA DE CRÉDITO'), { x: MARGIN_LEFT + 18, y: y - 22, size: 7.5, font: fontBold, color: cOrange });
+  page.drawText(sanitizeText(`12 × ${formatCLP(cuota12)}`), { x: MARGIN_LEFT + 18, y: y - 42, size: 17, font: fontBold, color: cBlue });
+  page.drawText(sanitizeText('Hasta 12 cuotas sin interés con cualquier banco'), { x: MARGIN_LEFT + 18, y: y - 56, size: 8, font: fontRegular, color: cLabel });
+  page.drawLine({ start: { x: MARGIN_LEFT + 18, y: y - 68 }, end: { x: MARGIN_LEFT + payColW - 18, y: y - 68 }, thickness: 1, color: COLOR_LIGHT_GRAY });
+  try {
+    const webpayLogo = await pdfDoc.embedPng(getWebpayLogoBuffer());
+    const targetH = 20;
+    const wpW = 176 * (targetH / 95);
+    page.drawImage(webpayLogo, { x: MARGIN_LEFT + 18, y: y - 68 - 12 - targetH, width: wpW, height: targetH });
+    page.drawText(sanitizeText('Pago seguro en línea'), { x: MARGIN_LEFT + 18 + wpW + 10, y: y - 68 - 12 - targetH / 2 - 3, size: 7.5, font: fontRegular, color: COLOR_FOOTER_MUTED });
+  } catch {
+    // logo optional
   }
 
-  // ========================================================================
-  // 8. FOOTER — ventas@enercity.cl + 15 días
-  // ========================================================================
-  const footerY = 55;
-  const footerTeam = 'Equipo de Ventas Enercity';
-  page.drawText(sanitizeText(footerTeam), {
-    x: MARGIN_LEFT, y: footerY, size: 8, font: fontBold, color: cBlue,
-  });
-  const footerTeamW = fontBold.widthOfTextAtSize(sanitizeText(footerTeam), 8);
-  page.drawText(sanitizeText(' · Email: ventas@enercity.cl | Tel: +56 9 2902 8578 | Providencia, Santiago, Chile'), {
-    x: MARGIN_LEFT + footerTeamW, y: footerY, size: 7, font: fontRegular, color: cText,
-  });
-  page.drawText(sanitizeText('*Tarifas de energía de referencia estimadas. Validez de la cotización: 15 días desde la fecha de emisión.'), {
-    x: MARGIN_LEFT, y: footerY - 13, size: 6, font: fontRegular, color: cText,
-  });
+  // Santander card
+  const santX = MARGIN_LEFT + payColW + payGap;
+  drawRoundedRect(page, { x: santX, y, width: payColW, height: payRow1H, radius: 10, borderColor: cBorder, borderWidth: 1 });
+  page.drawText(sanitizeText('TARJETA SANTANDER'), { x: santX + 18, y: y - 22, size: 7.5, font: fontBold, color: cOrange });
+  page.drawText(sanitizeText(`48 × ${formatCLP(cuota48)}`), { x: santX + 18, y: y - 42, size: 17, font: fontBold, color: cBlue });
+  page.drawText(sanitizeText('Hasta 48 cuotas sin interés con tarjetas Santander'), { x: santX + 18, y: y - 56, size: 8, font: fontRegular, color: cLabel });
+  page.drawLine({ start: { x: santX + 18, y: y - 68 }, end: { x: santX + payColW - 18, y: y - 68 }, thickness: 1, color: COLOR_LIGHT_GRAY });
+  page.drawText(sanitizeText('Banco Santander'), { x: santX + 18, y: y - 68 - 20, size: 10.5, font: fontBold, color: COLOR_SANTANDER_RED });
+  page.drawText(sanitizeText('Despacho gratis · acumula millas'), { x: santX + 18, y: y - 68 - 32, size: 7.5, font: fontRegular, color: COLOR_FOOTER_MUTED });
 
-  // ========================================================================
-  // Serialize
-  // ========================================================================
+  y -= (payRow1H + payGap);
+
+  // Financiamiento Enercity (full width, navy border)
+  const finH = 64;
+  drawRoundedRect(page, { x: MARGIN_LEFT, y, width: CONTENT_WIDTH, height: finH, radius: 10, borderColor: cBlue, borderWidth: 1 });
+  page.drawText(sanitizeText('FINANCIAMIENTO ENERCITY'), { x: MARGIN_LEFT + 20, y: y - 22, size: 7.5, font: fontBold, color: cOrange });
+  page.drawText(sanitizeText('Sin inversión inicial'), { x: MARGIN_LEFT + 20, y: y - 42, size: 17, font: fontBold, color: cBlue });
+  page.drawText(sanitizeText('Plazos de 10 a 25 años · cuota mensual comparable a tu boleta actual'), {
+    x: MARGIN_LEFT + 20, y: y - 55, size: 8, font: fontRegular, color: cLabel,
+  });
+  page.drawLine({ start: { x: MARGIN_LEFT + CONTENT_WIDTH - 130, y: y - 14 }, end: { x: MARGIN_LEFT + CONTENT_WIDTH - 130, y: y - finH + 14 }, thickness: 1, color: COLOR_LIGHT_GRAY });
+  page.drawText(sanitizeText('DESDE'), { x: MARGIN_LEFT + CONTENT_WIDTH - 110, y: y - 24, size: 7.5, font: fontBold, color: COLOR_FOOTER_MUTED });
+  page.drawText(sanitizeText('10 años'), { x: MARGIN_LEFT + CONTENT_WIDTH - 110, y: y - 42, size: 15, font: fontBold, color: cBlue });
+
+  y -= (finH + 26);
+
+  // --- Doble garantía Enercity ----------------------------------------------
+  y = drawSectionHeader(page, fontBold, fontRegular, 'Doble garantía Enercity', y);
+  const garColW = (CONTENT_WIDTH - 14) / 2;
+  const garH = 82;
+
+  drawRoundedRect(page, { x: MARGIN_LEFT, y, width: garColW, height: garH, radius: 10, color: cBgCard, borderColor: cBorder, borderWidth: 1 });
+  page.drawText(sanitizeText('INVERSIÓN PROTEGIDA'), { x: MARGIN_LEFT + 18, y: y - 22, size: 7.5, font: fontBold, color: cGreen });
+  page.drawText(sanitizeText('Hasta 120 meses'), { x: MARGIN_LEFT + 18, y: y - 40, size: 13, font: fontBold, color: cBlue });
+  const gar1Lines = wrapText(page, fontRegular, 'Enercity garantiza la instalación y los equipos hasta la recuperación total de tu inversión, con un máximo de 10 años.', garColW - 36).slice(0, 3);
+  let g1y = y - 54;
+  for (const line of gar1Lines) {
+    page.drawText(sanitizeText(line), { x: MARGIN_LEFT + 18, y: g1y, size: 8, font: fontRegular, color: cText });
+    g1y -= 10;
+  }
+
+  const gar2X = MARGIN_LEFT + garColW + 14;
+  drawRoundedRect(page, { x: gar2X, y, width: garColW, height: garH, radius: 10, color: cBgCard, borderColor: cBorder, borderWidth: 1 });
+  page.drawText(sanitizeText('GARANTÍA DE FÁBRICA'), { x: gar2X + 18, y: y - 22, size: 7.5, font: fontBold, color: cGreen });
+  page.drawText(sanitizeText('12 a 25 años'), { x: gar2X + 18, y: y - 40, size: 13, font: fontBold, color: cBlue });
+  const gar2Text = data.garantiaText && data.garantiaText.trim().length > 0
+    ? data.garantiaText
+    : 'Equipos respaldados directamente por sus fabricantes según componente, con gestión completa a cargo de Enercity.';
+  const gar2Lines = wrapText(page, fontRegular, gar2Text, garColW - 36).slice(0, 3);
+  let g2y = y - 54;
+  for (const line of gar2Lines) {
+    page.drawText(sanitizeText(line), { x: gar2X + 18, y: g2y, size: 8, font: fontRegular, color: cText });
+    g2y -= 10;
+  }
+
+  y -= (garH + 26);
+
+  // --- CTA card ---------------------------------------------------------
+  const ctaH = 66;
+  drawRoundedRect(page, { x: MARGIN_LEFT, y, width: CONTENT_WIDTH, height: ctaH, radius: 10, color: cBlue });
+  page.drawText(sanitizeText('¿Avanzamos con tu proyecto?'), { x: MARGIN_LEFT + 22, y: y - 28, size: 14, font: fontBold, color: cWhite });
+  page.drawText(sanitizeText('Coordinamos la visita técnica y entregamos el diseño definitivo en 48 horas.'), {
+    x: MARGIN_LEFT + 22, y: y - 44, size: 9, font: fontRegular, color: cWhite, opacity: 0.72,
+  });
+  const ctaPhone = sanitizeText('+56 9 2902 8578');
+  const ctaPhoneW = fontBold.widthOfTextAtSize(ctaPhone, 12);
+  page.drawText(ctaPhone, { x: PAGE_WIDTH - MARGIN_RIGHT - 22 - ctaPhoneW, y: y - 26, size: 12, font: fontBold, color: cOrange });
+  const ctaEmail = sanitizeText('ventas@enercity.cl');
+  const ctaEmailW = fontRegular.widthOfTextAtSize(ctaEmail, 9);
+  page.drawText(ctaEmail, { x: PAGE_WIDTH - MARGIN_RIGHT - 22 - ctaEmailW, y: y - 41, size: 9, font: fontRegular, color: cWhite, opacity: 0.85 });
+
+  drawPageFooter(
+    page, fontRegular,
+    'Estimación basada en radiación de la comuna, tarifa eléctrica vigente y performance ratio de 0,75. Valores sujetos a visita técnica. Validez de la cotización: 15 días desde la emisión. Enercity SpA · Av. Pedro de Valdivia 273, of. 1611, Providencia, Santiago.',
+    'Página 2 de 2',
+    CONTENT_WIDTH * 0.78,
+  );
+
   return await pdfDoc.save();
 }

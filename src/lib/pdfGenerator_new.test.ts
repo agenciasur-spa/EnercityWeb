@@ -313,8 +313,8 @@ describe('PDF Generator URL/Image Handling', () => {
       expect(pdfDoc.getPageCount()).toBeGreaterThan(0);
 
       const page = pdfDoc.getPage(0);
-      expect(page.getWidth()).toBe(595.28);
-      expect(page.getHeight()).toBe(841.89);
+      expect(page.getWidth()).toBe(612);
+      expect(page.getHeight()).toBe(792);
     });
 
     it('should not include battery equipment in On-Grid mode', async () => {
@@ -322,7 +322,7 @@ describe('PDF Generator URL/Image Handling', () => {
       expect(pdfBytes).toBeInstanceOf(Uint8Array);
 
       const pdfDoc = await PDFDocument.load(pdfBytes);
-      expect(pdfDoc.getPageCount()).toBe(1);
+      expect(pdfDoc.getPageCount()).toBe(2);
 
       const page = pdfDoc.getPage(0);
       const annotations = page.node.get(PDFName.of('Annots'));
@@ -339,7 +339,7 @@ describe('PDF Generator URL/Image Handling', () => {
       expect(pdfHeader).toBe('%PDF');
 
       const pdfDoc = await PDFDocument.load(pdfBytes);
-      expect(pdfDoc.getPageCount()).toBe(1);
+      expect(pdfDoc.getPageCount()).toBe(2);
     });
 
     it('should include customer information', async () => {
@@ -348,15 +348,15 @@ describe('PDF Generator URL/Image Handling', () => {
       expect(pdfDoc.getPageCount()).toBeGreaterThan(0);
 
       const page = pdfDoc.getPage(0);
-      expect(page.getWidth()).toBe(595.28);
-      expect(page.getHeight()).toBe(841.89);
+      expect(page.getWidth()).toBe(612);
+      expect(page.getHeight()).toBe(792);
     });
 
     it('should include equipment details', async () => {
       const pdfBytes = await generatePDF(basePDFData);
       const pdfDoc = await PDFDocument.load(pdfBytes);
 
-      expect(pdfDoc.getPageCount()).toBe(1);
+      expect(pdfDoc.getPageCount()).toBe(2);
 
       const page = pdfDoc.getPage(0);
       const annotations = page.node.get(PDFName.of('Annots'));

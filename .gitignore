@@ -32,6 +32,9 @@ pnpm-debug.log*
 # test results
 test-results/
 
+# PDF template preview output (npm run pdf:preview)
+.pdf-preview/
+
 # editor/IDE
 .atl/
 
