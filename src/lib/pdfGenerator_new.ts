@@ -427,6 +427,9 @@ async function drawEquipmentCardV2(
   }
 
   if (equipment.fichaTecnicaUrl) {
+    page.drawText(sanitizeText('Ver ficha técnica >'), {
+      x: x + padX, y: yTop - height + 16, size: 8.5, font: fontBold, color: COLOR_ACCENT_ORANGE,
+    });
     drawClickableLink(page, equipment.fichaTecnicaUrl, x, yTop, width, height);
   }
 }

@@ -168,7 +168,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
             <td style="padding:0 40px 40px;text-align:center;">
               <div style="display:inline-block;background:#F07E04;border-radius:12px;padding:16px 40px;">
                 <span style="font-size:15px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">
-                  Un asesor te contactará en 24 horas hábiles
+                  Un asesor te contactará en 48 horas hábiles
                 </span>
               </div>
             </td>
@@ -178,8 +178,8 @@ export async function sendLeadEmails(data: LeadEmailData) {
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity · paneles-solares.cl<br>
-                Este presupuesto tiene validez por 30 días. Sujeto a confirmación técnica.
+                Enercity · enercity.cl<br>
+                Este presupuesto tiene validez por 15 días. Sujeto a confirmación técnica.
               </p>
             </td>
           </tr>
@@ -385,7 +385,7 @@ export async function sendContactEmails(data: ContactEmailData) {
                 ¡Hola, ${nombre}!
               </h2>
               <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.6;">
-                Hemos recibido tu solicitud de consultoría <strong>${proyectoLabel}</strong>. Nuestro equipo se pondrá en contacto contigo en las próximas <strong>24 horas hábiles</strong>.
+                Hemos recibido tu solicitud de consultoría <strong>${proyectoLabel}</strong>. Nuestro equipo se pondrá en contacto contigo en las próximas <strong>48 horas hábiles</strong>.
               </p>
             </td>
           </tr>
@@ -468,7 +468,7 @@ export async function sendContactEmails(data: ContactEmailData) {
             <td style="padding:0 40px 40px;text-align:center;">
               <div style="display:inline-block;background:#4AAF4D;border-radius:12px;padding:16px 40px;">
                 <span style="font-size:15px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">
-                  Un asesor te contactará en 24 horas hábiles
+                  Un asesor te contactará en 48 horas hábiles
                 </span>
               </div>
             </td>
@@ -478,7 +478,7 @@ export async function sendContactEmails(data: ContactEmailData) {
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity · paneles-solares.cl<br>
+                Enercity · enercity.cl<br>
                 Consultoría técnica personalizada para proyectos solares.
               </p>
             </td>
@@ -699,7 +699,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
                 ¡Hola, ${nombre}!
               </h2>
               <p style="margin:0;font-size:15px;color:#4a5568;line-height:1.6;">
-                Gracias por contactar a <strong>Enercity</strong>. Hemos recibido la solicitud de <strong>${empresa}</strong>. Un asesor empresarial especializado se pondrá en contacto contigo en las próximas <strong>24 horas hábiles</strong> vía <strong>${metodoContacto}</strong>.
+                Gracias por contactar a <strong>Enercity</strong>. Hemos recibido la solicitud de <strong>${empresa}</strong>. Un asesor empresarial especializado se pondrá en contacto contigo en las próximas <strong>48 horas hábiles</strong> vía <strong>${metodoContacto}</strong>.
               </p>
             </td>
           </tr>
@@ -769,7 +769,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
                 ${[
                   ['✓', 'Un asesor empresarial revisará tu solicitud'],
                   ['✓', 'Análisis de viabilidad técnica y económica'],
-                  ['✓', 'Te contactaremos por ' + metodoContacto + ' en 24 horas hábiles'],
+                  ['✓', 'Te contactaremos por ' + metodoContacto + ' en 48 horas hábiles'],
                   ['✓', 'Propuesta comercial personalizada para tu empresa'],
                 ]
                   .map(
@@ -793,7 +793,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
             <td style="padding:0 40px 40px;text-align:center;">
               <div style="display:inline-block;background:#F07E04;border-radius:12px;padding:16px 40px;">
                 <span style="font-size:15px;font-weight:800;color:#ffffff;letter-spacing:0.5px;">
-                  Un asesor te contactará en 24 horas hábiles
+                  Un asesor te contactará en 48 horas hábiles
                 </span>
               </div>
             </td>
@@ -803,7 +803,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity · paneles-solares.cl<br>
+                Enercity · enercity.cl<br>
                 Soluciones solares para empresas e industria.
               </p>
             </td>

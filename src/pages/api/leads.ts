@@ -119,7 +119,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    comunaNombre = 'No especificada';
+    if (!comunaNombre) comunaNombre = 'No especificada';
     if (comunaId) {
       const { data: comunaData } = await supabase
         .from('comunas')
