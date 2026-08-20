@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -63,7 +63,6 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [existingComunas, setExistingComunas] = useState<Comuna[]>(initialComunas);
 
   const openCreate = useCallback(() => {
     setEditingId(null);
@@ -92,18 +91,12 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
       if (!res.ok) throw new Error('Error al cargar comunas');
       const data = await res.json();
       setComunas(data.comunas || []);
-      setExistingComunas(data.comunas || []);
     } catch (err) {
       console.error('Error fetching comunas:', err);
     } finally {
       setLoading(false);
     }
   }, []);
-
-  // Keep existingComunas in sync
-  useEffect(() => {
-    setExistingComunas(comunas);
-  }, [comunas]);
 
   const handleSave = useCallback(async () => {
     if (!form.nombre.trim()) {
@@ -364,7 +357,7 @@ export default function ComunasTable({ initialComunas }: ComunasTableProps) {
               />
               {editingId === null && (
                 <datalist id="comuna-nombres">
-                  {Array.from(new Set(existingComunas.map(c => c.nombre))).map((nombre) => (
+                  {Array.from(new Set(comunas.map(c => c.nombre))).map((nombre) => (
                     <option key={nombre} value={nombre} />
                   ))}
                 </datalist>

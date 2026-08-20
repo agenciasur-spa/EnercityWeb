@@ -262,9 +262,9 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
     if (step > 1) setStep((step - 1) as Step);
   };
 
-  const buildPdfData = (): PDFData | null => {
-    if (!result || result.estado !== "OK") return null;
-    return buildPdfDataFromResult(result, formData, comunas, equipmentCatalog);
+  const buildPdfData = (resultOverride: QuoteResult | null = result): PDFData | null => {
+    if (!resultOverride || resultOverride.estado !== "OK") return null;
+    return buildPdfDataFromResult(resultOverride, formData, comunas, equipmentCatalog);
   };
 
   const handleDownloadPdf = async () => {
@@ -402,14 +402,15 @@ export function SavingsCalculator({ comunas }: SavingsCalculatorProps) {
       const responseData = await apiResponse.json();
 
       // Pass quote number from lead API into the result for PDF
-      if (responseData.numeroCotizacion && result) {
-        result.numero_cotizacion = responseData.numeroCotizacion;
-      }
+      const resultForPdf =
+        responseData.numeroCotizacion && result
+          ? { ...result, numero_cotizacion: responseData.numeroCotizacion }
+          : result;
 
       // --- PDF generation (silent failure, must NOT break lead flow) ---
       // Save PDF data for the manual download button on Step 5
       try {
-        const pdfData = buildPdfData();
+        const pdfData = buildPdfData(resultForPdf);
         if (pdfData) {
           setSavedPdfData(pdfData);
           // Auto-download best-effort: may be blocked by browser download gating

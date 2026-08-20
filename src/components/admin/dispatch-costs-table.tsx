@@ -39,6 +39,7 @@ export default function DispatchCostsTable({ initialRegions }: DispatchCostsTabl
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, setState happens after the awaited fetch, not synchronously
     fetchRegions();
   }, [fetchRegions]);
 
