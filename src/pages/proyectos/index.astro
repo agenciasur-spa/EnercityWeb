@@ -34,7 +34,7 @@ const seoDescription =
 ---
 
 <Layout title={seoTitle} description={seoDescription}>
-  <Navbar client:load variant="proyectos" />
+  <Navbar client:load isHome={false} links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
 
   <main>
     {/* Hero — estilo home: fondo oscuro + overlay para legibilidad del navbar */}

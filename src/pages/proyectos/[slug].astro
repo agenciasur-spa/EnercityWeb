@@ -97,7 +97,7 @@ if (proyecto.cliente) specs.push({ icon: 'User', label: 'Cliente', value: proyec
 <Layout title={seoTitle} description={seoDescription} ogImage={proyecto.imagen_portada ?? undefined}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
-  <Navbar client:load links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
+  <Navbar client:load isHome={false} links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
 
   {/* Hero header — full-width image with dark overlay for navbar legibility */}
   <section class="relative flex min-h-[55vh] w-full items-end overflow-hidden bg-[#0A1929]">

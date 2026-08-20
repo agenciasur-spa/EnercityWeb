@@ -6,7 +6,8 @@ import type { NavLink } from '../../types/content';
 
 interface NavbarProps {
   links?: NavLink[];
-  variant?: 'home' | 'empresas' | 'minimal' | 'proyectos';
+  variant?: 'home' | 'empresas' | 'minimal';
+  isHome?: boolean;
 }
 
 const EMPRESAS_NAV_LINKS: NavLink[] = [
@@ -14,42 +15,40 @@ const EMPRESAS_NAV_LINKS: NavLink[] = [
   { id: 'e2', location: 'navbar', label: 'Costos', href: '/empresas#costos', sort_order: 2, active: true },
   { id: 'e3', location: 'navbar', label: 'Beneficios', href: '/empresas#beneficios', sort_order: 3, active: true },
   { id: 'e4', location: 'navbar', label: 'Proceso', href: '/empresas#proceso', sort_order: 4, active: true },
+  { id: 'e5', location: 'navbar', label: 'Proyectos', href: '/proyectos', sort_order: 5, active: true },
 ];
 
-const PROYECTOS_NAV_LINKS: NavLink[] = [
-  { id: 'p1', location: 'navbar', label: 'Inicio', href: '/', sort_order: 1, active: true },
-  { id: 'p2', location: 'navbar', label: 'Proyectos', href: '/proyectos', sort_order: 2, active: true },
-];
-
-export function Navbar({ links = [], variant = 'home' }: NavbarProps) {
+export function Navbar({ links = [], variant = 'home', isHome = true }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const isMinimal = variant === 'minimal';
   const isEmpresas = variant === 'empresas';
-  const isProyectos = variant === 'proyectos';
 
-  let activeLinks: NavLink[];
-  if (isEmpresas) {
-    activeLinks = EMPRESAS_NAV_LINKS;
-  } else if (isProyectos) {
-    activeLinks = PROYECTOS_NAV_LINKS;
-  } else {
-    activeLinks = links;
-  }
+  const activeLinks: NavLink[] = isEmpresas ? EMPRESAS_NAV_LINKS : links;
 
-  const showFaq = variant === 'home';
+  // Anchor-only hrefs (e.g. "#inicio") target sections that only exist on
+  // the home page — resolve them to "/#inicio" when rendered elsewhere.
+  const resolveHref = (href: string) =>
+    !isHome && href.startsWith('#') ? `/${href}` : href;
+
+  const showFaq = variant === 'home' && isHome;
   const showCta = variant !== 'minimal';
 
   const handleCtaClick = () => {
     const targetId = isEmpresas ? 'contacto' : 'simulador-section';
-    document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+    if (isHome || isEmpresas) {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.location.href = `/#${targetId}`;
+    }
   };
 
   return (
@@ -88,9 +87,9 @@ export function Navbar({ links = [], variant = 'home' }: NavbarProps) {
           {!isMinimal && (
             <div className="hidden md:flex items-center gap-8">
               {activeLinks.map((link) => (
-                <motion.a 
+                <motion.a
                   key={link.id || link.href}
-                  href={link.href} 
+                  href={resolveHref(link.href)}
                   whileHover={{ y: -1, transition: { duration: 0.15 } }}
                   className="text-sm font-medium text-white/70 hover:text-white transition-colors relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1.5px] after:bg-[#F07E04] after:transition-all after:duration-300 hover:after:w-full"
                 >
@@ -149,9 +148,9 @@ export function Navbar({ links = [], variant = 'home' }: NavbarProps) {
               >
                 <div className="flex flex-col gap-4">
                   {activeLinks.map((link) => (
-                    <a 
+                    <a
                       key={link.id || link.href}
-                      href={link.href} 
+                      href={resolveHref(link.href)}
                       onClick={() => setIsMenuOpen(false)}
                       className="text-lg font-bold text-white/80 hover:text-[#F07E04] py-2 border-b border-white/5"
                     >
