@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import sharp from 'sharp';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { getAdminUser } from '@/lib/auth';
 
@@ -7,6 +8,7 @@ export const prerender = false;
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const BUCKET = 'project-images';
+const WEBP_QUALITY = 82;
 
 export const POST: APIRoute = async ({ request }) => {
   const user = await getAdminUser(request);
@@ -42,17 +44,19 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Generate a unique filename: timestamp-originalName
-    const ext = file.name.split('.').pop() || 'jpg';
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.webp`;
     const path = `uploads/${filename}`;
 
     const arrayBuffer = await file.arrayBuffer();
+    const webpBuffer = await sharp(Buffer.from(arrayBuffer))
+      .rotate()
+      .webp({ quality: WEBP_QUALITY })
+      .toBuffer();
 
     const { error: uploadError } = await supabaseAdmin.storage
       .from(BUCKET)
-      .upload(path, arrayBuffer, {
-        contentType: file.type,
+      .upload(path, webpBuffer, {
+        contentType: 'image/webp',
         upsert: false,
       });
 

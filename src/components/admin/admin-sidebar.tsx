@@ -21,6 +21,8 @@ import {
   Truck,
   MapPin,
   Battery,
+  Newspaper,
+  Tag,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -56,6 +58,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/admin/content/testimonials', label: 'Testimonios', icon: MessageSquareQuote },
       { href: '/admin/content/faq', label: 'FAQ', icon: HelpCircle },
       { href: '/admin/content/nav', label: 'Navegación', icon: Link },
+    ],
+  },
+  {
+    label: 'Contenido — Blog',
+    items: [
+      { href: '/admin/content/blog-posts', label: 'Noticias', icon: Newspaper },
+      { href: '/admin/content/blog-categories', label: 'Categorías', icon: Tag },
     ],
   },
   {
