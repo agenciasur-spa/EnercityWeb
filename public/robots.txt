@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://paneles-solares.cl/sitemap-index.xml
+Sitemap: https://paneles-solares.cl/sitemap-posts.xml

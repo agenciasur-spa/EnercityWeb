@@ -1,0 +1,53 @@
+---
+import Layout from '../../layouts/layout.astro';
+import { Navbar } from '../../components/organisms/navbar';
+import { Footer } from '../../components/organisms/footer';
+import PostList from '../../components/organisms/blog/post-list.astro';
+import { getNavLinks, getFooterContent, getPublishedPosts, getBlogCategories } from '../../lib/content';
+import type { NavLink } from '../../types/content';
+
+export const prerender = false;
+
+const PER_PAGE = 12;
+
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const queryText = Astro.url.searchParams.get('q')?.trim() || undefined;
+
+const [navbarLinks, footerLinks, footerContent, { posts, total }, categories] = await Promise.all([
+  getNavLinks('navbar'),
+  getNavLinks('footer'),
+  getFooterContent(),
+  getPublishedPosts({ page, perPage: PER_PAGE, query: queryText }),
+  getBlogCategories(),
+]);
+
+const seoTitle = 'Blog | Enercity';
+const seoDescription = 'Noticias, novedades y contenido sobre energía solar de Enercity.';
+---
+
+<Layout title={seoTitle} description={seoDescription}>
+  <Navbar client:load isHome={false} links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
+
+  <main>
+    <section class="bg-[#0A1929] pt-32 pb-16">
+      <div class="container mx-auto px-6">
+        <h1 class="text-4xl font-bold text-white md:text-5xl">Blog</h1>
+        <p class="mt-3 max-w-2xl text-white/70">
+          Noticias y novedades sobre energía solar, proyectos y la actualidad de Enercity.
+        </p>
+      </div>
+    </section>
+
+    <PostList
+      posts={posts}
+      total={total}
+      page={page}
+      perPage={PER_PAGE}
+      categories={categories}
+      queryText={queryText}
+      basePath="/blog"
+    />
+  </main>
+
+  <Footer client:visible links={footerLinks} content={footerContent} />
+</Layout>

@@ -26,6 +26,7 @@ import type {
   EmpresasChecklistContent,
   EmpresasContactContent,
 } from '../types/content';
+import type { BlogCategory, BlogPostWithCategory, PaginatedPosts } from '../types/blog';
 
 // ────────────────────────────────────────────────
 // NORMALIZATION HELPERS
@@ -1069,6 +1070,115 @@ export async function getEmpresasContactContent(): Promise<EmpresasContactConten
       return data.data as EmpresasContactContent;
     },
     FALLBACK_EMPRESAS_CONTACT
+  );
+}
+
+// ────────────────────────────────────────────────
+// BLOG
+// ────────────────────────────────────────────────
+
+export async function getBlogCategories(): Promise<BlogCategory[]> {
+  return getCached<BlogCategory[]>(
+    'blog_categories',
+    async () => {
+      const { data, error } = await supabase
+        .from('blog_categories')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error || !data) throw error || new Error('No blog_categories data');
+      return data as BlogCategory[];
+    },
+    []
+  );
+}
+
+interface GetPublishedPostsOptions {
+  page?: number;
+  perPage?: number;
+  categorySlug?: string;
+  query?: string;
+}
+
+export async function getPublishedPosts(
+  options: GetPublishedPostsOptions = {}
+): Promise<PaginatedPosts> {
+  const { page = 1, perPage = 10, categorySlug, query } = options;
+  const cacheKey = `blog_posts:${page}:${perPage}:${categorySlug ?? ''}:${query ?? ''}`;
+
+  return getCached<PaginatedPosts>(
+    cacheKey,
+    async () => {
+      const categoryJoin = categorySlug ? 'blog_categories!inner' : 'blog_categories';
+      let q = supabase
+        .from('blog_posts')
+        .select(`*, category:${categoryJoin}(*)`, { count: 'exact' })
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (categorySlug) {
+        q = q.eq('category.slug', categorySlug);
+      }
+      if (query) {
+        q = q.textSearch('search_vector', query, { type: 'websearch', config: 'spanish' });
+      }
+
+      const from = (page - 1) * perPage;
+      const { data, error, count } = await q.range(from, from + perPage - 1);
+
+      if (error || !data) throw error || new Error('No blog_posts data');
+      return {
+        posts: data as unknown as BlogPostWithCategory[],
+        total: count ?? data.length,
+        page,
+        perPage,
+      };
+    },
+    { posts: [], total: 0, page, perPage }
+  );
+}
+
+export async function getPostBySlug(slug: string): Promise<BlogPostWithCategory | null> {
+  return getCached<BlogPostWithCategory | null>(
+    `blog_post:${slug}`,
+    async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*, category:blog_categories(*)')
+        .eq('slug', slug)
+        .eq('status', 'published')
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as unknown as BlogPostWithCategory | null;
+    },
+    null
+  );
+}
+
+export async function getRelatedPosts(
+  postId: string,
+  categoryId: string | null,
+  limit = 3
+): Promise<BlogPostWithCategory[]> {
+  if (!categoryId) return [];
+
+  return getCached<BlogPostWithCategory[]>(
+    `blog_related:${categoryId}:${postId}`,
+    async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*, category:blog_categories(*)')
+        .eq('status', 'published')
+        .eq('category_id', categoryId)
+        .neq('id', postId)
+        .order('published_at', { ascending: false })
+        .limit(limit);
+
+      if (error || !data) throw error || new Error('No related posts data');
+      return data as unknown as BlogPostWithCategory[];
+    },
+    []
   );
 }
 

@@ -1,0 +1,26 @@
+---
+import AdminLayout from '@/layouts/admin-layout.astro';
+import BlogPostsTable from '@/components/admin/content/blog-posts-table';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+
+export const prerender = false;
+
+const [{ data: posts, error: postsError }, { data: categories, error: categoriesError }] = await Promise.all([
+  supabaseAdmin
+    .from('blog_posts')
+    .select('*, category:blog_categories(*)')
+    .order('created_at', { ascending: false }),
+  supabaseAdmin.from('blog_categories').select('*').order('name', { ascending: true }),
+]);
+
+if (postsError) {
+  console.error('[blog-posts.astro] Supabase query error:', postsError);
+}
+if (categoriesError) {
+  console.error('[blog-posts.astro] Supabase categories query error:', categoriesError);
+}
+---
+
+<AdminLayout title="Noticias del Blog — Enercity Admin">
+  <BlogPostsTable client:load posts={posts ?? []} categories={categories ?? []} />
+</AdminLayout>

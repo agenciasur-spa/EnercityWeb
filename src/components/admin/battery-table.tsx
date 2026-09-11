@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, RefreshCw, Battery } from 'lucide-react';
 
-interface Battery {
+interface BatteryRecord {
   id: number;
   etiqueta: string;
   precio_neto: number;
@@ -12,14 +12,14 @@ interface Battery {
 }
 
 interface BatteryTableProps {
-  initialBattery?: Battery;
+  initialBattery?: BatteryRecord;
 }
 
 export default function BatteryTable({ initialBattery }: BatteryTableProps) {
-  const [battery, setBattery] = useState<Battery | null>(initialBattery || null);
+  const [battery, setBattery] = useState<BatteryRecord | null>(initialBattery || null);
   const [loading, setLoading] = useState(!initialBattery);
   const [saving, setSaving] = useState(false);
-  const [changes, setChanges] = useState<Partial<Battery>>({});
+  const [changes, setChanges] = useState<Partial<BatteryRecord>>({});
 
   const fetchBattery = async () => {
     setLoading(true);
@@ -37,6 +37,7 @@ export default function BatteryTable({ initialBattery }: BatteryTableProps) {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount, setState happens after the awaited fetch, not synchronously
     fetchBattery();
   }, []);
 
