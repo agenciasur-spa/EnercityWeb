@@ -99,9 +99,13 @@ const enterpriseContactSchema = z.object({
     .min(2, 'Nombre de empresa demasiado corto')
     .transform((v) => v.trim().slice(0, 255)),
   rut: z
-    .string()
-    .min(1, 'RUT requerido')
-    .refine(validarRUT, 'RUT inválido'),
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((v) => {
+      if (!v) return undefined;
+      const trimmed = v.trim();
+      return trimmed === '' ? undefined : trimmed;
+    })
+    .refine((v) => v === undefined || validarRUT(v), 'RUT inválido'),
   costoElectrico: z.enum(COSTO_OPTIONS, {
     errorMap: () => ({ message: 'Selecciona un rango de costo' }),
   }),
@@ -182,8 +186,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const { nombre, email, telefono, empresa, rut, costoElectrico, region, metodoContacto, mensaje } =
-      parsed.data;
+    const { nombre, email, telefono, empresa, rut, costoElectrico, region, metodoContacto, mensaje } = parsed.data;
 
     // 6. Gibberish check on mensaje (bot spam detection)
     if (mensaje && isGibberish(mensaje)) {
@@ -201,7 +204,7 @@ export const POST: APIRoute = async ({ request }) => {
         email,
         telefono,
         empresa,
-        rut,
+        rut: rut || null,
         costo_electrico: costoElectrico,
         region,
         metodo_contacto: metodoContacto,
@@ -222,7 +225,7 @@ export const POST: APIRoute = async ({ request }) => {
       await sendEnterpriseContactEmails({
         nombre,
         email,
-        telefono,
+        telefono: telefono ?? '',
         empresa,
         rut,
         costoElectrico,
@@ -237,7 +240,7 @@ export const POST: APIRoute = async ({ request }) => {
     // 9. Send to CRM (non-blocking)
     try {
       const crmMensaje = [
-        `RUT: ${rut}`,
+        ...(rut ? [`RUT: ${rut}`] : []),
         `Costo eléctrico mensual: ${costoElectrico}`,
         ...(mensaje ? [mensaje] : []),
       ].join('\n');

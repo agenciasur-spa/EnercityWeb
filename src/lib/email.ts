@@ -652,7 +652,7 @@ interface EnterpriseContactEmailData {
   email: string;
   telefono: string;
   empresa: string;
-  rut: string;
+  rut?: string;
   costoElectrico: string;
   region: string;
   metodoContacto: string;
@@ -723,14 +723,14 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
                     <span style="font-size:14px;color:#154660;font-weight:700;">${empresa}</span>
                   </td>
                 </tr>
-                <tr>
+                ${rut ? `<tr>
                   <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
                     <span style="font-size:13px;color:#718096;font-weight:500;">RUT</span>
                   </td>
                   <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;text-align:right;">
                     <span style="font-size:14px;color:#154660;font-weight:700;">${rut}</span>
                   </td>
-                </tr>
+                </tr>` : ''}
                 <tr>
                   <td style="padding:14px 20px;border-bottom:1px solid #e2e8f0;">
                     <span style="font-size:13px;color:#718096;font-weight:500;">Costo Eléctrico Mensual</span>
@@ -862,10 +862,10 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
                   <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;">Teléfono</span>
                   <span style="font-size:14px;font-weight:700;color:#154660;">${telefono}</span>
                 </div>
-                <div>
+                ${rut ? `<div>
                   <span style="font-size:10px;font-weight:800;color:#92400e;letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:2px;">RUT</span>
                   <span style="font-size:14px;font-weight:700;color:#154660;">${rut}</span>
-                </div>
+                </div>` : ''}
               </div>
             </td>
           </tr>
@@ -879,7 +879,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
               <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7fafc;border-radius:8px;overflow:hidden;">
                 ${[
                   ['Empresa', empresa],
-                  ['RUT', rut],
+                  ...(rut ? [['RUT', rut]] : []),
                   ['Contacto', nombre],
                   ['Email', email],
                   ['Teléfono', telefono],

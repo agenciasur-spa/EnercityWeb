@@ -88,8 +88,7 @@ export function EmpresasContactForm({ content }: EmpresasContactFormProps) {
         if (value.length < 2) error = 'Nombre demasiado corto';
         break;
       case 'rut':
-        if (!value) error = 'RUT requerido';
-        else if (!validarRUTClient(value)) error = 'RUT inválido';
+        if (value && !validarRUTClient(value)) error = 'RUT inválido';
         break;
       case 'costoElectrico':
       case 'region':
@@ -118,7 +117,7 @@ export function EmpresasContactForm({ content }: EmpresasContactFormProps) {
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
       (formData.telefono === '' || formData.telefono.length >= 8) &&
       formData.empresa.length >= 2 &&
-      validarRUTClient(formData.rut) &&
+      (formData.rut === '' || validarRUTClient(formData.rut)) &&
       formData.costoElectrico !== '' &&
       formData.region !== '' &&
       formData.metodoContacto !== '' &&
