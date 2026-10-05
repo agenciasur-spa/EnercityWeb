@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { supabaseAdmin } from '../../lib/supabase-admin';
 import { sendLeadEmails } from '../../lib/email';
+import { sendToCrm } from '../../lib/crm';
 import { generatePDF } from '../../lib/pdfGenerator_new';
 import type { PDFData } from '../../lib/pdf-types';
 import type { LeadInput } from '../../types/simulation';
@@ -246,7 +247,27 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[Email] Error details:', JSON.stringify(emailErrorDetails, null, 2));
     }
 
-    return new Response(JSON.stringify({ 
+    try {
+      const crmMensaje = [
+        `Cotización: ${numeroCotizacion}`,
+        `Comuna: ${comunaNombre}`,
+        `Monto boleta: $${montoBoletaIngresado}`,
+        `Ahorro mensual: $${ahorroMensual}`,
+        `Precio sistema: $${precioFinalIva}`,
+      ].join('\n');
+      await sendToCrm({
+        nombre,
+        correo: email,
+        telefono: `+56${telefono}`,
+        region: region || comunaRegion || undefined,
+        mensaje: crmMensaje,
+        embudo: 'B2C',
+      });
+    } catch (crmError) {
+      console.error('[CRM] Failed to send lead (non-blocking):', crmError);
+    }
+
+    return new Response(JSON.stringify({
       success: true, 
       lead: null,
       numeroCotizacion: numeroCotizacion,

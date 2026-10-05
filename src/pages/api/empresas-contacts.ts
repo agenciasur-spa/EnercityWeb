@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendEnterpriseContactEmails } from '../../lib/email';
+import { sendToCrm } from '../../lib/crm';
 import { z } from 'zod';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 import { verifyTurnstileToken } from '../../lib/turnstile';
@@ -231,6 +232,27 @@ export const POST: APIRoute = async ({ request }) => {
       });
     } catch (emailError) {
       console.error('[Email] Fallo en envío empresarial (no bloquea respuesta):', emailError);
+    }
+
+    // 9. Send to CRM (non-blocking)
+    try {
+      const crmMensaje = [
+        `RUT: ${rut}`,
+        `Costo eléctrico mensual: ${costoElectrico}`,
+        ...(mensaje ? [mensaje] : []),
+      ].join('\n');
+      await sendToCrm({
+        nombre,
+        correo: email,
+        telefono: telefono ?? undefined,
+        empresa,
+        metodo_de_contacto: metodoContacto,
+        region,
+        mensaje: crmMensaje,
+        embudo: 'B2B',
+      });
+    } catch (crmError) {
+      console.error('[CRM] Failed to send lead (non-blocking):', crmError);
     }
 
     return new Response(

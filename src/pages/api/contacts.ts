@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 import { sendContactEmails } from '../../lib/email';
+import { sendToCrm } from '../../lib/crm';
 import { z } from 'zod';
 import { checkRateLimit, getClientIP, createRateLimitResponse } from '../../lib/rate-limit';
 import { verifyTurnstileToken } from '../../lib/turnstile';
@@ -85,7 +86,7 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('contacts')
       .insert({
         nombre,
@@ -94,9 +95,7 @@ export const POST: APIRoute = async ({ request }) => {
         proyecto,
         mensaje: mensaje || null,
         estado: 'nuevo',
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.error('Error inserting contact:', error);
@@ -118,7 +117,23 @@ export const POST: APIRoute = async ({ request }) => {
       console.error('[Email] Fallo en envio (no bloquea respuesta):', emailError);
     }
 
-    return new Response(JSON.stringify({ success: true, contact: data }), {
+    try {
+      const crmMensaje = [
+        `Proyecto: ${proyecto}`,
+        ...(mensaje ? [mensaje] : []),
+      ].join('\n');
+      await sendToCrm({
+        nombre,
+        correo: email,
+        telefono: telefono ?? undefined,
+        mensaje: crmMensaje,
+        embudo: proyecto === 'industrial' ? 'B2B' : 'B2C',
+      });
+    } catch (crmError) {
+      console.error('[CRM] Failed to send lead (non-blocking):', crmError);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
