@@ -193,7 +193,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // 7. Insert into enterprise_contacts table
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('enterprise_contacts')
       .insert({
         nombre,
@@ -206,9 +206,7 @@ export const POST: APIRoute = async ({ request }) => {
         metodo_contacto: metodoContacto,
         mensaje: mensaje || null,
         estado: 'nuevo',
-      })
-      .select()
-      .single();
+      });
 
     if (error) {
       console.error('Error inserting enterprise contact:', error);
@@ -238,7 +236,7 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(
       JSON.stringify({
         success: true,
-        contact: { id: data?.id, nombre, email },
+        contact: { nombre, email },
       }),
       {
         status: 200,
