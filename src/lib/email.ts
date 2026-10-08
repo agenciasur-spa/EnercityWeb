@@ -6,6 +6,13 @@ import logoBuffer from '../assets/Enercity_logo_FFF.png?buffer';
 
 const resend = new Resend(import.meta.env.RESEND_API_KEY);
 
+function parseNotificationEmails(settings: Record<string, string | number>): string[] {
+  return String(settings.email_notification_to || 'contacto@enercity.cl')
+    .split(',')
+    .map((e) => e.trim())
+    .filter((e) => e.length > 0);
+}
+
 interface ClienteData {
   nombre: string;
   email: string;
@@ -57,6 +64,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
   const settings = await getSettings();
   const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
+  const notificationEmails = parseNotificationEmails(settings);
 
   const { cliente, comuna, kit, tipoTecho, tipoMedidor, precioFinal, montoBoleta } = data;
   const costoMedidorLabel = data.costoMedidor > 0 ? ` (+ ${formatCLP(data.costoMedidor)} por medidor)` : '';
@@ -326,7 +334,7 @@ export async function sendLeadEmails(data: LeadEmailData) {
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['contacto@enercity.cl'],
+        to: notificationEmails,
         subject: `🚨 NUEVO LEAD SIMULADOR: ${cliente.nombre} - ${comuna.nombre}`,
         html: managerHtml,
       }),
@@ -348,6 +356,7 @@ export async function sendContactEmails(data: ContactEmailData) {
   const settings = await getSettings();
   const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
+  const notificationEmails = parseNotificationEmails(settings);
 
   const { nombre, email, telefono, proyecto, mensaje } = data;
   const proyectoLabel = PROYECTO_LABELS[proyecto] ?? proyecto;
@@ -625,7 +634,7 @@ export async function sendContactEmails(data: ContactEmailData) {
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['contacto@enercity.cl'],
+        to: notificationEmails,
         subject: `Nuevo contacto: ${proyectoLabel} - ${nombre}`,
         html: managerHtml,
       }),
@@ -663,6 +672,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
   const settings = await getSettings();
   const emailFromName = (settings.email_from_name as string) || 'Enercity';
   const emailFromAddress = (settings.email_from_address as string) || 'onboarding@resend.dev';
+  const notificationEmails = parseNotificationEmails(settings);
 
   const { nombre, email, telefono, empresa, rut, costoElectrico, region, metodoContacto, mensaje } =
     data;
@@ -973,7 +983,7 @@ export async function sendEnterpriseContactEmails(data: EnterpriseContactEmailDa
       }),
       resend.emails.send({
         from: `${emailFromName} <${emailFromAddress}>`,
-        to: ['contacto@enercity.cl'],
+        to: notificationEmails,
         subject: `Nueva consulta empresarial: ${empresa} - ${nombre}`,
         html: managerHtml,
       }),
