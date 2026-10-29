@@ -96,6 +96,13 @@ export const PATCH: APIRoute = async ({ request }) => {
     row.slug = generateSlug(rest.nombre);
   }
 
+  // Fetch current slug before updating so we can register a redirect if it changed
+  const { data: current } = await supabaseAdmin
+    .from('proyectos')
+    .select('slug')
+    .eq('id', id)
+    .single();
+
   const { data, error } = await supabaseAdmin
     .from('proyectos')
     .update(row)
@@ -104,6 +111,15 @@ export const PATCH: APIRoute = async ({ request }) => {
     .single();
 
   if (error) return jsonResponse({ error: error.message }, 500);
+
+  // Register redirect if slug changed
+  const newSlug = (data as ProyectoDetalle).slug;
+  if (current?.slug && newSlug && current.slug !== newSlug) {
+    await supabaseAdmin
+      .from('proyecto_slug_redirects')
+      .upsert({ old_slug: current.slug, new_slug: newSlug }, { onConflict: 'old_slug' });
+  }
+
   return jsonResponse({ data });
 };
 

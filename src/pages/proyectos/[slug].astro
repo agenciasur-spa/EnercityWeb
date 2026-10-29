@@ -33,6 +33,17 @@ if (error) {
 const proyecto = data as unknown as ProyectoDetalle | null;
 
 if (!proyecto) {
+  // Check if this slug was renamed and has a redirect registered
+  const { data: redirect } = await supabase
+    .from('proyecto_slug_redirects')
+    .select('new_slug')
+    .eq('old_slug', slug)
+    .maybeSingle();
+
+  if (redirect?.new_slug) {
+    return Astro.redirect(`/proyectos/${redirect.new_slug}`, 301);
+  }
+
   return Astro.redirect('/proyectos');
 }
 

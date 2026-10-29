@@ -4,5 +4,9 @@
       "path": "/api/cron/keep-alive",
       "schedule": "0 6 * * *"
     }
+  ],
+  "redirects": [
+    { "source": "/proyectos/vina-del-maipo", "destination": "/proyectos/tres-mundos", "permanent": true },
+    { "source": "/proyectos/bosque-nativo",  "destination": "/proyectos/casa-victor",  "permanent": true }
   ]
 }

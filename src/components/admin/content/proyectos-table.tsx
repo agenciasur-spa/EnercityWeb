@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
 import {
-  Plus, Pencil, Trash2, Upload, Image as ImageIcon, X, MapPin, Zap,
+  Plus, Pencil, Trash2, Upload, Image as ImageIcon, X, MapPin, Zap, Lock, Unlock,
 } from 'lucide-react';
 import type { ProyectoDetalle } from '@/types/proyecto-detalle';
 
@@ -85,6 +85,7 @@ export default function ProyectosTable({ proyectos }: ProyectosTableProps) {
   const [form, setForm] = useState<FormData>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [slugLocked, setSlugLocked] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +94,7 @@ export default function ProyectosTable({ proyectos }: ProyectosTableProps) {
   // ── Dialog open helpers ──────────────────────────────────────
   const openCreate = useCallback(() => {
     setEditingId(null);
+    setSlugLocked(false);
     setForm({ ...emptyForm, orden: items.length });
     setError('');
     setDialogOpen(true);
@@ -100,6 +102,7 @@ export default function ProyectosTable({ proyectos }: ProyectosTableProps) {
 
   const openEdit = useCallback((p: ProyectoDetalle) => {
     setEditingId(p.id);
+    setSlugLocked(true); // existing projects start with slug locked
     setForm({
       nombre: p.nombre ?? '',
       slug: p.slug ?? '',
@@ -294,8 +297,15 @@ export default function ProyectosTable({ proyectos }: ProyectosTableProps) {
 
   // Helpers for form fields
   const setField = useCallback(<K extends keyof FormData>(key: K, value: FormData[K]) => {
-    setForm((f) => ({ ...f, [key]: value }));
-  }, []);
+    setForm((f) => {
+      const next = { ...f, [key]: value };
+      // Auto-sync slug from nombre when not locked
+      if (key === 'nombre' && !slugLocked) {
+        next.slug = slugify(value as string);
+      }
+      return next;
+    });
+  }, [slugLocked]);
 
   return (
     <div className="space-y-4">
@@ -440,27 +450,31 @@ export default function ProyectosTable({ proyectos }: ProyectosTableProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">
-                  Slug{' '}
-                  <span className="text-muted-foreground font-normal">
-                    (se genera automaticamente si lo dejas vacio)
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    value={form.slug}
-                    onChange={(e) => setField('slug', e.target.value)}
-                    placeholder={slugify(form.nombre) || 'planta-industrial-maipu'}
-                    className="flex-1"
-                  />
-                  <Button
+                <label className="text-sm font-medium flex items-center gap-2">
+                  Slug
+                  <button
                     type="button"
-                    variant="outline"
-                    onClick={() => setField('slug', slugify(form.nombre))}
+                    onClick={() => setSlugLocked((v) => !v)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    title={slugLocked ? 'Desbloquear slug (se sincronizará con el nombre)' : 'Bloquear slug (edición manual)'}
                   >
-                    Generar
-                  </Button>
-                </div>
+                    {slugLocked
+                      ? <Lock className="size-3.5" />
+                      : <Unlock className="size-3.5 text-[#F07E04]" />}
+                  </button>
+                  {!slugLocked && (
+                    <span className="text-xs text-[#F07E04] font-normal">auto-sincronizado</span>
+                  )}
+                </label>
+                <Input
+                  value={form.slug}
+                  onChange={(e) => {
+                    setSlugLocked(true);
+                    setField('slug', e.target.value);
+                  }}
+                  placeholder={slugify(form.nombre) || 'planta-industrial-maipu'}
+                  readOnly={false}
+                />
               </div>
 
               <div className="space-y-1.5">
