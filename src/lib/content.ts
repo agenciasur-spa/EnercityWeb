@@ -313,12 +313,14 @@ const FALLBACK_NAVBAR_LINKS: NavLink[] = [
   { id: '3', location: 'navbar', label: 'Soluciones', href: '#soluciones', sort_order: 3, active: true },
   { id: '4', location: 'navbar', label: 'Simulador', href: '#simulador-section', sort_order: 4, active: true },
   { id: '5', location: 'navbar', label: 'Empresas', href: '/empresas', sort_order: 5, active: true },
+  { id: '6', location: 'navbar', label: 'Noticias', href: '/blog', sort_order: 60, active: true },
 ];
 
 const FALLBACK_FOOTER_LINKS: NavLink[] = [
-  { id: '5', location: 'footer', label: 'Inicio', href: '/#inicio', sort_order: 1, active: true },
-  { id: '6', location: 'footer', label: 'Soluciones', href: '/#soluciones', sort_order: 2, active: true },
-  { id: '7', location: 'footer', label: 'Simulador', href: '/#simulador-section', sort_order: 3, active: true },
+  { id: '7', location: 'footer', label: 'Inicio', href: '/#inicio', sort_order: 1, active: true },
+  { id: '8', location: 'footer', label: 'Soluciones', href: '/#soluciones', sort_order: 2, active: true },
+  { id: '9', location: 'footer', label: 'Simulador', href: '/#simulador-section', sort_order: 3, active: true },
+  { id: '10', location: 'footer', label: 'Noticias', href: '/blog', sort_order: 60, active: true },
 ];
 
 const FALLBACK_GUARANTEES: GuaranteeContent = {
