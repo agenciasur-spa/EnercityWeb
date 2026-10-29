@@ -11,7 +11,7 @@ function escapeXml(value: string): string {
 }
 
 export const GET: APIRoute = async ({ site }) => {
-  const siteUrl = (site?.toString() ?? 'https://paneles-solares.cl').replace(/\/$/, '');
+  const siteUrl = (site?.toString() ?? 'https://enercity.cl').replace(/\/$/, '');
 
   const [{ data: posts }, { data: categories }] = await Promise.all([
     supabase

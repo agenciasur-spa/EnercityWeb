@@ -10,7 +10,7 @@ export async function GET(context: APIContext) {
   return rss({
     title: 'Blog Enercity',
     description: 'Noticias, novedades y contenido sobre energía solar de Enercity.',
-    site: context.site ?? 'https://paneles-solares.cl',
+    site: context.site ?? 'https://enercity.cl',
     items: posts.map((post) => ({
       title: post.title,
       description: post.excerpt ?? undefined,

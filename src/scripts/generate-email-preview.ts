@@ -179,7 +179,7 @@ const clienteHtml = `<!DOCTYPE html>
           <tr>
             <td style="background:#f8fafc;padding:24px 40px;text-align:center;border-top:1px solid #e2e8f0;">
               <p style="margin:0;font-size:12px;color:#a0aec0;line-height:1.6;">
-                Enercity · paneles-solares.cl<br>
+                Enercity · enercity.cl<br>
                 Este presupuesto tiene validez por 30 días. Sujeto a confirmación técnica.
               </p>
             </td>

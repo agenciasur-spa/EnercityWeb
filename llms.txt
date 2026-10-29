@@ -14,7 +14,7 @@ Enercity SpA es una empresa chilena especializada en energía solar fotovoltaica
 - Teléfono: +56 9 2902 8578
 - Email: contacto@enercity.cl
 - Horario de atención: 08:30 a 18:30 horas (Zona horaria: America/Santiago)
-- Sitio web: https://paneles-solares.cl
+- Sitio web: https://enercity.cl
 
 ## Cobertura Geográfica
 
@@ -154,7 +154,7 @@ El mantenimiento es simple y de bajo costo:
 
 ## Sitio Web
 
-URL principal: https://paneles-solares.cl
+URL principal: https://enercity.cl
 
 ---
 

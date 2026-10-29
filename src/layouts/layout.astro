@@ -43,14 +43,10 @@ const ogData = await getOpenGraphData(currentPath);
 // Prioridad: props del componente > datos de BD > valores por defecto
 const resolvedOgTitle = ogTitle || ogData?.title || `${title} — ${siteName}`;
 const resolvedOgDescription = ogDescription || ogData?.description || description;
-// Normalizar URL de OG image: solo reemplazar dominio viejo, respetar URLs externas (Supabase, etc.)
-const OLD_DOMAIN = 'https://paneles-solares.cl';
 const rawOgImage = ogImage || ogData?.image_url || `/og-image.png`;
-const resolvedOgImage = rawOgImage.startsWith(OLD_DOMAIN)
-  ? rawOgImage.replace(OLD_DOMAIN, siteUrl)
-  : rawOgImage.startsWith('http')
-    ? rawOgImage
-    : `${siteUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`;
+const resolvedOgImage = rawOgImage.startsWith('http')
+  ? rawOgImage
+  : `${siteUrl}${rawOgImage.startsWith('/') ? '' : '/'}${rawOgImage}`;
 
 // JSON-LD Structured Data
 const jsonLd = {
