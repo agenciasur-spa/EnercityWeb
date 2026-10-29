@@ -11,17 +11,20 @@ interface StatsBarProps {
 
 // Componente individual para el número que cuenta
 function Counter({ value, duration = 2 }: { value: string, duration?: number }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-  
-  // Extraemos solo los números del string (ej: "500+" -> 500)
   const numericValue = parseInt(value.replace(/\D/g, ''));
   const suffix = value.replace(/[0-9]/g, '');
 
+  // SSR renders the real value; client resets to 0 and animates up
+  const [displayValue, setDisplayValue] = useState(numericValue);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    setDisplayValue(0);
+  }, []);
+
   useEffect(() => {
     if (isInView) {
-      // Animación del conteo de números simple y directa
       const controls = animate(0, numericValue, {
         duration: duration,
         ease: "easeOut",
