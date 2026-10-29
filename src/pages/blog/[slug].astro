@@ -70,7 +70,7 @@ const jsonLd = {
 };
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogImage={post.cover_image_url ?? undefined}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={post.title} ogDescription={post.excerpt ?? post.title} ogImage={post.cover_image_url ?? undefined}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <Navbar client:load isHome={false} links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />

@@ -105,7 +105,7 @@ if (proyecto.ubicacion) specs.push({ icon: 'MapPin', label: 'Ubicación', value:
 if (proyecto.cliente) specs.push({ icon: 'User', label: 'Cliente', value: proyecto.cliente });
 ---
 
-<Layout title={seoTitle} description={seoDescription} ogImage={proyecto.imagen_portada ?? undefined}>
+<Layout title={seoTitle} description={seoDescription} ogTitle={proyecto.nombre} ogDescription={seoDescription} ogImage={proyecto.imagen_portada ?? undefined}>
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <Navbar client:load isHome={false} links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />

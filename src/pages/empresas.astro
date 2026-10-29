@@ -82,9 +82,20 @@ const heroContent: HeroContent = {
 const seoTitle = 'Enercity para Empresas | Energía Solar Industrial';
 const seoDescription =
   'Reduce tus costos eléctricos con energía solar para empresas. Sin inversión inicial, garantía de instalación y soporte especializado.';
+
+const faqJsonLd = empresasFAQ.length > 0 ? {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: empresasFAQ.map((faq) => ({
+    '@type': 'Question',
+    name: faq.pregunta,
+    acceptedAnswer: { '@type': 'Answer', text: faq.respuesta },
+  })),
+} : null;
 ---
 
 <Layout title={seoTitle} description={seoDescription}>
+  {faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
   <Navbar client:load variant="empresas" />
 
   <main>

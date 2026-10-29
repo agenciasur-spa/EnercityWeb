@@ -80,9 +80,20 @@ const seoTitle = `${heroContent.headline} ${heroContent.headlineAccent} | Enerci
 const seoDescription = heroContent.subheadline;
 const seoOgTitle = `Enercity — ${heroContent.headline} ${heroContent.headlineAccent}`;
 const seoOgDescription = heroContent.subheadline;
+
+const faqJsonLd = faqs.length > 0 ? {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.pregunta,
+    acceptedAnswer: { '@type': 'Answer', text: faq.respuesta },
+  })),
+} : null;
 ---
 
 <Layout title={seoTitle} description={seoDescription} ogTitle={seoOgTitle} ogDescription={seoOgDescription}>
+  {faqJsonLd && <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} />}
   <Navbar client:load links={navbarLinks.filter((l: NavLink) => l.label !== 'Simulador')} />
   
   <main>
